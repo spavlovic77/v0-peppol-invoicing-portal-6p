@@ -131,6 +131,19 @@
 .glass-input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+  outline: none;
+}
+
+/* Select dropdown option styling for dark theme */
+select.glass-input option,
+.glass-input option {
+  background: #1a1528;
+  color: #f0eef5;
+}
+
+/* Date input icon color */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
 }
 
 /* Scrollbar styling */

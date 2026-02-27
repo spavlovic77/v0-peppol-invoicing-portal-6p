@@ -7,7 +7,7 @@ import { FileText, LayoutDashboard, User, Plus, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/dashboard', label: 'Prehad', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Prehlad', icon: LayoutDashboard },
   { href: '/invoices/new', label: 'Nova faktura', icon: Plus },
   { href: '/profile', label: 'Profil', icon: User },
 ]
