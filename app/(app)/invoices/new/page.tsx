@@ -362,8 +362,8 @@ export default function NewInvoicePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : 'Nova faktura'}</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : 'Nova faktura'}</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
         </p>
       </div>

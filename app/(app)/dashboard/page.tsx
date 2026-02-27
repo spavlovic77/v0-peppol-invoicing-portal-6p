@@ -130,26 +130,26 @@ export default function DashboardPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Prehlad faktur</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Prehlad faktur</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {activeSupplier?.company_name}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {invoices.length > 0 && (
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors text-sm"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors text-sm"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden md:block">CSV Export</span>
+              <span className="hidden sm:block">CSV</span>
             </button>
           )}
           <Link
             href="/invoices/new"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
           >
             <Plus className="w-4 h-4" />
             Nova faktura
@@ -158,7 +158,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Celkom faktur</div>
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
@@ -219,13 +219,13 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-muted-foreground text-left">
+                <tr className="text-muted-foreground text-left text-xs sm:text-sm">
                   <th className="pb-3 font-medium">Cislo</th>
                   <th className="pb-3 font-medium">Odberatel</th>
-                  <th className="pb-3 font-medium">Datum</th>
+                  <th className="pb-3 font-medium hidden sm:table-cell">Datum</th>
                   <th className="pb-3 font-medium text-right">Suma</th>
                   <th className="pb-3 font-medium text-center">Stav</th>
-                  <th className="pb-3 font-medium w-10"><span className="sr-only">Akcie</span></th>
+                  <th className="pb-3 font-medium w-8"><span className="sr-only">Akcie</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
                       </span>
                     </td>
                     <td className="py-3 text-foreground">{inv.buyer_name}</td>
-                    <td className="py-3 text-muted-foreground">{inv.issue_date}</td>
+                    <td className="py-3 text-muted-foreground hidden sm:table-cell">{inv.issue_date}</td>
                     <td className="py-3 text-right text-foreground font-medium">
                       {fmt(inv.total_with_vat)} {inv.currency}
                     </td>

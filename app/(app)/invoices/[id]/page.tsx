@@ -189,7 +189,7 @@ export default function InvoiceDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="space-y-4">
         <div>
           <button
             onClick={() => router.push('/dashboard')}
@@ -197,7 +197,7 @@ export default function InvoiceDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Spat na prehlad
           </button>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             Faktura {invoice.invoice_number}
           </h1>
           <div className="flex items-center gap-3 mt-2">
@@ -209,7 +209,7 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {invoice.status === 'draft' && (
             <Link
               href={`/invoices/new?edit=${invoice.id}`}
@@ -325,7 +325,7 @@ export default function InvoiceDetailPage() {
             <Sparkles className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground">AI generovanie</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Model</div>
               <div className="text-foreground font-mono text-xs">{invoice.ai_model || 'N/A'}</div>
