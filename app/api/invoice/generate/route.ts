@@ -142,13 +142,28 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
 
     // Calculate AI cost from token usage
     // OpenAI gpt-4.1 pricing (as of 2025): input $2.00/1M, output $8.00/1M
-    const usage = result.usage || { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
     const MODEL_NAME = 'openai/gpt-4.1'
     const INPUT_PRICE_PER_1M = 2.00
     const OUTPUT_PRICE_PER_1M = 8.00
+
+    // The AI SDK usage object - log full structure for debugging
+    const rawUsage = result.usage as Record<string, unknown> | undefined
+    console.log('[v0] Raw AI usage:', JSON.stringify(rawUsage))
+
+    const promptTokens = Number(rawUsage?.promptTokens ?? rawUsage?.prompt_tokens ?? 0)
+    const completionTokens = Number(rawUsage?.completionTokens ?? rawUsage?.completion_tokens ?? 0)
+    const totalTokens = Number(rawUsage?.totalTokens ?? rawUsage?.total_tokens ?? 0)
+
+    // If we only have totalTokens, estimate split as ~30% input, ~70% output for structured generation
+    const hasBreakdown = promptTokens > 0 || completionTokens > 0
+    const effectivePrompt = hasBreakdown ? promptTokens : Math.round(totalTokens * 0.6)
+    const effectiveCompletion = hasBreakdown ? completionTokens : totalTokens - effectivePrompt
+
     const aiCostUsd =
-      (usage.promptTokens * INPUT_PRICE_PER_1M / 1_000_000) +
-      (usage.completionTokens * OUTPUT_PRICE_PER_1M / 1_000_000)
+      (effectivePrompt * INPUT_PRICE_PER_1M / 1_000_000) +
+      (effectiveCompletion * OUTPUT_PRICE_PER_1M / 1_000_000)
+
+    console.log('[v0] Token breakdown:', { promptTokens, completionTokens, totalTokens, effectivePrompt, effectiveCompletion, aiCostUsd })
 
     // Build the UBL XML from the structured output
     const xml = buildUblXml(peppolInvoice)
@@ -164,9 +179,9 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
         xml_content: xml,
         validation_errors: validationResults,
         status: allPassed ? 'valid' : 'invalid',
-        ai_prompt_tokens: usage.promptTokens,
-        ai_completion_tokens: usage.completionTokens,
-        ai_total_tokens: usage.totalTokens,
+        ai_prompt_tokens: effectivePrompt,
+        ai_completion_tokens: effectiveCompletion,
+        ai_total_tokens: totalTokens,
         ai_cost_usd: aiCostUsd,
         ai_model: MODEL_NAME,
       })
@@ -178,9 +193,9 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
       validation: validationResults,
       allPassed,
       aiUsage: {
-        promptTokens: usage.promptTokens,
-        completionTokens: usage.completionTokens,
-        totalTokens: usage.totalTokens,
+        promptTokens: effectivePrompt,
+        completionTokens: effectiveCompletion,
+        totalTokens,
         costUsd: aiCostUsd,
         model: MODEL_NAME,
       },
