@@ -3,39 +3,75 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ───── Light theme (default) ───── */
 :root {
-  --background: #0f0b1a;
-  --foreground: #f0eef5;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-foreground: #f0eef5;
-  --popover: #1a1528;
-  --popover-foreground: #f0eef5;
-  --primary: #7c3aed;
+  --background: #f8f9fb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: #e2dff0;
-  --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: #9b95b0;
-  --accent: #6d28d9;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #fecaca;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: #7c3aed;
-  --chart-1: #7c3aed;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e0e7ff;
+  --accent-foreground: #1e40af;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
   --chart-2: #06b6d4;
   --chart-3: #10b981;
   --chart-4: #f59e0b;
   --chart-5: #ef4444;
   --radius: 0.75rem;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #1a1528;
+  --glass: rgba(255, 255, 255, 0.80);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-heavy: rgba(255, 255, 255, 0.92);
+}
+
+/* ───── Dark theme ───── */
+.dark {
+  --background: #0f1117;
+  --foreground: #f0f2f5;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-foreground: #f0f2f5;
+  --popover: #1a1d28;
+  --popover-foreground: #f0f2f5;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.08);
+  --secondary-foreground: #e2e8f0;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #94a3b8;
+  --accent: #1e3a5f;
+  --accent-foreground: #93c5fd;
+  --destructive: #ef4444;
+  --destructive-foreground: #fecaca;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #06b6d4;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
   --success: #10b981;
   --success-foreground: #ffffff;
   --warning: #f59e0b;
-  --warning-foreground: #1a1528;
+  --warning-foreground: #1a1d28;
   --glass: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-heavy: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-heavy: rgba(255, 255, 255, 0.10);
 }
 
 @theme inline {
@@ -84,26 +120,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 18px;
+    line-height: 1.6;
   }
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
-
-.animate-gradient {
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
 }
 
 .glass-card {
@@ -121,42 +140,42 @@
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--input);
+  border: 1px solid var(--border);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .glass-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
   outline: none;
 }
 
-/* Select dropdown option styling for dark theme */
+/* Select dropdown styling */
 select.glass-input option,
 .glass-input option {
-  background: #1a1528;
-  color: #f0eef5;
+  background: var(--popover);
+  color: var(--popover-foreground);
 }
 
-/* Date input icon color */
-input[type="date"]::-webkit-calendar-picker-indicator {
+/* Date input icon - invert in dark mode */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.7);
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+/* Skeleton animation */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+.skeleton {
+  background: var(--muted);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
 }

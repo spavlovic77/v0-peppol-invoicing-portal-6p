@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Building2, Plus, Pencil, CreditCard, Loader2, Trash2 } from 'lucide-react'
+import { Building2, Plus, Pencil, CreditCard, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { SupplierCardSkeleton } from '@/components/skeleton'
 
 export default function SuppliersPage() {
   const { suppliers, activeSupplier, setActiveSupplier, loading, refreshSuppliers } = useActiveSupplier()
@@ -24,8 +25,19 @@ export default function SuppliersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="skeleton h-7 w-40 mb-2" />
+            <div className="skeleton h-4 w-64" />
+          </div>
+          <div className="skeleton h-10 w-44 rounded-xl" />
+        </div>
+        <div className="grid gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SupplierCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     )
   }
@@ -114,7 +126,7 @@ export default function SuppliersPage() {
                     {!isActive && (
                       <button
                         onClick={() => setActiveSupplier(s)}
-                        className="px-3 py-1.5 rounded-lg text-sm border border-glass-border text-foreground hover:bg-secondary transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-sm border border-border text-foreground hover:bg-secondary transition-colors"
                       >
                         Nastavit ako aktivny
                       </button>

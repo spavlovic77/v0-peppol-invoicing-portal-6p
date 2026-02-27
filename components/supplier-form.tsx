@@ -173,9 +173,19 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
             className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
           >
             {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Vyhladat
+            {lookingUp ? 'Hladam...' : 'Vyhladat'}
           </button>
         </div>
+        {lookingUp && (
+          <div className="mt-4 grid md:grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i}>
+                <div className="skeleton h-3 w-20 mb-2" />
+                <div className="skeleton h-10 w-full rounded-xl" />
+              </div>
+            ))}
+          </div>
+        )}
       </GlassCard>
 
       {/* Company Info */}

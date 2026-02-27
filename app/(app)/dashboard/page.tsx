@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2 } from 'lucide-react'
+import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { GlassCard } from '@/components/glass-card'
 import { useActiveSupplier } from '@/lib/supplier-context'
+import { DashboardSkeleton } from '@/components/skeleton'
 
 interface Invoice {
   id: string
@@ -101,11 +102,7 @@ export default function DashboardPage() {
   }
 
   if (supplierLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   // No suppliers at all
