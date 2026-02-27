@@ -1,5 +1,8 @@
 import { Navbar } from '@/components/navbar'
 
+// All app pages require auth / Supabase — never statically prerender
+export const dynamic = 'force-dynamic'
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
