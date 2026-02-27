@@ -234,14 +234,18 @@ export default function InvoiceDetailPage() {
               </button>
               <button
                 onClick={downloadXml}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors"
+                disabled={invoice.status === 'invalid'}
+                title={invoice.status === 'invalid' ? 'Faktura obsahuje validacne chyby' : 'Stiahnut XML'}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <FileCode className="w-4 h-4" />
                 XML
               </button>
               <button
                 onClick={downloadPdf}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+                disabled={invoice.status === 'invalid'}
+                title={invoice.status === 'invalid' ? 'Faktura obsahuje validacne chyby' : 'Stiahnut PDF'}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary/40"
               >
                 <FileText className="w-4 h-4" />
                 PDF
@@ -250,6 +254,21 @@ export default function InvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Validation Warning */}
+      {invoice.status === 'invalid' && (
+        <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-destructive/10 border border-destructive/20">
+          <XCircle className="w-5 h-5 text-destructive shrink-0" />
+          <div>
+            <div className="text-sm font-medium text-destructive">
+              Faktura obsahuje validacne chyby
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              Stahovanie XML a PDF je zablokovane. Opravte chyby a regenerujte fakturu.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invoice Info */}
       <div className="grid md:grid-cols-3 gap-6">
