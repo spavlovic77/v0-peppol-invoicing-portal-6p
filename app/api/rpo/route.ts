@@ -1,110 +1,91 @@
 import { NextResponse } from 'next/server'
 
-interface RPOResponse {
+interface RegisterUZSearch {
+  id: number[]
+  existujeDalsieId: boolean
+}
+
+interface RegisterUZDetail {
   id: number
+  nazovUJ: string
   ico: string
-  nazov: string
   dic?: string
-  ic_dph?: string
-  adresa?: {
-    ulica?: string
-    cisloDomu?: string
-    obec?: string
-    psc?: string
-    stat?: string
-  }
+  mesto?: string
+  ulica?: string
+  psc?: string
   pravnaForma?: string
-  registracia?: string
+  kraj?: string
+  okres?: string
+  datumZalozenia?: string
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const ico = searchParams.get('ico')
 
-  if (!ico || ico.length < 6) {
-    return NextResponse.json({ error: 'Neplatne ICO' }, { status: 400 })
+  if (!ico || ico.length < 6 || ico.length > 8) {
+    return NextResponse.json({ error: 'Neplatne ICO (6-8 cifier)' }, { status: 400 })
   }
 
-  try {
-    // Try Slovak RPO API
-    const response = await fetch(
-      `https://rpo.statistics.sk/rpo/json/full/${ico}`,
-      {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      }
-    )
+  const paddedICO = ico.padStart(8, '0')
 
-    if (!response.ok) {
-      // Fallback: try FinStat-like API or return not found
+  try {
+    // Step 1: Search for the company by ICO
+    const searchUrl = `https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&pokracovat-za-id=1&max-zaznamov=1&ico=${paddedICO}`
+    const searchRes = await fetch(searchUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (!searchRes.ok) {
       return NextResponse.json(
-        { error: 'Subjekt s danym ICO nebol najdeny' },
+        { error: 'Chyba pri komunikacii s registrom' },
+        { status: 502 }
+      )
+    }
+
+    const searchData: RegisterUZSearch = await searchRes.json()
+
+    if (!searchData.id || searchData.id.length === 0) {
+      return NextResponse.json(
+        { error: 'Subjekt s danym ICO nebol najdeny v registri' },
         { status: 404 }
       )
     }
 
-    const data = await response.json()
+    // Step 2: Get detail by internal ID
+    const detailUrl = `https://www.registeruz.sk/cruz-public/api/uctovna-jednotka?id=${searchData.id[0]}`
+    const detailRes = await fetch(detailUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    })
 
-    // The RPO API returns data in a specific structure
-    // Extract relevant fields
-    let companyData
-    if (data && typeof data === 'object') {
-      // RPO returns detailed data - extract what we need
-      const name = data.nazov || data.obchodneMeno || data.name || ''
-      const addresses = data.adresy || data.sidlo || []
-      const addr = Array.isArray(addresses) ? addresses[0] : addresses || {}
-
-      const street = [addr.ulica, addr.supisneCislo || addr.cisloDomu]
-        .filter(Boolean)
-        .join(' ')
-
-      companyData = {
-        ico: ico.padStart(8, '0'),
-        company_name: name,
-        dic: data.dic || null,
-        ic_dph: data.icDph || data.ic_dph || null,
-        street: street || null,
-        city: addr.obec || addr.mesto || null,
-        postal_code: addr.psc || null,
-        country_code: 'SK',
-        registration_court: data.registracia || null,
-        registration_number: data.registracneCislo || null,
-      }
-    } else {
+    if (!detailRes.ok) {
       return NextResponse.json(
-        { error: 'Neocakavany format odpovede' },
-        { status: 500 }
+        { error: 'Nepodarilo sa nacitat detail subjektu' },
+        { status: 502 }
       )
+    }
+
+    const detail: RegisterUZDetail = await detailRes.json()
+
+    // Map the response to our format
+    const companyData = {
+      ico: detail.ico || paddedICO,
+      company_name: detail.nazovUJ || '',
+      dic: detail.dic || null,
+      ic_dph: detail.dic ? `SK${detail.dic}` : null,
+      street: detail.ulica || null,
+      city: detail.mesto || null,
+      postal_code: detail.psc || null,
+      country_code: 'SK',
+      registration_court: null,
+      registration_number: null,
     }
 
     return NextResponse.json(companyData)
   } catch (error) {
-    // If RPO API fails, try alternative source
-    try {
-      const finstatResponse = await fetch(
-        `https://www.finstat.sk/api/detail?ico=${ico}&apikey=demo`,
-        { signal: AbortSignal.timeout(5000) }
-      )
-
-      if (finstatResponse.ok) {
-        const fsData = await finstatResponse.json()
-        return NextResponse.json({
-          ico: ico.padStart(8, '0'),
-          company_name: fsData.Name || '',
-          dic: fsData.Dic || null,
-          ic_dph: fsData.IcDph || null,
-          street: fsData.Street || null,
-          city: fsData.City || null,
-          postal_code: fsData.ZipCode || null,
-          country_code: 'SK',
-          registration_court: fsData.RegistrationCourt || null,
-          registration_number: fsData.RegistrationNumber || null,
-        })
-      }
-    } catch {
-      // Ignore secondary failure
-    }
-
+    console.error('RPO lookup error:', error)
     return NextResponse.json(
       { error: 'Nepodarilo sa nacitat udaje. Skuste to neskor alebo vyplnte manualne.' },
       { status: 503 }
