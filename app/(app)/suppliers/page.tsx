@@ -3,10 +3,24 @@
 import Link from 'next/link'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Building2, Plus, Pencil, CreditCard, Loader2 } from 'lucide-react'
+import { Building2, Plus, Pencil, CreditCard, Loader2, Trash2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 export default function SuppliersPage() {
-  const { suppliers, activeSupplier, setActiveSupplier, loading } = useActiveSupplier()
+  const { suppliers, activeSupplier, setActiveSupplier, loading, refreshSuppliers } = useActiveSupplier()
+  const supabase = createClient()
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Naozaj chcete zmazat dodavatela "${name}"? Vsetky faktury tohto dodavatela stratia priradenie.`)) return
+    const { error } = await supabase.from('suppliers').delete().eq('id', id)
+    if (error) {
+      toast.error('Chyba pri mazani: ' + error.message)
+    } else {
+      toast.success('Dodavatel bol zmazany')
+      await refreshSuppliers()
+    }
+  }
 
   if (loading) {
     return (
@@ -111,6 +125,12 @@ export default function SuppliersPage() {
                     >
                       <Pencil className="w-4 h-4" />
                     </Link>
+                    <button
+                      onClick={() => handleDelete(s.id, s.company_name)}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </GlassCard>

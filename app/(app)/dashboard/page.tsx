@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2 } from 'lucide-react'
+import { Loader2, Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { GlassCard } from '@/components/glass-card'
 import { useActiveSupplier } from '@/lib/supplier-context'
 
@@ -65,6 +66,19 @@ export default function DashboardPage() {
     totalAmount: invoices.reduce((s, i) => s + (i.total_with_vat || 0), 0),
     totalAiCost: invoices.reduce((s, i) => s + (i.ai_cost_usd || 0), 0),
     totalTokens: invoices.reduce((s, i) => s + (i.ai_total_tokens || 0), 0),
+  }
+
+  async function handleDeleteInvoice(e: React.MouseEvent, inv: Invoice) {
+    e.stopPropagation()
+    if (!confirm(`Naozaj chcete zmazat fakturu ${inv.invoice_number}?`)) return
+    await supabase.from('invoice_items').delete().eq('invoice_id', inv.id)
+    const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
+    if (error) {
+      toast.error('Chyba pri mazani: ' + error.message)
+    } else {
+      toast.success('Faktura bola zmazana')
+      setInvoices((prev) => prev.filter((i) => i.id !== inv.id))
+    }
   }
 
   const fmt = (n: number) =>
@@ -214,6 +228,7 @@ export default function DashboardPage() {
                   <th className="pb-3 font-medium">Datum</th>
                   <th className="pb-3 font-medium text-right">Suma</th>
                   <th className="pb-3 font-medium text-center">Stav</th>
+                  <th className="pb-3 font-medium w-10"><span className="sr-only">Akcie</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -252,6 +267,15 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="py-3">
+                      <button
+                        onClick={(e) => handleDeleteInvoice(e, inv)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Zmazat fakturu"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 ))}

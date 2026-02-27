@@ -37,6 +37,8 @@ export default function NewInvoicePage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const duplicateId = searchParams.get('duplicate')
+  const editId = searchParams.get('edit')
+  const isEditMode = !!editId
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoice_number: '',
@@ -77,6 +79,54 @@ export default function NewInvoicePage() {
       iban: activeSupplier.iban,
       swift: activeSupplier.swift,
     }))
+
+    // If editing, load the full invoice including number and dates
+    if (editId) {
+      const { data: srcInv } = await supabase.from('invoices').select('*').eq('id', editId).eq('user_id', user.id).single()
+      const { data: srcItems } = await supabase.from('invoice_items').select('*').eq('invoice_id', editId).order('line_number')
+      if (srcInv) {
+        setFormData((prev) => ({
+          ...prev,
+          invoice_number: srcInv.invoice_number,
+          issue_date: srcInv.issue_date,
+          due_date: srcInv.due_date,
+          delivery_date: srcInv.delivery_date || prev.delivery_date,
+          currency: srcInv.currency || 'EUR',
+          buyer_ico: srcInv.buyer_ico,
+          buyer_dic: srcInv.buyer_dic,
+          buyer_ic_dph: srcInv.buyer_ic_dph,
+          buyer_name: srcInv.buyer_name,
+          buyer_street: srcInv.buyer_street,
+          buyer_city: srcInv.buyer_city,
+          buyer_postal_code: srcInv.buyer_postal_code,
+          buyer_country_code: srcInv.buyer_country_code || 'SK',
+          buyer_email: srcInv.buyer_email,
+          buyer_peppol_id: srcInv.buyer_peppol_id,
+          order_reference: srcInv.order_reference,
+          buyer_reference: srcInv.buyer_reference,
+          payment_means_code: srcInv.payment_means_code || '30',
+          bank_name: srcInv.bank_name || prev.bank_name,
+          iban: srcInv.iban || prev.iban,
+          swift: srcInv.swift || prev.swift,
+          variable_symbol: srcInv.variable_symbol,
+          note: srcInv.note,
+          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => ({
+            line_number: idx + 1,
+            description: it.description as string,
+            quantity: it.quantity as number,
+            unit: (it.unit as string) || 'C62',
+            unit_price: it.unit_price as number,
+            vat_category: (it.vat_category as string) || 'S',
+            vat_rate: (it.vat_rate as number) || 20,
+            line_total: (it.quantity as number) * (it.unit_price as number),
+            item_number: (it.item_number as string) || null,
+            buyer_item_number: (it.buyer_item_number as string) || null,
+          })) : [{ ...defaultItem }],
+        }))
+        setLoading(false)
+        return // Skip invoice number generation
+      }
+    }
 
     // If duplicating, load the source invoice
     if (duplicateId) {
@@ -139,7 +189,7 @@ export default function NewInvoicePage() {
     }))
 
     setLoading(false)
-  }, [supabase, router, activeSupplier, duplicateId])
+  }, [supabase, router, activeSupplier, duplicateId, editId])
 
   useEffect(() => {
     if (!supplierLoading) loadData()
@@ -170,53 +220,71 @@ export default function NewInvoicePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const year = new Date().getFullYear()
-      const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
-      await supabase.from('invoice_sequences').upsert(
-        { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: 'FV' },
-        { onConflict: 'user_id,supplier_id,year' }
-      )
+      const invoicePayload = {
+        user_id: user.id,
+        supplier_id: activeSupplier.id,
+        invoice_number: formData.invoice_number,
+        issue_date: formData.issue_date,
+        due_date: formData.due_date,
+        delivery_date: formData.delivery_date,
+        currency: formData.currency,
+        buyer_ico: formData.buyer_ico,
+        buyer_dic: formData.buyer_dic,
+        buyer_ic_dph: formData.buyer_ic_dph,
+        buyer_name: formData.buyer_name,
+        buyer_street: formData.buyer_street,
+        buyer_city: formData.buyer_city,
+        buyer_postal_code: formData.buyer_postal_code,
+        buyer_country_code: formData.buyer_country_code,
+        buyer_email: formData.buyer_email,
+        buyer_peppol_id: formData.buyer_peppol_id,
+        order_reference: formData.order_reference,
+        buyer_reference: formData.buyer_reference,
+        payment_means_code: formData.payment_means_code,
+        bank_name: formData.bank_name,
+        iban: formData.iban,
+        swift: formData.swift,
+        variable_symbol: formData.variable_symbol,
+        total_without_vat: totals.withoutVat,
+        total_vat: totals.vat,
+        total_with_vat: totals.withVat,
+        note: formData.note,
+        status: 'draft',
+      }
 
-      const { data: invoice, error } = await supabase
-        .from('invoices')
-        .insert({
-          user_id: user.id,
-          supplier_id: activeSupplier.id,
-          invoice_number: formData.invoice_number,
-          issue_date: formData.issue_date,
-          due_date: formData.due_date,
-          delivery_date: formData.delivery_date,
-          currency: formData.currency,
-          buyer_ico: formData.buyer_ico,
-          buyer_dic: formData.buyer_dic,
-          buyer_ic_dph: formData.buyer_ic_dph,
-          buyer_name: formData.buyer_name,
-          buyer_street: formData.buyer_street,
-          buyer_city: formData.buyer_city,
-          buyer_postal_code: formData.buyer_postal_code,
-          buyer_country_code: formData.buyer_country_code,
-          buyer_email: formData.buyer_email,
-          buyer_peppol_id: formData.buyer_peppol_id,
-          order_reference: formData.order_reference,
-          buyer_reference: formData.buyer_reference,
-          payment_means_code: formData.payment_means_code,
-          bank_name: formData.bank_name,
-          iban: formData.iban,
-          swift: formData.swift,
-          variable_symbol: formData.variable_symbol,
-          total_without_vat: totals.withoutVat,
-          total_vat: totals.vat,
-          total_with_vat: totals.withVat,
-          note: formData.note,
-          status: 'draft',
-        })
-        .select()
-        .single()
+      let invoiceId: string
 
-      if (error) throw error
+      if (isEditMode && editId) {
+        // Update existing invoice
+        const { error } = await supabase
+          .from('invoices')
+          .update({ ...invoicePayload, xml_content: null, validation_errors: null })
+          .eq('id', editId)
+        if (error) throw error
+        invoiceId = editId
+
+        // Delete old items and re-insert
+        await supabase.from('invoice_items').delete().eq('invoice_id', editId)
+      } else {
+        // Create new invoice
+        const year = new Date().getFullYear()
+        const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
+        await supabase.from('invoice_sequences').upsert(
+          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: 'FV' },
+          { onConflict: 'user_id,supplier_id,year' }
+        )
+
+        const { data: invoice, error } = await supabase
+          .from('invoices')
+          .insert(invoicePayload)
+          .select()
+          .single()
+        if (error) throw error
+        invoiceId = invoice.id
+      }
 
       const items = formData.items.map((item) => ({
-        invoice_id: invoice.id,
+        invoice_id: invoiceId,
         line_number: item.line_number,
         description: item.description,
         quantity: item.quantity,
@@ -232,10 +300,10 @@ export default function NewInvoicePage() {
       const { error: itemsError } = await supabase.from('invoice_items').insert(items)
       if (itemsError) throw itemsError
 
-      toast.success('Faktura bola vytvorena')
-      router.push(`/invoices/${invoice.id}`)
+      toast.success(isEditMode ? 'Faktura bola aktualizovana' : 'Faktura bola vytvorena')
+      router.push(`/invoices/${invoiceId}`)
     } catch (err) {
-      toast.error('Chyba pri vytvarani faktury: ' + (err as Error).message)
+      toast.error('Chyba: ' + (err as Error).message)
     } finally {
       setCreating(false)
     }
@@ -294,7 +362,7 @@ export default function NewInvoicePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Nova faktura</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : 'Nova faktura'}</h1>
         <p className="text-muted-foreground mt-1">
           Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
         </p>
@@ -327,7 +395,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            Vytvorit fakturu
+            {isEditMode ? 'Ulozit zmeny' : 'Vytvorit fakturu'}
           </button>
         )}
       </div>
