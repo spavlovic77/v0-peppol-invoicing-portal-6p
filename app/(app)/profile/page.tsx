@@ -151,7 +151,7 @@ export default function ProfilePage() {
             onChange={(e) => setIcoInput(e.target.value)}
             placeholder="Zadajte ICO (napr. 36421928)"
             className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
-            maxLength={8}
+            maxLength={10}
           />
           <button
             onClick={lookupICO}
