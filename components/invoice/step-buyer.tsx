@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Building2, Search, Loader2, Contact } from 'lucide-react'
+import { Building2, Search, Loader2, Contact, CheckCircle2, XCircle, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import type { InvoiceFormData } from '@/lib/schemas'
@@ -32,7 +32,30 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
   const [buyerIco, setBuyerIco] = useState(formData.buyer_ico || '')
   const [contacts, setContacts] = useState<BuyerContact[]>([])
   const [showContacts, setShowContacts] = useState(false)
+  const [peppolStatus, setPeppolStatus] = useState<'idle' | 'checking' | 'found' | 'not_found' | 'error' | 'no_key'>('idle')
   const supabase = createClient()
+
+  // Check Peppol presence when buyer DIC changes
+  useEffect(() => {
+    if (!formData.buyer_dic || !supplierId) {
+      setPeppolStatus('idle')
+      return
+    }
+    const participantId = `0245:${formData.buyer_dic}`
+    setPeppolStatus('checking')
+    fetch(`/api/peppol/discover?participant_id=${encodeURIComponent(participantId)}&supplier_id=${supplierId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error?.includes('API kluc')) {
+          setPeppolStatus('no_key')
+        } else if (data.found) {
+          setPeppolStatus('found')
+        } else {
+          setPeppolStatus('not_found')
+        }
+      })
+      .catch(() => setPeppolStatus('error'))
+  }, [formData.buyer_dic, supplierId])
 
   const loadContacts = useCallback(async () => {
     if (!supplierId) return
@@ -223,12 +246,41 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
         </div>
       </GlassCard>
 
-      {/* Peppol ID Preview */}
+      {/* Peppol ID Preview + Status */}
       {formData.buyer_dic && (
-        <GlassCard className="border-primary/20">
-          <div className="text-sm text-muted-foreground mb-1">Peppol ID odberatela</div>
-          <div className="text-lg font-mono font-semibold text-primary">
+        <GlassCard className={peppolStatus === 'found' ? 'border-success/30' : peppolStatus === 'not_found' ? 'border-warning/30' : 'border-primary/20'}>
+          <div className="flex items-center gap-3 mb-2">
+            <Globe className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-foreground">Peppol</h2>
+          </div>
+          <div className="text-base font-mono font-semibold text-primary mb-3">
             0245:{formData.buyer_dic}
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            {peppolStatus === 'checking' && (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span className="text-muted-foreground">Overujem registraciu na Peppol...</span>
+              </>
+            )}
+            {peppolStatus === 'found' && (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-success" />
+                <span className="text-success font-medium">Odberatel je registrovany na Peppol</span>
+              </>
+            )}
+            {peppolStatus === 'not_found' && (
+              <>
+                <XCircle className="w-4 h-4 text-warning" />
+                <span className="text-warning font-medium">Odberatel nie je registrovany na Peppol</span>
+              </>
+            )}
+            {peppolStatus === 'no_key' && (
+              <span className="text-xs text-muted-foreground">AP API kluc nie je nastaveny - overenie Peppol nedostupne</span>
+            )}
+            {peppolStatus === 'error' && (
+              <span className="text-xs text-muted-foreground">Nepodarilo sa overit Peppol registraciu</span>
+            )}
           </div>
         </GlassCard>
       )}

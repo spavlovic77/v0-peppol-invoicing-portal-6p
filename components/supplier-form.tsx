@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2 } from 'lucide-react'
+import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff } from 'lucide-react'
 
 export interface SupplierFormData {
   ico: string
@@ -25,12 +25,14 @@ export interface SupplierFormData {
   web: string
   registration_court: string
   registration_number: string
+  ap_api_key: string
 }
 
 const emptyForm: SupplierFormData = {
   ico: '', dic: '', ic_dph: '', company_name: '', street: '', city: '',
   postal_code: '', country_code: 'SK', bank_name: '', iban: '', swift: '',
   email: '', phone: '', web: '', registration_court: '', registration_number: '',
+  ap_api_key: '',
 }
 
 interface SupplierFormProps {
@@ -42,6 +44,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
   const [form, setForm] = useState<SupplierFormData>({ ...emptyForm, ...initial })
   const [saving, setSaving] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
   const [icoInput, setIcoInput] = useState(initial?.ico || '')
   const router = useRouter()
   const supabase = createClient()
@@ -113,6 +116,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         web: form.web || null,
         registration_court: form.registration_court || null,
         registration_number: form.registration_number || null,
+        ap_api_key: form.ap_api_key || null,
       }
 
       let error
@@ -232,6 +236,44 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Telefon" value={form.phone} onChange={(v) => updateField('phone', v)} type="tel" />
           <Field label="Web stranka" value={form.web} onChange={(v) => updateField('web', v)} className="md:col-span-2" />
         </div>
+      </GlassCard>
+
+      {/* AP API Key */}
+      <GlassCard>
+        <div className="flex items-center gap-3 mb-4">
+          <Key className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-foreground">Peppol Access Point (ION AP)</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          API kluc pre odosielanie faktur cez Peppol siet. Ziskate ho na{' '}
+          <a href="https://ion-ap.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">ion-ap.net</a>
+        </p>
+        <div className="relative">
+          <label className="block text-sm text-muted-foreground mb-1.5">AP API kluc</label>
+          <div className="flex gap-2">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              value={form.ap_api_key}
+              onChange={(e) => updateField('ap_api_key', e.target.value)}
+              placeholder="napr. d5ac88320c6078db43677a00ecd2a9a3d3d2bcf5"
+              className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground font-mono text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="p-2.5 rounded-xl glass-card text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              title={showApiKey ? 'Skryt kluc' : 'Zobrazit kluc'}
+            >
+              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+        {form.ap_api_key && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-success">
+            <div className="w-2 h-2 rounded-full bg-success" />
+            AP kluc je nastaveny - mozete odosielat faktury cez Peppol
+          </div>
+        )}
       </GlassCard>
 
       {/* Peppol ID Preview */}
