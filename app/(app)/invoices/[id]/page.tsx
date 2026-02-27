@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Download, FileText, FileCode, Sparkles, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, Download, FileText, FileCode, Sparkles, ArrowLeft, CheckCircle2, XCircle, Copy } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationDisplay } from '@/components/invoice/validation-display'
+import Link from 'next/link'
 
 interface InvoiceData {
   id: string
@@ -190,6 +191,13 @@ export default function InvoiceDetailPage() {
         </div>
 
         <div className="flex gap-2">
+          <Link
+            href={`/invoices/new?duplicate=${invoice.id}`}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors"
+          >
+            <Copy className="w-4 h-4" />
+            <span className="hidden md:inline">Duplikovat</span>
+          </Link>
           {!invoice.xml_content && (
             <button
               onClick={handleGenerate}

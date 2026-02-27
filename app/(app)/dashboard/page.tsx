@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, Plus, FileText, CheckCircle2, XCircle, Clock, Search } from 'lucide-react'
+import { Loader2, Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
+import { useActiveSupplier } from '@/lib/supplier-context'
 
 interface Invoice {
   id: string
@@ -22,38 +23,32 @@ interface Invoice {
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { activeSupplier, suppliers, loading: supplierLoading } = useActiveSupplier()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [hasProfile, setHasProfile] = useState(false)
   const [search, setSearch] = useState('')
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/auth/login'); return }
 
-    // Check profile
-    const { data: profile } = await supabase
-      .from('company_profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single()
+    if (!activeSupplier) { setLoading(false); return }
 
-    setHasProfile(!!profile)
-
-    // Load invoices
+    // Load invoices scoped to active supplier
     const { data: invs } = await supabase
       .from('invoices')
       .select('*')
       .eq('user_id', user.id)
+      .eq('supplier_id', activeSupplier.id)
       .order('created_at', { ascending: false })
 
     setInvoices(invs || [])
     setLoading(false)
-  }, [supabase, router])
+  }, [supabase, router, activeSupplier])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (!supplierLoading) loadData()
+  }, [loadData, supplierLoading])
 
   const filtered = invoices.filter(
     (inv) =>
@@ -71,7 +66,23 @@ export default function DashboardPage() {
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  if (loading) {
+  function exportCSV() {
+    if (filtered.length === 0) return
+    const header = 'Cislo faktury;Odberatel;Datum vystavenia;Datum splatnosti;Suma;Mena;Stav'
+    const rows = filtered.map((inv) =>
+      `${inv.invoice_number};${inv.buyer_name};${inv.issue_date};${inv.due_date};${inv.total_with_vat};${inv.currency};${inv.status}`
+    )
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `faktury-${activeSupplier?.company_name || 'export'}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (supplierLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -79,43 +90,56 @@ export default function DashboardPage() {
     )
   }
 
+  // No suppliers at all
+  if (suppliers.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <GlassCard className="text-center py-16">
+          <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-2">Vitajte v Peppol Faktura</h2>
+          <p className="text-muted-foreground mb-6">
+            Zacnite pridanim prvej firmy, za ktoru budete vystavovat faktury.
+          </p>
+          <Link
+            href="/suppliers/new"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Pridat prveho dodavatela
+          </Link>
+        </GlassCard>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Profile Warning */}
-      {!hasProfile && (
-        <GlassCard heavy>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">Dokoncite registraciu</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Pre vystavovanie faktur je potrebne vyplnit firemny profil a platobne udaje.
-              </p>
-            </div>
-            <Link
-              href="/profile"
-              className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-            >
-              Vyplnit profil
-            </Link>
-          </div>
-        </GlassCard>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Prehlad faktur</h1>
-          <p className="text-muted-foreground mt-1">Spravujte svoje Peppol e-faktury</p>
+          <p className="text-muted-foreground mt-1">
+            {activeSupplier?.company_name}
+          </p>
         </div>
-        <Link
-          href="/invoices/new"
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors ${
-            !hasProfile ? 'opacity-50 pointer-events-none' : ''
-          }`}
-        >
-          <Plus className="w-4 h-4" />
-          Nova faktura
-        </Link>
+        <div className="flex items-center gap-3">
+          {invoices.length > 0 && (
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden md:block">CSV Export</span>
+            </button>
+          )}
+          <Link
+            href="/invoices/new"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nova faktura
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -157,9 +181,9 @@ export default function DashboardPage() {
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground">
-              {invoices.length === 0 ? 'Zatial nemAte ziadne faktury' : 'Ziadne vysledky hladania'}
+              {invoices.length === 0 ? 'Zatial nemate ziadne faktury pre tohto dodavatela' : 'Ziadne vysledky hladania'}
             </p>
-            {invoices.length === 0 && hasProfile && (
+            {invoices.length === 0 && (
               <Link
                 href="/invoices/new"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors mt-4"

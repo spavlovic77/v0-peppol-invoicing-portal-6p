@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Building2 } from 'lucide-react'
 import { StepBasicInfo } from '@/components/invoice/step-basic-info'
 import { StepBuyer } from '@/components/invoice/step-buyer'
 import { StepItems } from '@/components/invoice/step-items'
 import { StepSummary } from '@/components/invoice/step-summary'
 import { InvoiceWizardStepper } from '@/components/invoice/wizard-stepper'
-import type { InvoiceFormData, CompanyProfile } from '@/lib/schemas'
+import { useActiveSupplier, type Supplier } from '@/lib/supplier-context'
+import { GlassCard } from '@/components/glass-card'
+import type { InvoiceFormData } from '@/lib/schemas'
+import Link from 'next/link'
 
 const defaultItem = {
   line_number: 1,
@@ -27,11 +30,14 @@ const defaultItem = {
 
 export default function NewInvoicePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  const { activeSupplier, loading: supplierLoading } = useActiveSupplier()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [profile, setProfile] = useState<CompanyProfile | null>(null)
+  const duplicateId = searchParams.get('duplicate')
+
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoice_number: '',
     issue_date: new Date().toISOString().split('T')[0],
@@ -60,39 +66,65 @@ export default function NewInvoicePage() {
   })
 
   const loadData = useCallback(async () => {
+    if (!activeSupplier) { setLoading(false); return }
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/auth/login'); return }
 
-    // Load profile
-    const { data: profileData } = await supabase
-      .from('company_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-
-    if (!profileData) {
-      toast.error('Najprv vyplnte firemny profil')
-      router.push('/profile')
-      return
-    }
-    setProfile(profileData)
-
-    // Pre-fill payment from profile
+    // Pre-fill payment from active supplier
     setFormData((prev) => ({
       ...prev,
-      bank_name: profileData.bank_name,
-      iban: profileData.iban,
-      swift: profileData.swift,
+      bank_name: activeSupplier.bank_name,
+      iban: activeSupplier.iban,
+      swift: activeSupplier.swift,
     }))
 
-    // Generate invoice number
+    // If duplicating, load the source invoice
+    if (duplicateId) {
+      const { data: srcInv } = await supabase.from('invoices').select('*').eq('id', duplicateId).eq('user_id', user.id).single()
+      const { data: srcItems } = await supabase.from('invoice_items').select('*').eq('invoice_id', duplicateId).order('line_number')
+      if (srcInv) {
+        setFormData((prev) => ({
+          ...prev,
+          // keep new dates & number, copy buyer + items + payment
+          buyer_ico: srcInv.buyer_ico,
+          buyer_dic: srcInv.buyer_dic,
+          buyer_ic_dph: srcInv.buyer_ic_dph,
+          buyer_name: srcInv.buyer_name,
+          buyer_street: srcInv.buyer_street,
+          buyer_city: srcInv.buyer_city,
+          buyer_postal_code: srcInv.buyer_postal_code,
+          buyer_country_code: srcInv.buyer_country_code || 'SK',
+          buyer_email: srcInv.buyer_email,
+          buyer_peppol_id: srcInv.buyer_peppol_id,
+          order_reference: srcInv.order_reference,
+          buyer_reference: srcInv.buyer_reference,
+          note: srcInv.note,
+          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => ({
+            line_number: idx + 1,
+            description: it.description as string,
+            quantity: it.quantity as number,
+            unit: (it.unit as string) || 'C62',
+            unit_price: it.unit_price as number,
+            vat_category: (it.vat_category as string) || 'S',
+            vat_rate: (it.vat_rate as number) || 20,
+            line_total: (it.quantity as number) * (it.unit_price as number),
+            item_number: (it.item_number as string) || null,
+            buyer_item_number: (it.buyer_item_number as string) || null,
+          })) : [{ ...defaultItem }],
+        }))
+        toast.success('Udaje z povodnej faktury boli nacitane')
+      }
+    }
+
+    // Generate invoice number scoped to supplier
     const year = new Date().getFullYear()
     const { data: seq } = await supabase
       .from('invoice_sequences')
       .select('*')
       .eq('user_id', user.id)
+      .eq('supplier_id', activeSupplier.id)
       .eq('year', year)
-      .single()
+      .maybeSingle()
 
     let nextNum = 1
     if (seq) {
@@ -107,17 +139,16 @@ export default function NewInvoicePage() {
     }))
 
     setLoading(false)
-  }, [supabase, router])
+  }, [supabase, router, activeSupplier, duplicateId])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (!supplierLoading) loadData()
+  }, [loadData, supplierLoading])
 
   function updateForm(updates: Partial<InvoiceFormData>) {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
 
-  // Calculate totals
   const totals = formData.items.reduce(
     (acc, item) => {
       const lineTotal = item.quantity * item.unit_price
@@ -132,26 +163,25 @@ export default function NewInvoicePage() {
   )
 
   async function handleCreate() {
-    if (!profile) return
+    if (!activeSupplier) return
     setCreating(true)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Update sequence
       const year = new Date().getFullYear()
       const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
       await supabase.from('invoice_sequences').upsert(
-        { user_id: user.id, year, last_number: seqNum, prefix: 'FV' },
-        { onConflict: 'user_id,year' }
+        { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: 'FV' },
+        { onConflict: 'user_id,supplier_id,year' }
       )
 
-      // Create invoice
       const { data: invoice, error } = await supabase
         .from('invoices')
         .insert({
           user_id: user.id,
+          supplier_id: activeSupplier.id,
           invoice_number: formData.invoice_number,
           issue_date: formData.issue_date,
           due_date: formData.due_date,
@@ -185,7 +215,6 @@ export default function NewInvoicePage() {
 
       if (error) throw error
 
-      // Create invoice items
       const items = formData.items.map((item) => ({
         invoice_id: invoice.id,
         line_number: item.line_number,
@@ -200,10 +229,7 @@ export default function NewInvoicePage() {
         buyer_item_number: item.buyer_item_number,
       }))
 
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(items)
-
+      const { error: itemsError } = await supabase.from('invoice_items').insert(items)
       if (itemsError) throw itemsError
 
       toast.success('Faktura bola vytvorena')
@@ -215,7 +241,7 @@ export default function NewInvoicePage() {
     }
   }
 
-  if (loading) {
+  if (supplierLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -223,33 +249,61 @@ export default function NewInvoicePage() {
     )
   }
 
+  if (!activeSupplier) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <GlassCard className="text-center py-16">
+          <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-2">Najprv vytvorte dodavatela</h2>
+          <p className="text-muted-foreground mb-6">Pre vystavovanie faktur je potrebne mat aspon jedneho dodavatela.</p>
+          <Link href="/suppliers/new" className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+            Pridat dodavatela
+          </Link>
+        </GlassCard>
+      </div>
+    )
+  }
+
+  // Build a supplier-shaped object for the summary step (matches CompanyProfile interface)
+  const supplierAsProfile = {
+    ico: activeSupplier.ico,
+    dic: activeSupplier.dic,
+    ic_dph: activeSupplier.ic_dph,
+    company_name: activeSupplier.company_name,
+    street: activeSupplier.street,
+    city: activeSupplier.city,
+    postal_code: activeSupplier.postal_code,
+    country_code: activeSupplier.country_code,
+    bank_name: activeSupplier.bank_name,
+    iban: activeSupplier.iban,
+    swift: activeSupplier.swift,
+    email: activeSupplier.email,
+    phone: activeSupplier.phone,
+    web: activeSupplier.web,
+    registration_court: activeSupplier.registration_court,
+    registration_number: activeSupplier.registration_number,
+  }
+
   const steps = [
-    { label: 'Zakladne udaje', component: (
-      <StepBasicInfo formData={formData} updateForm={updateForm} />
-    )},
-    { label: 'Odberatel', component: (
-      <StepBuyer formData={formData} updateForm={updateForm} />
-    )},
-    { label: 'Polozky', component: (
-      <StepItems formData={formData} updateForm={updateForm} totals={totals} />
-    )},
-    { label: 'Suhrn', component: (
-      <StepSummary formData={formData} profile={profile!} totals={totals} />
-    )},
+    { label: 'Zakladne udaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
+    { label: 'Odberatel', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} /> },
+    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} /> },
+    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} /> },
   ]
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Nova faktura</h1>
-        <p className="text-muted-foreground mt-1">Vyplnte udaje a AI vygeneruje platnu Peppol XML fakturu</p>
+        <p className="text-muted-foreground mt-1">
+          Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
+        </p>
       </div>
 
       <InvoiceWizardStepper steps={steps.map((s) => s.label)} currentStep={step} />
 
       <div>{steps[step].component}</div>
 
-      {/* Navigation */}
       <div className="flex justify-between">
         <button
           onClick={() => setStep((s) => Math.max(0, s - 1))}

@@ -41,15 +41,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Chyba pri nacitani poloziek' }, { status: 500 })
     }
 
-    // Fetch supplier profile
-    const { data: profile } = await supabase
-      .from('company_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    // Fetch supplier profile from suppliers table using invoice.supplier_id
+    let profile
+    if (invoice.supplier_id) {
+      const { data } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', invoice.supplier_id)
+        .single()
+      profile = data
+    }
+    // Fallback to legacy company_profiles for old invoices
+    if (!profile) {
+      const { data } = await supabase
+        .from('company_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      profile = data
+    }
 
     if (!profile) {
-      return NextResponse.json({ error: 'Firemny profil nenajdeny' }, { status: 404 })
+      return NextResponse.json({ error: 'Profil dodavatela nenajdeny' }, { status: 404 })
     }
 
     // Build prompt with all invoice data

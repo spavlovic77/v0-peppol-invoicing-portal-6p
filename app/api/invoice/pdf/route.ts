@@ -35,14 +35,28 @@ export async function GET(req: Request) {
       .eq('invoice_id', invoiceId)
       .order('line_number')
 
-    const { data: profile } = await supabase
-      .from('company_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    // Fetch supplier from suppliers table using invoice.supplier_id
+    let profile
+    if (invoice.supplier_id) {
+      const { data } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', invoice.supplier_id)
+        .single()
+      profile = data
+    }
+    // Fallback to legacy company_profiles for old invoices
+    if (!profile) {
+      const { data } = await supabase
+        .from('company_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      profile = data
+    }
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Supplier profile not found' }, { status: 404 })
     }
 
     const element = createElement(InvoicePdfDocument, {
