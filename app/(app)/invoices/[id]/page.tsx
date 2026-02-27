@@ -35,6 +35,11 @@ interface InvoiceData {
   iban: string | null
   swift: string | null
   variable_symbol: string | null
+  ai_prompt_tokens: number | null
+  ai_completion_tokens: number | null
+  ai_total_tokens: number | null
+  ai_cost_usd: number | null
+  ai_model: string | null
 }
 
 interface InvoiceItem {
@@ -263,6 +268,46 @@ export default function InvoiceDetailPage() {
           </div>
         </GlassCard>
       </div>
+
+      {/* AI Cost Info */}
+      {invoice.ai_total_tokens && (
+        <GlassCard>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-foreground">AI generovanie</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Model</div>
+              <div className="text-foreground font-mono text-xs">{invoice.ai_model || 'N/A'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Vstupne tokeny</div>
+              <div className="text-foreground font-medium">
+                {(invoice.ai_prompt_tokens || 0).toLocaleString('sk-SK')}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Vystupne tokeny</div>
+              <div className="text-foreground font-medium">
+                {(invoice.ai_completion_tokens || 0).toLocaleString('sk-SK')}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Celkom tokeny</div>
+              <div className="text-foreground font-medium">
+                {(invoice.ai_total_tokens || 0).toLocaleString('sk-SK')}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Naklady</div>
+              <div className="text-primary font-bold">
+                ${(invoice.ai_cost_usd || 0).toFixed(4)}
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Buyer */}
       <GlassCard>

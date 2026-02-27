@@ -140,6 +140,16 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
       return NextResponse.json({ error: 'AI nedokazal vygenerovat fakturu' }, { status: 500 })
     }
 
+    // Calculate AI cost from token usage
+    // OpenAI gpt-4.1 pricing (as of 2025): input $2.00/1M, output $8.00/1M
+    const usage = result.usage || { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+    const MODEL_NAME = 'openai/gpt-4.1'
+    const INPUT_PRICE_PER_1M = 2.00
+    const OUTPUT_PRICE_PER_1M = 8.00
+    const aiCostUsd =
+      (usage.promptTokens * INPUT_PRICE_PER_1M / 1_000_000) +
+      (usage.completionTokens * OUTPUT_PRICE_PER_1M / 1_000_000)
+
     // Build the UBL XML from the structured output
     const xml = buildUblXml(peppolInvoice)
 
@@ -147,13 +157,18 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
     const validationResults = validateInvoice(peppolInvoice)
     const allPassed = validationResults.every((phase) => phase.passed)
 
-    // Save XML and validation to database
+    // Save XML, validation, and AI cost to database
     await supabase
       .from('invoices')
       .update({
         xml_content: xml,
         validation_errors: validationResults,
         status: allPassed ? 'valid' : 'invalid',
+        ai_prompt_tokens: usage.promptTokens,
+        ai_completion_tokens: usage.completionTokens,
+        ai_total_tokens: usage.totalTokens,
+        ai_cost_usd: aiCostUsd,
+        ai_model: MODEL_NAME,
       })
       .eq('id', invoiceId)
 
@@ -162,6 +177,13 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
       peppolInvoice,
       validation: validationResults,
       allPassed,
+      aiUsage: {
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
+        costUsd: aiCostUsd,
+        model: MODEL_NAME,
+      },
     })
   } catch (err) {
     console.error('Generate invoice error:', err)
