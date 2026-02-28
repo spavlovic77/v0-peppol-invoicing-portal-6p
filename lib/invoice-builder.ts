@@ -79,15 +79,21 @@ export function buildPeppolInvoice(
     const discountAmt = round2(item.discount_amount || (grossAmount * (item.discount_percent || 0)) / 100)
     const lineExtension = round2(grossAmount - discountAmt)
 
+    // R120: LineExtensionAmount MUST equal qty * PriceAmount (exactly)
+    // So PriceAmount must be the net price per unit (after discount)
+    // and LineExtensionAmount must be recalculated from rounded PriceAmount to avoid rounding drift
+    const netPricePerUnit = item.quantity > 0 ? round2(lineExtension / item.quantity) : item.unit_price
+    const adjustedLineExtension = round2(item.quantity * netPricePerUnit)
+
     return {
       id: String(item.line_number),
       invoicedQuantity: item.quantity,
       unitCode: item.unit || 'C62',
-      lineExtensionAmount: lineExtension,
+      lineExtensionAmount: adjustedLineExtension,
       itemName: item.description,
       classifiedTaxCategoryId: item.vat_category || 'S',
       taxPercent: item.vat_rate ?? 20,
-      priceAmount: item.unit_price,
+      priceAmount: netPricePerUnit,
       sellersItemIdentification: item.item_number || null,
       buyersItemIdentification: item.buyer_item_number || null,
       allowanceChargeAmount: discountAmt,

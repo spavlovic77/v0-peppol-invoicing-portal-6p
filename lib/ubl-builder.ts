@@ -181,9 +181,7 @@ ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:Allo
     <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
     <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
     <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>
-    <cbc:MultiplierFactorNumeric>0</cbc:MultiplierFactorNumeric>
     <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>
-    <cbc:BaseAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:BaseAmount>
     <cac:TaxCategory>
       <cbc:ID>${escapeXml(a.taxCategoryId)}</cbc:ID>
       <cbc:Percent>${a.taxPercent}</cbc:Percent>
