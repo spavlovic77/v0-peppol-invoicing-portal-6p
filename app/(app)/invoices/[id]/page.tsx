@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Download, FileText, FileCode, Sparkles, ArrowLeft, CheckCircle2, XCircle, Copy, Pencil, Trash2, Send, Globe } from 'lucide-react'
+import { Loader2, FileText, FileCode, Sparkles, ArrowLeft, CheckCircle2, XCircle, Copy, Pencil, Trash2, Send, Globe } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationDisplay } from '@/components/invoice/validation-display'
 import Link from 'next/link'
@@ -384,19 +384,9 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* Validation Warning */}
-      {invoice.status === 'invalid' && (
-        <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-destructive/10 border border-destructive/20">
-          <XCircle className="w-5 h-5 text-destructive shrink-0" />
-          <div>
-            <div className="text-sm font-medium text-destructive">
-              Faktura obsahuje validacne chyby
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              Stahovanie XML a PDF je zablokovane. Opravte chyby a regenerujte fakturu.
-            </div>
-          </div>
-        </div>
+      {/* Validation Accordion */}
+      {validation && Array.isArray(validation) && (
+        <ValidationDisplay phases={validation} />
       )}
 
       {/* Peppol Delivery Status */}
@@ -576,29 +566,7 @@ export default function InvoiceDetailPage() {
         </div>
       </GlassCard>
 
-      {/* Validation Results */}
-      {validation && Array.isArray(validation) && (
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            <Download className="w-5 h-5 inline mr-2" />
-            Validacia faktury
-          </h2>
-          <ValidationDisplay phases={validation} />
-        </div>
-      )}
 
-      {/* XML Preview */}
-      {invoice.xml_content && (
-        <GlassCard>
-          <h2 className="font-semibold text-foreground mb-3">Peppol XML nahled</h2>
-          <div className="max-h-80 overflow-auto rounded-lg bg-background/50 p-4">
-            <pre className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-all">
-              {invoice.xml_content.slice(0, 3000)}
-              {invoice.xml_content.length > 3000 && '\n\n... (skratene)'}
-            </pre>
-          </div>
-        </GlassCard>
-      )}
     </div>
   )
 }
