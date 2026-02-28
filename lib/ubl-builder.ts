@@ -23,8 +23,7 @@ function stripEndpointScheme(id: string | null | undefined): string {
 export function buildUblXml(inv: PeppolInvoice): string {
   const lines = inv.invoiceLines
     .map(
-      (line) => `
-    <cac:InvoiceLine>
+      (line) => `<cac:InvoiceLine>
       <cbc:ID>${escapeXml(line.id)}</cbc:ID>
       <cbc:InvoicedQuantity unitCode="${escapeXml(line.unitCode)}">${line.invoicedQuantity}</cbc:InvoicedQuantity>
       <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>
@@ -57,24 +56,23 @@ export function buildUblXml(inv: PeppolInvoice): string {
       </cac:Price>
     </cac:InvoiceLine>`
     )
-    .join('')
+    .join('\n  ')
 
   const taxSubtotals = inv.taxSubtotals
     .map(
-      (ts) => `
-        <cac:TaxSubtotal>
-          <cbc:TaxableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(ts.taxableAmount)}</cbc:TaxableAmount>
-          <cbc:TaxAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(ts.taxAmount)}</cbc:TaxAmount>
-          <cac:TaxCategory>
-            <cbc:ID>${escapeXml(ts.taxCategoryId)}</cbc:ID>
-            <cbc:Percent>${ts.taxPercent}</cbc:Percent>
-            <cac:TaxScheme>
-              <cbc:ID>VAT</cbc:ID>
-            </cac:TaxScheme>
-          </cac:TaxCategory>
-        </cac:TaxSubtotal>`
+      (ts) => `<cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(ts.taxableAmount)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(ts.taxAmount)}</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>${escapeXml(ts.taxCategoryId)}</cbc:ID>
+        <cbc:Percent>${ts.taxPercent}</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>`
     )
-    .join('')
+    .join('\n    ')
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
@@ -86,13 +84,11 @@ export function buildUblXml(inv: PeppolInvoice): string {
   <cbc:IssueDate>${escapeXml(inv.issueDate)}</cbc:IssueDate>
   <cbc:DueDate>${escapeXml(inv.dueDate)}</cbc:DueDate>
   <cbc:InvoiceTypeCode>${escapeXml(inv.invoiceTypeCode)}</cbc:InvoiceTypeCode>
-  ${inv.invoiceNote ? `<cbc:Note>${escapeXml(inv.invoiceNote)}</cbc:Note>` : ''}
-  <cbc:DocumentCurrencyCode>${escapeXml(inv.documentCurrencyCode)}</cbc:DocumentCurrencyCode>
+  ${inv.invoiceNote ? `<cbc:Note>${escapeXml(inv.invoiceNote)}</cbc:Note>\n  ` : ''}<cbc:DocumentCurrencyCode>${escapeXml(inv.documentCurrencyCode)}</cbc:DocumentCurrencyCode>
   <cbc:BuyerReference>${escapeXml(inv.buyerReference)}</cbc:BuyerReference>
   ${inv.orderReferenceId ? `<cac:OrderReference>
     <cbc:ID>${escapeXml(inv.orderReferenceId)}</cbc:ID>
-  </cac:OrderReference>` : ''}
-  <cac:AccountingSupplierParty>
+  </cac:OrderReference>\n  ` : ''}<cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="${escapeXml(inv.supplierEndpointSchemeId)}">${escapeXml(stripEndpointScheme(inv.supplierEndpointId))}</cbc:EndpointID>
       <cac:PartyName>
@@ -181,7 +177,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
         : ''
     }
   </cac:PaymentMeans>
-  ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `<cac:AllowanceCharge>
+${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:AllowanceCharge>
     <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
     <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
     <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>
@@ -195,7 +191,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
         <cbc:ID>VAT</cbc:ID>
       </cac:TaxScheme>
     </cac:TaxCategory>
-  </cac:AllowanceCharge>`).join('\n  ')}
+  </cac:AllowanceCharge>`).join('\n')}
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxAmountTotal)}</cbc:TaxAmount>
     ${taxSubtotals}
