@@ -29,18 +29,18 @@ export function buildUblXml(inv: PeppolInvoice): string {
       <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>
       <cac:Item>
         <cbc:Name>${escapeXml(line.itemName)}</cbc:Name>${
-          line.sellersItemIdentification
-            ? `
-        <cac:SellersItemIdentification>
-          <cbc:ID>${escapeXml(line.sellersItemIdentification)}</cbc:ID>
-        </cac:SellersItemIdentification>`
-            : ''
-        }${
           line.buyersItemIdentification
             ? `
         <cac:BuyersItemIdentification>
           <cbc:ID>${escapeXml(line.buyersItemIdentification)}</cbc:ID>
         </cac:BuyersItemIdentification>`
+            : ''
+        }${
+          line.sellersItemIdentification
+            ? `
+        <cac:SellersItemIdentification>
+          <cbc:ID>${escapeXml(line.sellersItemIdentification)}</cbc:ID>
+        </cac:SellersItemIdentification>`
             : ''
         }
         <cac:ClassifiedTaxCategory>
@@ -197,11 +197,11 @@ ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:Allo
     ${taxSubtotals}
   </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.lineExtensionAmountTotal)}</cbc:LineExtensionAmount>${
+    <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.lineExtensionAmountTotal)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxExclusiveAmount)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxInclusiveAmount)}</cbc:TaxInclusiveAmount>${
     (inv.allowanceTotalAmount || 0) > 0 ? `
     <cbc:AllowanceTotalAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.allowanceTotalAmount)}</cbc:AllowanceTotalAmount>` : ''}
-    <cbc:TaxExclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxExclusiveAmount)}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxInclusiveAmount)}</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.payableAmount)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   ${lines}
