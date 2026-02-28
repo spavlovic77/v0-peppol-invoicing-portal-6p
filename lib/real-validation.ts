@@ -4,7 +4,10 @@
  * Runs the official OpenPEPPOL schematron rules against the generated UBL XML.
  * The .sef.json files are produced by: node scripts/compile-schematron.mjs
  *
- * Falls back to the existing JS-based validation if SEF files are not yet compiled.
+ * Fallback chain (in order):
+ *  1. Saxon-JS with local SEF files  — primary, runs on Vercel after prebuild
+ *  2. peppolvalidator.com REST API   — when SEF files are not yet compiled
+ *  3. JS-based simulation            — absolute last resort if API is unreachable
  */
 
 import fs from 'fs'
@@ -133,89 +136,164 @@ function buildPhase(
   }
 }
 
+// ─── External API fallback (peppolvalidator.com) ─────────────────────────────
+
+const EXTERNAL_VALIDATOR_URL = 'https://peppolvalidator.com/api/v1/validate'
+const EXTERNAL_API_TIMEOUT_MS = 15_000
+
+interface ExternalApiItem {
+  id?: string
+  severity?: string
+  rule?: string
+  location?: string
+  message?: string
+}
+
+interface ExternalApiResponse {
+  status: 'valid' | 'invalid' | 'error'
+  errors?: ExternalApiItem[]
+  warnings?: ExternalApiItem[]
+}
+
+/**
+ * Calls peppolvalidator.com with the raw UBL XML.
+ * Returns [cenPhase, peppolPhase] shaped as ValidationPhase[].
+ * Throws if the API is unreachable or returns a non-2xx status.
+ */
+async function validateViaExternalApi(xml: string): Promise<[ValidationPhase, ValidationPhase]> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), EXTERNAL_API_TIMEOUT_MS)
+
+  let body: ExternalApiResponse
+  try {
+    const res = await fetch(EXTERNAL_VALIDATOR_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body: xml,
+      signal: controller.signal,
+    })
+    if (!res.ok) throw new Error(`peppolvalidator.com responded with HTTP ${res.status}`)
+    body = await res.json() as ExternalApiResponse
+  } finally {
+    clearTimeout(timer)
+  }
+
+  // Map API items → ValidationResult, split by rule-ID prefix:
+  //   BR-*           → Phase 2 (CEN EN16931)
+  //   PEPPOL-* / *   → Phase 3 (PEPPOL BIS)
+  const cenResults: ValidationResult[]   = []
+  const peppolResults: ValidationResult[] = []
+
+  const mapItem = (item: ExternalApiItem, passed: boolean, severity: 'error' | 'warning'): ValidationResult => ({
+    rule:     item.id ?? item.rule ?? 'UNKNOWN',
+    severity,
+    message:  item.message ?? `Rule ${item.id ?? item.rule} violated`,
+    passed,
+  })
+
+  for (const item of body.errors ?? []) {
+    const result = mapItem(item, false, 'error')
+    if ((item.id ?? item.rule ?? '').startsWith('BR-')) {
+      cenResults.push(result)
+    } else {
+      peppolResults.push(result)
+    }
+  }
+
+  for (const item of body.warnings ?? []) {
+    const result = mapItem(item, true, 'warning')
+    if ((item.id ?? item.rule ?? '').startsWith('BR-')) {
+      cenResults.push(result)
+    } else {
+      peppolResults.push(result)
+    }
+  }
+
+  // Add synthetic OK entries for phases with no violations
+  if (cenResults.length === 0) {
+    cenResults.push({ rule: 'OK', severity: 'error', message: 'Vsetky EN16931 pravidla su splnene', passed: true })
+  }
+  if (peppolResults.length === 0) {
+    peppolResults.push({ rule: 'OK', severity: 'error', message: 'Vsetky PEPPOL BIS 3.0 pravidla su splnene', passed: true })
+  }
+
+  const cenErrors   = cenResults.filter((r) => !r.passed)
+  const peppolErrors = peppolResults.filter((r) => !r.passed)
+
+  const phase2: ValidationPhase = {
+    name:        'EN16931 pravidla',
+    description: 'Europske obchodne pravidla pre e-fakturaciu — peppolvalidator.com',
+    results:     cenResults,
+    passed:      cenErrors.length === 0,
+  }
+
+  const phase3: ValidationPhase = {
+    name:        'Peppol BIS schematron pravidla',
+    description: 'Specificke Peppol BIS 3.0 pravidla — peppolvalidator.com',
+    results:     peppolResults,
+    passed:      peppolErrors.length === 0,
+  }
+
+  return [phase2, phase3]
+}
+
+// ─── JS simulation fallback (last resort) ────────────────────────────────────
+
+function jsFallback(inv: PeppolInvoice): [ValidationPhase, ValidationPhase] {
+  const tag = (phase: ValidationPhase): ValidationPhase => ({
+    ...phase,
+    description: phase.description + ' [SIMULACIA]',
+  })
+  return [tag(validateEN16931(inv)), tag(validatePeppolSchematron(inv))]
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
- * Validates a PEPPOL invoice using:
- *  - Phase 1: Structural check on the JSON object (fast, always runs)
- *  - Phase 2: Official CEN EN16931 schematron on the UBL XML
- *  - Phase 3: Official PEPPOL BIS 3.0 schematron on the UBL XML
- *
- * Falls back to JS-based simulation for phases 2 & 3 if SEF files are missing
- * (i.e., compile-schematron.mjs has not been run yet).
+ * Validates a PEPPOL invoice using the following priority chain:
+ *  1. Saxon-JS + local SEF files   (primary — runs on Vercel after prebuild)
+ *  2. peppolvalidator.com REST API  (fallback — when SEF files not compiled)
+ *  3. JS-based simulation           (last resort — if external API unreachable)
  */
 export async function validateInvoiceXml(
   xml: string,
   inv: PeppolInvoice
 ): Promise<ValidationPhase[]> {
-  // Phase 1 — always run (fast JSON checks)
+  // Phase 1 — always run (fast JSON checks, no XML needed)
   const phase1 = validateStructure(inv)
 
-  // Check if compiled SEF files are available
-  const cenSefObj   = getCenSef()
+  // ── Primary: Saxon-JS with local SEF files ──────────────────────────────────
+  const cenSefObj    = getCenSef()
   const peppolSefObj = getPeppolSef()
 
-  if (!cenSefObj || !peppolSefObj) {
-    // SEF files not compiled yet — fall back to JS simulation with a warning banner
-    console.warn(
-      '[real-validation] SEF files not found — falling back to JS-based validation.\n' +
-      '  Run: node scripts/compile-schematron.mjs'
-    )
-    const phase2 = validateEN16931(inv)
-    const phase3 = validatePeppolSchematron(inv)
+  if (cenSefObj && peppolSefObj) {
+    try {
+      const [cenAsserts, peppolAsserts] = await Promise.all([
+        runSchematron(xml, cenSefObj),
+        runSchematron(xml, peppolSefObj),
+      ])
 
-    // Append a warning note to each phase so the UI shows it's simulated
-    const simulationNote = (phase: ValidationPhase): ValidationPhase => ({
-      ...phase,
-      description: phase.description + ' [SIMULACIA — spustite compile-schematron.mjs pre realnu validaciu]',
-    })
-
-    return [phase1, simulationNote(phase2), simulationNote(phase3)]
+      return [
+        phase1,
+        buildPhase('EN16931 pravidla', 'Europske obchodne pravidla pre e-fakturaciu — oficialny CEN schematron (OpenPEPPOL)', cenAsserts),
+        buildPhase('Peppol BIS schematron pravidla', 'Specificke Peppol BIS 3.0 pravidla — oficialny OpenPEPPOL schematron', peppolAsserts),
+      ]
+    } catch (err) {
+      console.error('[real-validation] Saxon-JS failed, trying external API:', (err as Error).message)
+    }
+  } else {
+    console.warn('[real-validation] SEF files not found — trying external API. Run: node scripts/compile-schematron.mjs')
   }
 
-  // Real schematron validation — run both in parallel
+  // ── Fallback: peppolvalidator.com external API ──────────────────────────────
   try {
-    const [cenAsserts, peppolAsserts] = await Promise.all([
-      runSchematron(xml, cenSefObj),
-      runSchematron(xml, peppolSefObj),
-    ])
-
-    const phase2 = buildPhase(
-      'EN16931 pravidla',
-      'Europske obchodne pravidla pre e-fakturaciu — oficialny CEN schematron (OpenPEPPOL)',
-      cenAsserts
-    )
-
-    const phase3 = buildPhase(
-      'Peppol BIS schematron pravidla',
-      'Specificke Peppol BIS 3.0 pravidla — oficialny OpenPEPPOL schematron',
-      peppolAsserts
-    )
-
+    const [phase2, phase3] = await validateViaExternalApi(xml)
     return [phase1, phase2, phase3]
   } catch (err) {
-    // Schematron execution failed (e.g., malformed XML, SaxonJS error)
-    const errMsg = err instanceof Error ? err.message : String(err)
-    console.error('[real-validation] Schematron execution error:', errMsg)
-
-    const errorPhase = (name: string, desc: string): ValidationPhase => ({
-      name,
-      description: desc,
-      results: [
-        {
-          rule:     'SYSTEM',
-          severity: 'error',
-          message:  `Schematron validacia zlyhala: ${errMsg}`,
-          passed:   false,
-        },
-      ],
-      passed: false,
-    })
-
-    return [
-      phase1,
-      errorPhase('EN16931 pravidla', 'Europske obchodne pravidla pre e-fakturaciu'),
-      errorPhase('Peppol BIS schematron pravidla', 'Specificke Peppol BIS 3.0 pravidla'),
-    ]
+    console.error('[real-validation] External API failed, falling back to JS simulation:', (err as Error).message)
   }
+
+  // ── Last resort: JS simulation ───────────────────────────────────────────────
+  const [phase2, phase3] = jsFallback(inv)
+  return [phase1, phase2, phase3]
 }
