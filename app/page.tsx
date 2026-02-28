@@ -40,14 +40,6 @@ export default function LandingPage() {
           <span className="text-2xl font-bold text-foreground">Zrob e-fakturu</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-balance leading-tight">
-          Elektronicka fakturacia
-        </h1>
-        <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
-          Peppol BIS 3.0 pre slovenske firmy
-        </p>
-
         {/* Google Sign In */}
         <button
           onClick={handleGoogleSignIn}
