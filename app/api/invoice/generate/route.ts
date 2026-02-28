@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { peppolInvoiceSchema } from '@/lib/schemas'
 import type { PeppolInvoice } from '@/lib/schemas'
 import { buildUblXml } from '@/lib/ubl-builder'
-import { validateInvoice } from '@/lib/validation'
+import { validateInvoiceXml } from '@/lib/real-validation'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -170,8 +170,8 @@ Calculate all totals precisely. Ensure the VAT breakdown (taxSubtotals) groups i
     // Build the UBL XML from the structured output
     const xml = buildUblXml(peppolInvoice)
 
-    // Run 3-phase validation
-    const validationResults = validateInvoice(peppolInvoice)
+    // Run 3-phase validation (real schematron via Saxon-JS)
+    const validationResults = await validateInvoiceXml(xml, peppolInvoice)
     const allPassed = validationResults.every((phase) => phase.passed)
 
     // Save XML, validation, and AI cost to database

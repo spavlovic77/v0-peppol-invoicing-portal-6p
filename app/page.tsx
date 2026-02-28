@@ -26,18 +26,11 @@ export default function LandingPage() {
           <span className="text-2xl font-bold text-foreground">Zrob e-fakturu</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-balance leading-tight">
-          Elektronicka fakturacia
-        </h1>
-        <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
-          Peppol BIS 3.0 pre slovenske firmy
-        </p>
-
-        {/* Google Sign In - server-side route to avoid localhost redirect */}
-        <a
-          href="/auth/sign-in"
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-foreground text-background text-lg font-medium hover:opacity-90 transition-opacity"
+        {/* Google Sign In */}
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-foreground text-background text-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>

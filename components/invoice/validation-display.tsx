@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical } from 'lucide-react'
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 
@@ -16,6 +16,7 @@ interface ValidationPhase {
   description: string
   results: ValidationResult[]
   passed: boolean
+  simulated?: boolean
 }
 
 interface Props {
@@ -38,6 +39,7 @@ export function ValidationDisplay({ phases }: Props) {
     0
   )
   const allPassed = phases.every((p) => p.passed)
+  const isSimulated = phases.some((p) => p.simulated)
   const totalErrors = phases.reduce(
     (s, p) => s + p.results.filter((r) => !r.passed && r.severity === 'error').length,
     0
@@ -90,6 +92,19 @@ export function ValidationDisplay({ phases }: Props) {
         </div>
       </button>
 
+      {/* Simulation warning banner */}
+      {isSimulated && (
+        <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
+          <FlaskConical className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-semibold text-warning">Simulacia validacie</p>
+            <p className="text-xs text-muted-foreground">
+              Schematron subory nie su skompilované a externá API je nedostupná. Výsledky sú orientačné — nespúšťajú sa skutočné PEPPOL pravidlá.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Expanded: show validation phases */}
       {topOpen && (
         <div className="mt-4 space-y-3">
@@ -117,13 +132,19 @@ export function ValidationDisplay({ phases }: Props) {
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
                     <div className="text-left">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-mono text-muted-foreground">
                           Faza {phaseIdx + 1}
                         </span>
                         <span className="font-medium text-foreground text-sm">
                           {phase.name}
                         </span>
+                        {phase.simulated && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-xs font-medium">
+                            <FlaskConical className="w-3 h-3" />
+                            SIMULACIA
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {phase.description}
