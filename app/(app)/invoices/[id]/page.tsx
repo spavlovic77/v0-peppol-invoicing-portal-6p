@@ -219,11 +219,9 @@ export default function InvoiceDetailPage() {
 
     const poll = async () => {
       attempts++
-      console.log(`[v0] Polling attempt ${attempts}/${maxAttempts} for tx ${txId}`)
       try {
         const res = await fetch(`/api/peppol/status?invoiceId=${invId}&transactionId=${txId}`)
         const data = await res.json()
-        console.log(`[v0] Poll response:`, data)
 
         if (data.status === 'delivered' || data.status === 'failed') {
           pollingRef.current = false

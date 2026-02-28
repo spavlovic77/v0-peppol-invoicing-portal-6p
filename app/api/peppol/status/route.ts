@@ -60,18 +60,18 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json()
-    console.log("[v0] ION AP status response:", JSON.stringify(data))
-    
-    // Map ION AP status to our internal status
-    const apStatus = (data.status || data.state || '').toLowerCase()
+    // Map ION AP state to our internal status
+    // ION AP uses "state" field with values like: SENT, FAILED, PENDING, etc.
+    // "SENT" = final success (document transmitted to recipient AP)
+    const apState = (data.state || data.status || '').toUpperCase()
     let newStatus = invoice.peppol_send_status
 
-    if (apStatus.includes('deliver') || apStatus.includes('success') || apStatus.includes('accepted') || apStatus.includes('complet') || apStatus.includes('done') || apStatus.includes('transmitted') || apStatus.includes('finished')) {
+    if (apState === 'SENT' || apState === 'DELIVERED' || apState === 'ACCEPTED' || apState === 'COMPLETED' || apState === 'DONE') {
       newStatus = 'delivered'
-    } else if (apStatus.includes('fail') || apStatus.includes('reject') || apStatus.includes('error') || apStatus.includes('invalid')) {
+    } else if (apState === 'FAILED' || apState === 'REJECTED' || apState === 'ERROR' || apState === 'INVALID') {
       newStatus = 'failed'
-    } else if (apStatus.includes('pending') || apStatus.includes('process') || apStatus.includes('send') || apStatus.includes('queue') || apStatus.includes('transit') || apStatus.includes('progress')) {
-      newStatus = 'sent'
+    } else if (apState === 'PENDING' || apState === 'PROCESSING' || apState === 'QUEUED' || apState === 'IN_PROGRESS') {
+      newStatus = 'sent' // still in transit
     }
 
     // Update status if changed
