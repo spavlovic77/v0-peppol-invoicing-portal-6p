@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const res = await fetch(`${ION_AP_BASE}/api/v2/send-document`, {
       method: 'POST',
       headers: {
-        'Authorization': supplier.ap_api_key,
+        'Authorization': `Token ${supplier.ap_api_key}`,
         'Content-Type': 'application/xml',
       },
       body: invoice.xml_content,

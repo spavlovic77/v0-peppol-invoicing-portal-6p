@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       `${ION_AP_BASE}/api/v2/send-transactions/${invoice.peppol_transaction_id}`,
       {
         headers: {
-          'Authorization': supplier.ap_api_key,
+          'Authorization': `Token ${supplier.ap_api_key}`,
           'Accept': 'application/json',
         },
       }
