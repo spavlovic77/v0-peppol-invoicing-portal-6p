@@ -80,11 +80,6 @@ export async function POST(req: Request) {
         xml_content: xml,
         validation_errors: validationResults,
         status: allPassed ? 'valid' : 'invalid',
-        ai_prompt_tokens: 0,
-        ai_completion_tokens: 0,
-        ai_total_tokens: 0,
-        ai_cost_usd: 0,
-        ai_model: 'deterministic',
       })
       .eq('id', invoiceId)
 

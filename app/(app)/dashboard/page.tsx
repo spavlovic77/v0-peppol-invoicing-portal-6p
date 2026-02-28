@@ -20,8 +20,7 @@ interface Invoice {
   currency: string
   status: string
   created_at: string
-  ai_cost_usd: number | null
-  ai_total_tokens: number | null
+
 }
 
 export default function DashboardPage() {
@@ -65,8 +64,6 @@ export default function DashboardPage() {
     valid: invoices.filter((i) => i.status === 'valid').length,
     draft: invoices.filter((i) => i.status === 'draft').length,
     totalAmount: invoices.reduce((s, i) => s + (i.total_with_vat || 0), 0),
-    totalAiCost: invoices.reduce((s, i) => s + (i.ai_cost_usd || 0), 0),
-    totalTokens: invoices.reduce((s, i) => s + (i.ai_total_tokens || 0), 0),
   }
 
   async function handleDeleteInvoice(e: React.MouseEvent, inv: Invoice) {
@@ -158,7 +155,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Celkom faktur</div>
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
@@ -174,13 +171,6 @@ export default function DashboardPage() {
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Celkova suma</div>
           <div className="text-2xl font-bold text-primary">{fmt(stats.totalAmount)} EUR</div>
-        </GlassCard>
-        <GlassCard>
-          <div className="text-xs text-muted-foreground mb-1">AI naklady</div>
-          <div className="text-2xl font-bold text-foreground">${stats.totalAiCost.toFixed(4)}</div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {stats.totalTokens.toLocaleString('sk-SK')} tokenov
-          </div>
         </GlassCard>
       </div>
 
