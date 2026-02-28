@@ -234,13 +234,16 @@ export function buildPeppolInvoice(
     if (correction !== 0) {
       totalCorrections += correction
 
+      // Charge codes use UNCL 7161 (ZZZ = Mutually defined)
+      // Allowance codes use UNCL 5189 (104 = Special agreement)
+      const isCharge = correction > 0
       documentAllowances.push({
         amount: round2(Math.abs(correction)),
         reason: 'Vzajomne definovane',
-        reasonCode: 'ZZZ',
+        reasonCode: isCharge ? 'ZZZ' : '104',
         taxCategoryId: enGroup.catId,
         taxPercent: rate,
-        isCharge: correction > 0, // Charge if SK > EN, Allowance if SK < EN
+        isCharge,
       })
     }
 
