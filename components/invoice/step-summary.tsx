@@ -1,6 +1,84 @@
 import { GlassCard } from '@/components/glass-card'
-import { FileText, Building2, CreditCard, Package } from 'lucide-react'
+import { FileText, Building2, CreditCard, Package, Calculator } from 'lucide-react'
 import type { InvoiceFormData, CompanyProfile } from '@/lib/schemas'
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+interface TaxRecapRow {
+  rate: number
+  base: number
+  vat: number
+  total: number
+}
+
+interface CorrectionRow {
+  rate: number
+  amount: number
+  isCharge: boolean
+}
+
+function buildRecap(items: InvoiceFormData['items'], globalDiscountPct: number): {
+  rows: TaxRecapRow[]
+  corrections: CorrectionRow[]
+} {
+  const lineExtTotal = items.reduce((s, it) => {
+    const gross = it.quantity * it.unit_price
+    const disc = it.discount_amount || round2(gross * (it.discount_percent || 0) / 100)
+    return s + round2(gross - disc)
+  }, 0)
+  const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
+
+  const groups = new Map<number, { lineTotal: number; grossSum: number }>()
+  for (const it of items) {
+    const rate = it.vat_rate || 0
+    const gross = it.quantity * it.unit_price
+    const disc = it.discount_amount || round2(gross * (it.discount_percent || 0) / 100)
+    const lineNet = round2(gross - disc)
+    const lineGross = round2(lineNet * (100 + rate) / 100)
+    const existing = groups.get(rate)
+    if (existing) {
+      existing.lineTotal += lineNet
+      existing.grossSum += lineGross
+    } else {
+      groups.set(rate, { lineTotal: lineNet, grossSum: lineGross })
+    }
+  }
+
+  const rows: TaxRecapRow[] = []
+  const corrections: CorrectionRow[] = []
+
+  for (const [rate, group] of groups) {
+    const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
+    const allocDiscount = round2(globalDiscountAmt * proportion)
+    const taxBase_EN = round2(group.lineTotal - allocDiscount)
+
+    if (rate === 0) {
+      rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
+      continue
+    }
+
+    let grossWithVat = round2(group.grossSum)
+    if (globalDiscountAmt > 0 && lineExtTotal > 0) {
+      const discGross = round2(allocDiscount * (100 + rate) / 100)
+      grossWithVat = round2(grossWithVat - discGross)
+    }
+
+    const tax_SK = round2(grossWithVat * rate / (100 + rate))
+    const base_SK = round2(grossWithVat - tax_SK)
+    const correction = round2(base_SK - taxBase_EN)
+
+    if (correction !== 0) {
+      corrections.push({ rate, amount: correction, isCharge: correction > 0 })
+    }
+
+    rows.push({ rate, base: base_SK, vat: tax_SK, total: round2(base_SK + tax_SK) })
+  }
+
+  rows.sort((a, b) => b.rate - a.rate)
+  return { rows, corrections }
+}
 
 interface Props {
   formData: InvoiceFormData
@@ -11,6 +89,8 @@ interface Props {
 export function StepSummary({ formData, profile, totals }: Props) {
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const { rows: recapRows, corrections } = buildRecap(formData.items, formData.global_discount_percent || 0)
 
   return (
     <div className="space-y-6">
@@ -147,6 +227,50 @@ export function StepSummary({ formData, profile, totals }: Props) {
                   <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
                   <td className="py-2 text-right text-foreground font-medium">
                     {fmt(item.line_total || item.quantity * item.unit_price)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+
+      {/* VAT Recapitulation */}
+      <GlassCard>
+        <div className="flex items-center gap-3 mb-4">
+          <Calculator className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-foreground">Rekapitulacia DPH</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-muted-foreground text-left">
+                <th className="pb-2 font-medium">Sadzba</th>
+                <th className="pb-2 font-medium text-right">Zaklad dane</th>
+                <th className="pb-2 font-medium text-right">DPH</th>
+                <th className="pb-2 font-medium text-right">Spolu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recapRows.map((row, i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="py-2 text-foreground font-medium">{row.rate}%</td>
+                  <td className="py-2 text-right text-foreground">{fmt(row.base)} {formData.currency}</td>
+                  <td className="py-2 text-right text-foreground">{fmt(row.vat)} {formData.currency}</td>
+                  <td className="py-2 text-right text-foreground font-medium">{fmt(row.total)} {formData.currency}</td>
+                </tr>
+              ))}
+              {corrections.map((c, i) => (
+                <tr key={`c${i}`} className="border-t border-border bg-amber-500/5">
+                  <td className="py-2 text-amber-700 dark:text-amber-400 text-xs italic">
+                    Korekcia {c.rate}%
+                  </td>
+                  <td className="py-2 text-right text-amber-700 dark:text-amber-400 text-xs italic">
+                    {c.isCharge ? '+' : '-'}{fmt(Math.abs(c.amount))} {formData.currency}
+                  </td>
+                  <td className="py-2"></td>
+                  <td className="py-2 text-right text-amber-700 dark:text-amber-400 text-xs italic">
+                    Zaokruhlovacia korekcia
                   </td>
                 </tr>
               ))}
