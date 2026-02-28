@@ -96,8 +96,9 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
   const lineSum = inv.invoiceLines.reduce((s, l) => s + l.lineExtensionAmount, 0)
   check('BR-12', Math.abs(lineSum - inv.lineExtensionAmountTotal) < 0.02, `Suma riadkov (${lineSum.toFixed(2)}) sa musi rovnat celkovej sume riadkov (${inv.lineExtensionAmountTotal.toFixed(2)})`)
 
-  // BR-13: Tax exclusive = line extension total
-  check('BR-13', Math.abs(inv.taxExclusiveAmount - inv.lineExtensionAmountTotal) < 0.02, 'Suma bez DPH sa musi rovnat sume riadkov')
+  // BR-13: Tax exclusive = line extension total - allowances
+  const expectedTaxExclusive = inv.lineExtensionAmountTotal - (inv.allowanceTotalAmount || 0)
+  check('BR-13', Math.abs(inv.taxExclusiveAmount - expectedTaxExclusive) < 0.02, `Zaklad dane (${inv.taxExclusiveAmount.toFixed(2)}) = suma riadkov (${inv.lineExtensionAmountTotal.toFixed(2)}) - zlavy (${(inv.allowanceTotalAmount || 0).toFixed(2)})`)
 
   // BR-14: Tax inclusive = tax exclusive + tax total
   check('BR-14', Math.abs(inv.taxInclusiveAmount - (inv.taxExclusiveAmount + inv.taxAmountTotal)) < 0.02, 'Suma s DPH = zaklad dane + DPH')
@@ -112,9 +113,11 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
     check(`BR-23-L${i + 1}`, !!line.itemName, `Riadok ${i + 1}: musi mat nazov polozky`)
     check(`BR-24-L${i + 1}`, line.priceAmount >= 0, `Riadok ${i + 1}: cena nesmie byt zaporna`)
 
-    // Check line total calculation
-    const expectedTotal = line.invoicedQuantity * line.priceAmount
-    check(`BR-25-L${i + 1}`, Math.abs(line.lineExtensionAmount - expectedTotal) < 0.02, `Riadok ${i + 1}: suma riadku (${line.lineExtensionAmount}) sa musi rovnat mnozstvo x cena (${expectedTotal.toFixed(2)})`)
+    // Check line total calculation (qty * price - discount)
+    const grossTotal = line.invoicedQuantity * line.priceAmount
+    const discountAmt = line.allowanceChargeAmount || 0
+    const expectedTotal = grossTotal - discountAmt
+    check(`BR-25-L${i + 1}`, Math.abs(line.lineExtensionAmount - expectedTotal) < 0.02, `Riadok ${i + 1}: suma riadku (${line.lineExtensionAmount}) sa musi rovnat mnozstvo x cena - zlava (${expectedTotal.toFixed(2)})`)
   })
 
   // Tax subtotal checks
