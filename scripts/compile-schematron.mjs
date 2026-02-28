@@ -27,8 +27,12 @@ const PEPPOL_TAG = 'release-3.0.20'
 const PEPPOL_BASE = `https://raw.githubusercontent.com/OpenPEPPOL/peppol-bis-invoice-3/${PEPPOL_TAG}/rules/sch`
 
 // ISO Schematron skeleton (converts .sch → .xsl)
-const ISO_SKELETON_URL =
-  'https://raw.githubusercontent.com/Schematron/schematron/master/trunk/schematron/code/iso_schematron_skeleton_for_xslt2.xsl'
+// Primary source: Schematron/stf repo (official XSLT 2.0 / Saxon skeleton)
+// Fallback: OpenPEPPOL's own copy bundled in their older peppol-bis repo
+const ISO_SKELETON_URLS = [
+  'https://raw.githubusercontent.com/Schematron/stf/master/iso-schematron-xslt2/iso_schematron_skeleton_for_saxon.xsl',
+  'https://raw.githubusercontent.com/OpenPEPPOL/peppol-bis/master/script/iso-schematron-xslt2/iso_schematron_skeleton_for_saxon.xsl',
+]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +42,20 @@ async function download(url, destPath) {
   if (!res.ok) throw new Error(`HTTP ${res.status} downloading ${url}`)
   writeFileSync(destPath, await res.text(), 'utf-8')
   console.log(' done')
+}
+
+async function downloadWithFallback(urls, destPath) {
+  const errors = []
+  for (const url of urls) {
+    try {
+      await download(url, destPath)
+      return
+    } catch (err) {
+      errors.push(`${url}: ${err.message}`)
+      process.stdout.write(` (retrying...)\n`)
+    }
+  }
+  throw new Error(`All sources failed:\n  ${errors.join('\n  ')}`)
 }
 
 function xslt3(...args) {
@@ -83,11 +101,11 @@ async function main() {
 
   // ── Step 1: Download source files ──────────────────────────────────────────
   console.log('Downloading source files...')
-  const skeletonPath = join(TEMP_DIR, 'iso_skeleton.xsl')
-  const cenSchPath   = join(TEMP_DIR, 'CEN-EN16931-UBL.sch')
+  const skeletonPath  = join(TEMP_DIR, 'iso_skeleton.xsl')
+  const cenSchPath    = join(TEMP_DIR, 'CEN-EN16931-UBL.sch')
   const peppolSchPath = join(TEMP_DIR, 'PEPPOL-EN16931-UBL.sch')
 
-  await download(ISO_SKELETON_URL, skeletonPath)
+  await downloadWithFallback(ISO_SKELETON_URLS, skeletonPath)
   await download(`${PEPPOL_BASE}/CEN-EN16931-UBL.sch`, cenSchPath)
   await download(`${PEPPOL_BASE}/PEPPOL-EN16931-UBL.sch`, peppolSchPath)
 
