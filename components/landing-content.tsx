@@ -1,13 +1,122 @@
 'use client'
 
-import { FileText, Sun, Moon } from 'lucide-react'
+import { FileText, Sun, Moon, Loader2 } from 'lucide-react'
 import { useTheme } from '@/lib/theme-provider'
+import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Script from 'next/script'
+
+declare global {
+  interface Window {
+    AppleID: {
+      auth: {
+        init: (config: Record<string, unknown>) => void
+        signIn: () => Promise<{
+          authorization: { id_token: string; code: string }
+          user?: { name?: { firstName?: string; lastName?: string }; email?: string }
+        }>
+      }
+    }
+  }
+}
 
 export function LandingContent() {
   const { theme, toggleTheme } = useTheme()
+  const [appleLoading, setAppleLoading] = useState(false)
+  const [appleReady, setAppleReady] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
+
+  // Get the site URL for Apple redirect URI
+  const siteUrl = typeof window !== 'undefined'
+    ? (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin)
+    : ''
+
+  function initApple() {
+    if (typeof window !== 'undefined' && window.AppleID) {
+      window.AppleID.auth.init({
+        clientId: 'sk.zrobefakturu.web',
+        scope: 'name email',
+        redirectURI: `${siteUrl}/auth/callback`,
+        usePopup: true,
+      })
+      setAppleReady(true)
+    }
+  }
+
+  useEffect(() => {
+    // If Apple JS SDK already loaded
+    if (typeof window !== 'undefined' && window.AppleID) {
+      initApple()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function handleAppleSignIn() {
+    if (!window.AppleID) return
+    setAppleLoading(true)
+    try {
+      const response = await window.AppleID.auth.signIn()
+      const idToken = response.authorization.id_token
+
+      // Use signInWithIdToken -- Supabase only validates the token,
+      // no code exchange needed (avoids "Unable to exchange external code" error)
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: idToken,
+      })
+
+      if (error) throw error
+
+      // Store user name if provided (Apple only returns name on first auth)
+      if (response.user?.name) {
+        const { firstName, lastName } = response.user.name
+        const fullName = [firstName, lastName].filter(Boolean).join(' ')
+        if (fullName) {
+          await supabase.auth.updateUser({
+            data: { full_name: fullName },
+          })
+        }
+      }
+
+      // Check if user has a supplier profile
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: suppliers } = await supabase
+          .from('suppliers')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+
+        if (!suppliers || suppliers.length === 0) {
+          router.push('/suppliers/new')
+          return
+        }
+      }
+      router.push('/dashboard')
+    } catch (err) {
+      const error = err as { error?: string; message?: string }
+      // Don't show error if user just closed the popup
+      if (error.error === 'popup_closed_by_user') {
+        setAppleLoading(false)
+        return
+      }
+      console.error('Apple sign-in error:', error)
+      alert('Prihlasenie cez Apple zlyhalo. Skuste to znova.')
+    } finally {
+      setAppleLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      {/* Apple JS SDK */}
+      <Script
+        src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+        onLoad={initApple}
+      />
+
       {/* Theme toggle - top right */}
       <button
         onClick={toggleTheme}
@@ -40,16 +149,21 @@ export function LandingContent() {
           {'Prihlasit sa cez Google'}
         </a>
 
-        {/* Apple Sign In */}
-        <a
-          href="/auth/sign-in/apple"
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border border-border bg-card text-foreground text-lg font-medium hover:opacity-90 transition-opacity mt-3"
+        {/* Apple Sign In - Popup + ID Token flow (Method B) */}
+        <button
+          onClick={handleAppleSignIn}
+          disabled={appleLoading || !appleReady}
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border border-border bg-card text-foreground text-lg font-medium hover:opacity-90 transition-opacity mt-3 disabled:opacity-50"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-          </svg>
-          {'Prihlasit sa cez Apple'}
-        </a>
+          {appleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+            </svg>
+          )}
+          {appleLoading ? 'Prihlasovanie...' : 'Prihlasit sa cez Apple'}
+        </button>
 
         <p className="text-sm text-muted-foreground mt-6">
           {'Prihlasenim suhlasite s podmienkami pouzivania'}

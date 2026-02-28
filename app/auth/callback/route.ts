@@ -22,22 +22,56 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Check if user has a company profile
+      // Check if user has a supplier profile
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: profile } = await supabase
-          .from('company_profiles')
+        const { data: suppliers } = await supabase
+          .from('suppliers')
           .select('id')
-          .eq('id', user.id)
-          .single()
+          .eq('user_id', user.id)
+          .limit(1)
 
-        if (!profile) {
-          // First login - redirect to profile setup
-          return NextResponse.redirect(`${origin}/profile`)
+        if (!suppliers || suppliers.length === 0) {
+          return NextResponse.redirect(`${origin}/suppliers/new`)
         }
       }
       return NextResponse.redirect(`${origin}${next}`)
     }
+  }
+
+  return NextResponse.redirect(`${origin}/auth/error`)
+}
+
+// POST: Apple sends auth response via form_post
+export async function POST(request: Request) {
+  const headersList = await headers()
+  const origin = getOrigin(headersList)
+
+  try {
+    const formData = await request.formData()
+    const code = formData.get('code') as string | null
+    const idToken = formData.get('id_token') as string | null
+    const error = formData.get('error') as string | null
+
+    if (error) {
+      return NextResponse.redirect(`${origin}/auth/error?error=${error}`)
+    }
+
+    if (code) {
+      const supabase = await createClient()
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      if (!exchangeError) {
+        return NextResponse.redirect(`${origin}/dashboard`)
+      }
+    }
+
+    // If we got an id_token but no code exchange, redirect to home
+    // The client-side will handle signInWithIdToken
+    if (idToken) {
+      return NextResponse.redirect(`${origin}/dashboard`)
+    }
+  } catch {
+    // Fall through to error
   }
 
   return NextResponse.redirect(`${origin}/auth/error`)
