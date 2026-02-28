@@ -98,7 +98,7 @@ export function buildPeppolInvoice(
       lineExtensionAmount: adjustedLineExtension,
       itemName: item.description,
       classifiedTaxCategoryId: item.vat_category || 'S',
-      taxPercent: item.vat_rate ?? 20,
+      taxPercent: item.vat_rate ?? 23,
       priceAmount: netPricePerUnit,
       sellersItemIdentification: item.item_number || null,
       buyersItemIdentification: item.buyer_item_number || null,

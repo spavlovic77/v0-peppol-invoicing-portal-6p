@@ -22,7 +22,8 @@ const unitOptions = [
 ]
 
 const vatRates = [
-  { value: 20, label: '20% (zakladna)' },
+  { value: 23, label: '23% (zakladna od 2025)' },
+  { value: 20, label: '20% (zakladna do 2024)' },
   { value: 10, label: '10% (znizena)' },
   { value: 5, label: '5% (znizena)' },
   { value: 0, label: '0% (oslobodene)' },
@@ -37,7 +38,7 @@ export function StepItems({ formData, updateForm, totals }: Props) {
       unit: 'C62',
       unit_price: 0,
       vat_category: 'S',
-      vat_rate: 20,
+      vat_rate: 23,
       discount_percent: 0,
       discount_amount: 0,
       line_total: 0,

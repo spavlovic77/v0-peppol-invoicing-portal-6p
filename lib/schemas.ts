@@ -30,7 +30,7 @@ export const invoiceItemSchema = z.object({
   unit: z.string().default('C62'),
   unit_price: z.number().min(0, 'Jednotkova cena nesmie byt zaporna'),
   vat_category: z.string().default('S'),
-  vat_rate: z.number().min(0).max(100).default(20),
+  vat_rate: z.number().min(0).max(100).default(23),
   discount_percent: z.number().min(0).max(100).default(0),
   discount_amount: z.number().min(0).default(0),
   line_total: z.number(),
