@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateInvoiceXml } from '@/lib/real-validation'
+import { buildPeppolInvoice } from '@/lib/invoice-builder'
 
 const ION_AP_BASE = 'https://test.ion-ap.net'
 
@@ -49,6 +51,57 @@ export async function POST(request: Request) {
 
   if (!supplier?.ap_api_key) {
     return NextResponse.json({ error: 'AP API kluc nie je nastaveny' }, { status: 400 })
+  }
+
+  // Pre-send validation gate -- re-validate before sending
+  try {
+    // Fetch items + supplier for building PeppolInvoice object
+    const { data: items } = await supabase
+      .from('invoice_items')
+      .select('*')
+      .eq('invoice_id', invoiceId)
+      .order('line_number')
+
+    const { data: fullInvoice } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', invoiceId)
+      .single()
+
+    let supplierProfile = null
+    if (fullInvoice?.supplier_id) {
+      const { data } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', fullInvoice.supplier_id)
+        .single()
+      supplierProfile = data
+    }
+
+    if (fullInvoice && items && supplierProfile) {
+      const peppolInvoice = buildPeppolInvoice(fullInvoice, items, supplierProfile)
+      const validationResults = await validateInvoiceXml(invoice.xml_content, peppolInvoice)
+      const hasErrors = validationResults.some((phase) => !phase.passed)
+
+      if (hasErrors) {
+        // Save validation errors to DB
+        await supabase
+          .from('invoices')
+          .update({ validation_errors: validationResults, status: 'invalid' })
+          .eq('id', invoiceId)
+
+        const failedPhases = validationResults.filter((p) => !p.passed)
+        const errorMessages = failedPhases.flatMap((p) =>
+          p.results.filter((r) => !r.passed && r.severity === 'error').map((r) => `[${r.rule}] ${r.message}`)
+        )
+        return NextResponse.json(
+          { error: `Validacia zlyhala pred odoslanim:\n${errorMessages.slice(0, 5).join('\n')}` },
+          { status: 400 }
+        )
+      }
+    }
+  } catch (valErr) {
+    console.error('[send] Pre-send validation error (proceeding anyway):', (valErr as Error).message)
   }
 
   try {
