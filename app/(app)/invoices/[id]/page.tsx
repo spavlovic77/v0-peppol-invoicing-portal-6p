@@ -40,6 +40,10 @@ interface InvoiceData {
   ai_total_tokens: number | null
   ai_cost_usd: number | null
   ai_model: string | null
+  supplier_id: string | null
+  peppol_send_status: string | null
+  peppol_transaction_id: string | null
+  peppol_sent_at: string | null
 }
 
 interface InvoiceItem {
@@ -62,6 +66,9 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [validation, setValidation] = useState<unknown>(null)
+  const [sending, setSending] = useState(false)
+  const [polling, setPolling] = useState(false)
+  const [hasApKey, setHasApKey] = useState(false)
 
   const loadInvoice = useCallback(async () => {
     const { data: inv } = await supabase
@@ -87,6 +94,17 @@ export default function InvoiceDetailPage() {
     if (inv.validation_errors) {
       setValidation(inv.validation_errors)
     }
+
+    // Check if the supplier has an AP API key
+    if (inv.supplier_id) {
+      const { data: supplier } = await supabase
+        .from('suppliers')
+        .select('ap_api_key')
+        .eq('id', inv.supplier_id)
+        .single()
+      setHasApKey(!!supplier?.ap_api_key)
+    }
+
     setLoading(false)
   }, [supabase, params.id, router])
 
@@ -162,6 +180,77 @@ export default function InvoiceDetailPage() {
       router.push('/dashboard')
     }
   }
+
+  async function handleSendPeppol() {
+    if (!invoice) return
+    if (!confirm('Odoslat fakturu cez Peppol siet?')) return
+    setSending(true)
+    try {
+      const res = await fetch('/api/peppol/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Chyba pri odosielani')
+
+      toast.success('Faktura bola odoslana na Peppol siet')
+      await loadInvoice()
+
+      // Start polling for delivery status
+      if (data.transactionId) {
+        pollDeliveryStatus(data.transactionId)
+      }
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function pollDeliveryStatus(txId: string) {
+    setPolling(true)
+    let attempts = 0
+    const maxAttempts = 20
+
+    const poll = async () => {
+      attempts++
+      try {
+        const res = await fetch(`/api/peppol/status?invoiceId=${invoice!.id}&transactionId=${txId}`)
+        const data = await res.json()
+
+        if (data.status === 'delivered' || data.status === 'failed') {
+          setPolling(false)
+          await loadInvoice()
+          if (data.status === 'delivered') {
+            toast.success('Faktura bola uspesne dorucena cez Peppol')
+          } else {
+            toast.error('Dorucenie faktury zlyhalo')
+          }
+          return
+        }
+
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 3000) // poll every 3s
+        } else {
+          setPolling(false)
+          toast.info('Overenie dorucenia trva dlhsie. Skontrolujte neskor.')
+        }
+      } catch {
+        setPolling(false)
+      }
+    }
+
+    poll()
+  }
+
+  // Auto-poll if invoice was already sent but pending
+  useEffect(() => {
+    if (invoice?.peppol_send_status === 'sent' && invoice?.peppol_transaction_id) {
+      pollDeliveryStatus(invoice.peppol_transaction_id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice?.peppol_send_status])
 
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -280,6 +369,16 @@ export default function InvoiceDetailPage() {
                 <FileText className="w-4 h-4" />
                 PDF
               </button>
+              {hasApKey && invoice.status === 'valid' && !invoice.peppol_send_status && (
+                <button
+                  onClick={handleSendPeppol}
+                  disabled={sending}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-success text-white font-medium hover:bg-success/90 transition-colors disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? 'Odosielam...' : 'Odoslat cez Peppol'}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -298,6 +397,60 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Peppol Delivery Status */}
+      {invoice.peppol_send_status && (
+        <GlassCard className={
+          invoice.peppol_send_status === 'delivered' ? 'border-success/30' :
+          invoice.peppol_send_status === 'failed' ? 'border-destructive/30' :
+          'border-primary/30'
+        }>
+          <div className="flex items-center gap-3">
+            <Globe className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-foreground text-sm">Peppol dorucenie</h2>
+                {invoice.peppol_send_status === 'sent' && (
+                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                    {polling && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Odoslane
+                  </span>
+                )}
+                {invoice.peppol_send_status === 'delivered' && (
+                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-success/15 text-success">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Dorucene
+                  </span>
+                )}
+                {invoice.peppol_send_status === 'failed' && (
+                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">
+                    <XCircle className="w-3 h-3" />
+                    Zlyhalo
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {invoice.peppol_sent_at && `Odoslane: ${new Date(invoice.peppol_sent_at).toLocaleString('sk-SK')}`}
+                {invoice.peppol_transaction_id && (
+                  <span className="ml-2 font-mono">TX: {invoice.peppol_transaction_id.slice(0, 12)}...</span>
+                )}
+              </div>
+              {polling && (
+                <div className="text-xs text-primary mt-1">Overujem dorucenie...</div>
+              )}
+            </div>
+            {invoice.peppol_send_status === 'failed' && hasApKey && (
+              <button
+                onClick={handleSendPeppol}
+                disabled={sending}
+                className="px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
+              >
+                Skusit znova
+              </button>
+            )}
+          </div>
+        </GlassCard>
       )}
 
       {/* Invoice Info */}
