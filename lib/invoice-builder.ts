@@ -124,15 +124,18 @@ export function buildPeppolInvoice(
 
   const documentAllowances: PeppolInvoice['documentAllowances'] = []
 
-  // Group lines by tax rate for proportional distribution
-  const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number }>()
+  // Group lines by tax rate -- track both net total and per-line gross sum
+  const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number; grossSum: number }>()
   for (const line of invoiceLines) {
     const key = `${line.classifiedTaxCategoryId}-${line.taxPercent}`
+    // SK: gross each line individually, then sum (rounding per line)
+    const lineGross = round2(line.lineExtensionAmount * (100 + line.taxPercent) / 100)
     const existing = taxGroups.get(key)
     if (existing) {
       existing.lineTotal += line.lineExtensionAmount
+      existing.grossSum += lineGross
     } else {
-      taxGroups.set(key, { rate: line.taxPercent, catId: line.classifiedTaxCategoryId, lineTotal: line.lineExtensionAmount })
+      taxGroups.set(key, { rate: line.taxPercent, catId: line.classifiedTaxCategoryId, lineTotal: line.lineExtensionAmount, grossSum: lineGross })
     }
   }
 
@@ -194,7 +197,7 @@ export function buildPeppolInvoice(
 
   const skTaxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number }[] = []
 
-  for (const [, enGroup] of enTaxGroups) {
+  for (const [key, enGroup] of enTaxGroups) {
     const rate = enGroup.rate
     const taxBase_EN = enGroup.taxBase
 
@@ -209,8 +212,17 @@ export function buildPeppolInvoice(
       continue
     }
 
-    // Gross with VAT from EN tax base
-    const grossWithVat = round2(taxBase_EN * (100 + rate) / 100)
+    // Gross with VAT = sum of per-line gross amounts (rounded per line, then summed)
+    // This is the SK-correct method: gross each line individually
+    const taxGroup = taxGroups.get(key)
+    let grossWithVat = taxGroup ? round2(taxGroup.grossSum) : round2(taxBase_EN * (100 + rate) / 100)
+
+    // If global discount was applied, reduce gross proportionally
+    if (globalDiscountAmt > 0 && lineExtensionAmountTotal > 0 && taxGroup) {
+      const proportion = taxGroup.lineTotal / lineExtensionAmountTotal
+      const discountGross = round2(round2(globalDiscountAmt * proportion) * (100 + rate) / 100)
+      grossWithVat = round2(grossWithVat - discountGross)
+    }
 
     // SK reverse calculation
     const tax_SK = round2(grossWithVat * rate / (100 + rate))
