@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 IMPORTANT RULES:
 - CustomizationID MUST be exactly: "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0"
 - ProfileID MUST be exactly: "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
-- For Slovakia, endpoint schemeID is "0245" and the endpoint ID is the DIC number
+- For Peppol test network, endpoint schemeID is "9950" and the endpoint ID is the DIC number
 - Invoice type code 380 = standard invoice
 - Payment means code 30 = bank transfer (Credit transfer)
 - All monetary amounts must be calculated precisely to 2 decimal places
@@ -96,7 +96,7 @@ SUPPLIER DATA:
 - Country: ${profile.country_code || 'SK'}
 - IBAN: ${profile.iban || ''}
 - SWIFT/BIC: ${profile.swift || ''}
-- Peppol Endpoint (0245): ${supplierPeppolId}
+- Peppol Endpoint (9950): ${supplierPeppolId}
 
 BUYER DATA:
 - Name: ${invoice.buyer_name}

@@ -281,10 +281,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         <GlassCard className="border-primary/20">
           <div className="text-sm text-muted-foreground mb-1">Peppol ID tohto dodavatela</div>
           <div className="text-lg font-mono font-semibold text-primary">
-            0245:{form.dic}
+            9950:{form.dic}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Schema 0245 (Slovensko) + DIC
+            Schema 9950 (Peppol test) + DIC
           </div>
         </GlassCard>
       )}

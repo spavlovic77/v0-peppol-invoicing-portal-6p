@@ -69,7 +69,7 @@ export default function BuyersPage() {
           street: data.street || prev.street,
           city: data.city || prev.city,
           postal_code: data.postal_code || prev.postal_code,
-          peppol_id: data.dic ? `0245:${data.dic}` : prev.peppol_id,
+          peppol_id: data.dic ? `9950:${data.dic}` : prev.peppol_id,
         }))
         toast.success('Udaje boli nacitane z registra')
       } else {
@@ -233,7 +233,7 @@ export default function BuyersPage() {
             <BField label="Ulica" value={form.street || ''} onChange={(v) => setForm({ ...form, street: v })} />
             <BField label="Mesto" value={form.city || ''} onChange={(v) => setForm({ ...form, city: v })} />
             <BField label="PSC" value={form.postal_code || ''} onChange={(v) => setForm({ ...form, postal_code: v })} />
-            <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder="napr. 0245:2022182030" />
+            <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder="napr. 9950:2022182030" />
           </div>
 
           <div className="flex justify-end">

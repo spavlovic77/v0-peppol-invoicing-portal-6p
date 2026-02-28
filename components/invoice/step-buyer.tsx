@@ -41,7 +41,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
       setPeppolStatus('idle')
       return
     }
-    const participantId = `0245:${formData.buyer_dic}`
+    const participantId = `9950:${formData.buyer_dic}`
     setPeppolStatus('checking')
     fetch(`/api/peppol/discover?participant_id=${encodeURIComponent(participantId)}&supplier_id=${supplierId}`)
       .then(res => res.json())
@@ -97,7 +97,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
       const res = await fetch(`/api/rpo?ico=${buyerIco}`)
       const data = await res.json()
       if (res.ok) {
-        const peppolId = data.dic ? `0245:${data.dic}` : null
+        const peppolId = data.dic ? `9950:${data.dic}` : null
         updateForm({
           buyer_ico: data.ico,
           buyer_name: data.company_name || formData.buyer_name,
@@ -254,7 +254,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
             <h2 className="font-semibold text-foreground">Peppol</h2>
           </div>
           <div className="text-base font-mono font-semibold text-primary mb-3">
-            0245:{formData.buyer_dic}
+            9950:{formData.buyer_dic}
           </div>
           <div className="flex items-center gap-2 text-sm">
             {peppolStatus === 'checking' && (
