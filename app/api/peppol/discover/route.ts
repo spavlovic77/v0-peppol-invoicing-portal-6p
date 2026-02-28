@@ -38,9 +38,9 @@ export async function GET(request: Request) {
 
   try {
     const encoded = encodeURIComponent(participantId)
-    const res = await fetch(`${ION_AP_BASE}/api/v2/discover/${encoded}`, {
+    const res = await fetch(`${ION_AP_BASE}/api/v2/discover/${encoded}?log_level=NOTSET`, {
       headers: {
-        'Authorization': `Token ${supplier.ap_api_key}`,
+        'Authorization': supplier.ap_api_key,
         'Accept': 'application/json',
       },
     })
