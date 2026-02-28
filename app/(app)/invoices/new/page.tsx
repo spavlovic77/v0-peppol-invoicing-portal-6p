@@ -223,6 +223,8 @@ export default function NewInvoicePage() {
   }
 
   const totals = (() => {
+    const r2 = (n: number) => Math.round(n * 100) / 100
+
     // Sum line totals (already include per-item discounts)
     const lineSum = formData.items.reduce((acc, item) => {
       const gross = item.quantity * item.unit_price
@@ -232,21 +234,41 @@ export default function NewInvoicePage() {
 
     // Apply global discount
     const globalDiscount = lineSum * (formData.global_discount_percent || 0) / 100
-    const withoutVat = Math.round((lineSum - globalDiscount) * 100) / 100
+    const taxBase_EN = r2(lineSum - globalDiscount)
 
-    // Calculate VAT on discounted amounts per tax rate
-    const vat = formData.items.reduce((acc, item) => {
+    // Slovak reverse method: calculate VAT per tax rate group
+    // Group items by tax rate
+    const taxGroups = new Map<number, number>()
+    for (const item of formData.items) {
       const gross = item.quantity * item.unit_price
       const itemDiscount = item.discount_amount || (gross * (item.discount_percent || 0) / 100)
       const lineNet = gross - itemDiscount
-      // Proportional global discount per line
       const lineGlobalDiscount = lineSum > 0 ? (lineNet / lineSum) * globalDiscount : 0
-      const taxBase = lineNet - lineGlobalDiscount
-      return acc + (taxBase * (item.vat_rate / 100))
-    }, 0)
+      const groupTaxBase = r2(lineNet - lineGlobalDiscount)
+      const rate = item.vat_rate || 0
+      taxGroups.set(rate, (taxGroups.get(rate) || 0) + groupTaxBase)
+    }
 
-    const roundedVat = Math.round(vat * 100) / 100
-    return { withoutVat, vat: roundedVat, withVat: Math.round((withoutVat + roundedVat) * 100) / 100 }
+    // SK reverse calculation per group
+    let totalVat = 0
+    let totalTaxBase = 0
+    for (const [rate, taxBase] of taxGroups) {
+      if (rate === 0) {
+        totalTaxBase += r2(taxBase)
+        continue
+      }
+      const grossWithVat = r2(taxBase * (100 + rate) / 100)
+      const tax_SK = r2(grossWithVat * rate / (100 + rate))
+      const base_SK = r2(grossWithVat - tax_SK)
+      totalVat += tax_SK
+      totalTaxBase += base_SK
+    }
+
+    totalVat = r2(totalVat)
+    totalTaxBase = r2(totalTaxBase)
+    const withVat = r2(totalTaxBase + totalVat)
+
+    return { withoutVat: totalTaxBase, vat: totalVat, withVat }
   })()
 
   async function handleCreate() {
