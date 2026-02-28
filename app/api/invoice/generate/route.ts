@@ -69,16 +69,6 @@ export async function POST(req: Request) {
     // Build UBL XML
     const xml = buildUblXml(peppolInvoice)
 
-    // Debug: log full XML
-    const xmlLines = xml.split('\n')
-    console.log(`[v0] XML total lines: ${xmlLines.length}`)
-    // Log lines around the error area (100-120)
-    xmlLines.slice(99, 125).forEach((line, i) => console.log(`[v0] L${100 + i}: ${line}`))
-    // Also log invoice data for debugging
-    console.log(`[v0] payment_means_code: "${invoice.payment_means_code}"`)
-    console.log(`[v0] global_discount_percent: ${invoice.global_discount_percent}`)
-    console.log(`[v0] items count: ${items.length}`)
-
     // Validate
     const validationResults = await validateInvoiceXml(xml, peppolInvoice)
     const allPassed = validationResults.every((phase) => phase.passed)
