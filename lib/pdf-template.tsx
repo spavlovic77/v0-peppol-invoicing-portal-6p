@@ -199,11 +199,146 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#444',
   },
+  recapSection: {
+    marginBottom: 15,
+  },
+  recapTitle: {
+    fontSize: 8,
+    color: '#7c3aed',
+    fontFamily: 'Helvetica-Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  recapHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f0ecff',
+    padding: 6,
+    borderRadius: 2,
+  },
+  recapHeaderText: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#5b21b6',
+  },
+  recapRow: {
+    flexDirection: 'row',
+    padding: 5,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#eee',
+  },
+  recapCorrRow: {
+    flexDirection: 'row',
+    padding: 5,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fffbeb',
+  },
+  recapCol1: { width: '25%' },
+  recapCol2: { width: '25%', textAlign: 'right' },
+  recapCol3: { width: '25%', textAlign: 'right' },
+  recapCol4: { width: '25%', textAlign: 'right' },
+  recapBold: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+  },
+  recapText: {
+    fontSize: 9,
+    color: '#444',
+  },
+  recapCorrText: {
+    fontSize: 8,
+    color: '#92400e',
+    fontStyle: 'italic',
+  },
 })
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return '0,00'
   return n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+interface TaxRecapRow {
+  rate: number
+  base: number
+  vat: number
+  total: number
+}
+
+interface CorrectionRow {
+  rate: number
+  amount: number
+  isCharge: boolean
+}
+
+function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<string, unknown>): {
+  rows: TaxRecapRow[]
+  corrections: CorrectionRow[]
+} {
+  const lineExtTotal = items.reduce((s, it) => s + Number(it.line_total || 0), 0)
+  const globalDiscountPct = Number(invoice.global_discount_percent || 0)
+  const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
+
+  // Group by rate: collect line totals + per-line gross sums
+  const groups = new Map<number, { lineTotal: number; grossSum: number }>()
+  for (const it of items) {
+    const rate = Number(it.vat_rate || 0)
+    const qty = Number(it.quantity || 0)
+    const price = Number(it.unit_price || 0)
+    const discAmt = Number(it.discount_amount || 0)
+    const discPct = Number(it.discount_percent || 0)
+    const gross = qty * price
+    const disc = discAmt || round2(gross * discPct / 100)
+    const lineNet = round2(gross - disc)
+    const lineGross = round2(lineNet * (100 + rate) / 100)
+    const existing = groups.get(rate)
+    if (existing) {
+      existing.lineTotal += lineNet
+      existing.grossSum += lineGross
+    } else {
+      groups.set(rate, { lineTotal: lineNet, grossSum: lineGross })
+    }
+  }
+
+  const rows: TaxRecapRow[] = []
+  const corrections: CorrectionRow[] = []
+
+  for (const [rate, group] of groups) {
+    // EN base (minus proportional global discount)
+    const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
+    const allocDiscount = round2(globalDiscountAmt * proportion)
+    const taxBase_EN = round2(group.lineTotal - allocDiscount)
+
+    if (rate === 0) {
+      rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
+      continue
+    }
+
+    // SK reverse: gross up per line, then reverse
+    let grossWithVat = round2(group.grossSum)
+    if (globalDiscountAmt > 0 && lineExtTotal > 0) {
+      const discGross = round2(allocDiscount * (100 + rate) / 100)
+      grossWithVat = round2(grossWithVat - discGross)
+    }
+
+    const tax_SK = round2(grossWithVat * rate / (100 + rate))
+    const base_SK = round2(grossWithVat - tax_SK)
+    const correction = round2(base_SK - taxBase_EN)
+
+    if (correction !== 0) {
+      corrections.push({ rate, amount: correction, isCharge: correction > 0 })
+    }
+
+    rows.push({ rate, base: base_SK, vat: tax_SK, total: round2(base_SK + tax_SK) })
+  }
+
+  // Sort by rate descending
+  rows.sort((a, b) => b.rate - a.rate)
+  return { rows, corrections }
 }
 
 interface InvoicePdfProps {
@@ -292,6 +427,45 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             </View>
           ))}
         </View>
+
+        {/* VAT Recapitulation */}
+        {(() => {
+          const { rows, corrections } = buildRecapitulation(items, invoice)
+          const currency = String(invoice.currency || 'EUR')
+          return (
+            <View style={styles.recapSection}>
+              <Text style={styles.recapTitle}>Rekapitulacia DPH</Text>
+              <View style={styles.recapHeader}>
+                <Text style={[styles.recapHeaderText, styles.recapCol1]}>Sadzba DPH</Text>
+                <Text style={[styles.recapHeaderText, styles.recapCol2]}>Zaklad dane</Text>
+                <Text style={[styles.recapHeaderText, styles.recapCol3]}>DPH</Text>
+                <Text style={[styles.recapHeaderText, styles.recapCol4]}>Spolu</Text>
+              </View>
+              {rows.map((row, i) => (
+                <View key={i} style={styles.recapRow}>
+                  <Text style={[styles.recapBold, styles.recapCol1]}>{row.rate}%</Text>
+                  <Text style={[styles.recapText, styles.recapCol2]}>{fmt(row.base)} {currency}</Text>
+                  <Text style={[styles.recapText, styles.recapCol3]}>{fmt(row.vat)} {currency}</Text>
+                  <Text style={[styles.recapBold, styles.recapCol4]}>{fmt(row.total)} {currency}</Text>
+                </View>
+              ))}
+              {corrections.map((c, i) => (
+                <View key={`c${i}`} style={styles.recapCorrRow}>
+                  <Text style={[styles.recapCorrText, styles.recapCol1]}>
+                    Korekcia {c.rate}%
+                  </Text>
+                  <Text style={[styles.recapCorrText, styles.recapCol2]}>
+                    {c.isCharge ? '+' : '-'}{fmt(Math.abs(c.amount))} {currency}
+                  </Text>
+                  <Text style={[styles.recapCorrText, styles.recapCol3]}></Text>
+                  <Text style={[styles.recapCorrText, styles.recapCol4]}>
+                    Zaokruhlovacia korekcia
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )
+        })()}
 
         {/* Totals */}
         <View style={styles.totalsBox}>
