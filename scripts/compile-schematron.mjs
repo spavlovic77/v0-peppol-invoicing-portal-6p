@@ -23,7 +23,7 @@ const TEMP_DIR = join(SCHEMATRON_DIR, '_temp')
 
 // ─── OpenPEPPOL release tag ───────────────────────────────────────────────────
 // Check https://github.com/OpenPEPPOL/peppol-bis-invoice-3/releases for updates
-const PEPPOL_TAG = 'release-3.0.20'
+const PEPPOL_TAG = 'v3.0.19'
 const PEPPOL_BASE = `https://raw.githubusercontent.com/OpenPEPPOL/peppol-bis-invoice-3/${PEPPOL_TAG}/rules/sch`
 
 // ISO Schematron skeleton (converts .sch → .xsl)
