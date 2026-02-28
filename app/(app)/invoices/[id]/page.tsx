@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -199,7 +199,7 @@ export default function InvoiceDetailPage() {
 
       // Start polling for delivery status
       if (data.transactionId) {
-        pollDeliveryStatus(data.transactionId)
+        pollDeliveryStatus(data.transactionId, invoice.id)
       }
     } catch (err) {
       toast.error((err as Error).message)
@@ -208,18 +208,25 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  async function pollDeliveryStatus(txId: string) {
+  const pollingRef = React.useRef(false)
+
+  async function pollDeliveryStatus(txId: string, invId: string) {
+    if (pollingRef.current) return // prevent double-polling
+    pollingRef.current = true
     setPolling(true)
     let attempts = 0
-    const maxAttempts = 20
+    const maxAttempts = 10
 
     const poll = async () => {
       attempts++
+      console.log(`[v0] Polling attempt ${attempts}/${maxAttempts} for tx ${txId}`)
       try {
-        const res = await fetch(`/api/peppol/status?invoiceId=${invoice!.id}&transactionId=${txId}`)
+        const res = await fetch(`/api/peppol/status?invoiceId=${invId}&transactionId=${txId}`)
         const data = await res.json()
+        console.log(`[v0] Poll response:`, data)
 
         if (data.status === 'delivered' || data.status === 'failed') {
+          pollingRef.current = false
           setPolling(false)
           await loadInvoice()
           if (data.status === 'delivered') {
@@ -231,12 +238,14 @@ export default function InvoiceDetailPage() {
         }
 
         if (attempts < maxAttempts) {
-          setTimeout(poll, 3000) // poll every 3s
+          setTimeout(poll, 5000) // poll every 5s
         } else {
+          pollingRef.current = false
           setPolling(false)
           toast.info('Overenie dorucenia trva dlhsie. Skontrolujte neskor.')
         }
       } catch {
+        pollingRef.current = false
         setPolling(false)
       }
     }
@@ -244,10 +253,13 @@ export default function InvoiceDetailPage() {
     poll()
   }
 
-  // Auto-poll if invoice was already sent but pending
+  // Auto-poll if invoice was already sent but pending (only once on mount)
+  const autoPolledRef = React.useRef(false)
   useEffect(() => {
+    if (autoPolledRef.current) return
     if (invoice?.peppol_send_status === 'sent' && invoice?.peppol_transaction_id) {
-      pollDeliveryStatus(invoice.peppol_transaction_id)
+      autoPolledRef.current = true
+      pollDeliveryStatus(invoice.peppol_transaction_id, invoice.id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoice?.peppol_send_status])

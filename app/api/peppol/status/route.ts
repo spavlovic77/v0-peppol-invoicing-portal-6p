@@ -5,7 +5,7 @@ const ION_AP_BASE = 'https://test.ion-ap.net'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const invoiceId = searchParams.get('invoice_id')
+  const invoiceId = searchParams.get('invoiceId') || searchParams.get('invoice_id')
 
   if (!invoiceId) {
     return NextResponse.json({ error: 'invoice_id is required' }, { status: 400 })
@@ -60,15 +60,17 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json()
+    console.log("[v0] ION AP status response:", JSON.stringify(data))
+    
     // Map ION AP status to our internal status
-    const apStatus = (data.status || '').toLowerCase()
+    const apStatus = (data.status || data.state || '').toLowerCase()
     let newStatus = invoice.peppol_send_status
 
-    if (apStatus.includes('deliver') || apStatus.includes('success') || apStatus.includes('accepted')) {
+    if (apStatus.includes('deliver') || apStatus.includes('success') || apStatus.includes('accepted') || apStatus.includes('complet') || apStatus.includes('done') || apStatus.includes('transmitted') || apStatus.includes('finished')) {
       newStatus = 'delivered'
-    } else if (apStatus.includes('fail') || apStatus.includes('reject') || apStatus.includes('error')) {
+    } else if (apStatus.includes('fail') || apStatus.includes('reject') || apStatus.includes('error') || apStatus.includes('invalid')) {
       newStatus = 'failed'
-    } else if (apStatus.includes('pending') || apStatus.includes('process') || apStatus.includes('send')) {
+    } else if (apStatus.includes('pending') || apStatus.includes('process') || apStatus.includes('send') || apStatus.includes('queue') || apStatus.includes('transit') || apStatus.includes('progress')) {
       newStatus = 'sent'
     }
 
