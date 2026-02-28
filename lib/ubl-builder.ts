@@ -178,8 +178,8 @@ export function buildUblXml(inv: PeppolInvoice): string {
     }
   </cac:PaymentMeans>
 ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:AllowanceCharge>
-    <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
-    <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
+    <cbc:ChargeIndicator>${a.isCharge ? 'true' : 'false'}</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReasonCode>${escapeXml(a.reasonCode || '95')}</cbc:AllowanceChargeReasonCode>
     <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>
     <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>
     <cac:TaxCategory>
@@ -199,7 +199,9 @@ ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:Allo
     <cbc:TaxExclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxExclusiveAmount)}</cbc:TaxExclusiveAmount>
     <cbc:TaxInclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxInclusiveAmount)}</cbc:TaxInclusiveAmount>${
     (inv.allowanceTotalAmount || 0) > 0 ? `
-    <cbc:AllowanceTotalAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.allowanceTotalAmount)}</cbc:AllowanceTotalAmount>` : ''}
+    <cbc:AllowanceTotalAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.allowanceTotalAmount)}</cbc:AllowanceTotalAmount>` : ''}${
+    (inv.chargeTotalAmount || 0) > 0 ? `
+    <cbc:ChargeTotalAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.chargeTotalAmount)}</cbc:ChargeTotalAmount>` : ''}
     <cbc:PayableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.payableAmount)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   ${lines}
