@@ -23,6 +23,8 @@ const defaultItem = {
   unit_price: 0,
   vat_category: 'S',
   vat_rate: 20,
+  discount_percent: 0,
+  discount_amount: 0,
   line_total: 0,
   item_number: null,
   buyer_item_number: null,
@@ -64,6 +66,8 @@ export default function NewInvoicePage() {
     swift: null,
     variable_symbol: null,
     note: null,
+    global_discount_percent: 0,
+    global_discount_amount: 0,
     items: [{ ...defaultItem }],
   })
 
@@ -110,18 +114,28 @@ export default function NewInvoicePage() {
           swift: srcInv.swift || prev.swift,
           variable_symbol: srcInv.variable_symbol,
           note: srcInv.note,
-          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => ({
-            line_number: idx + 1,
-            description: it.description as string,
-            quantity: it.quantity as number,
-            unit: (it.unit as string) || 'C62',
-            unit_price: it.unit_price as number,
-            vat_category: (it.vat_category as string) || 'S',
-            vat_rate: (it.vat_rate as number) || 20,
-            line_total: (it.quantity as number) * (it.unit_price as number),
-            item_number: (it.item_number as string) || null,
-            buyer_item_number: (it.buyer_item_number as string) || null,
-          })) : [{ ...defaultItem }],
+          global_discount_percent: srcInv.global_discount_percent || 0,
+          global_discount_amount: srcInv.global_discount_amount || 0,
+          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => {
+            const qty = it.quantity as number
+            const price = it.unit_price as number
+            const dp = (it.discount_percent as number) || 0
+            const da = (it.discount_amount as number) || 0
+            return {
+              line_number: idx + 1,
+              description: it.description as string,
+              quantity: qty,
+              unit: (it.unit as string) || 'C62',
+              unit_price: price,
+              vat_category: (it.vat_category as string) || 'S',
+              vat_rate: (it.vat_rate as number) || 20,
+              discount_percent: dp,
+              discount_amount: da,
+              line_total: Math.round((qty * price - da) * 100) / 100,
+              item_number: (it.item_number as string) || null,
+              buyer_item_number: (it.buyer_item_number as string) || null,
+            }
+          }) : [{ ...defaultItem }],
         }))
         setLoading(false)
         return // Skip invoice number generation
@@ -149,18 +163,27 @@ export default function NewInvoicePage() {
           order_reference: srcInv.order_reference,
           buyer_reference: srcInv.buyer_reference,
           note: srcInv.note,
-          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => ({
-            line_number: idx + 1,
-            description: it.description as string,
-            quantity: it.quantity as number,
-            unit: (it.unit as string) || 'C62',
-            unit_price: it.unit_price as number,
-            vat_category: (it.vat_category as string) || 'S',
-            vat_rate: (it.vat_rate as number) || 20,
-            line_total: (it.quantity as number) * (it.unit_price as number),
-            item_number: (it.item_number as string) || null,
-            buyer_item_number: (it.buyer_item_number as string) || null,
-          })) : [{ ...defaultItem }],
+          global_discount_percent: srcInv.global_discount_percent || 0,
+          global_discount_amount: srcInv.global_discount_amount || 0,
+          items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => {
+            const qty = it.quantity as number
+            const price = it.unit_price as number
+            const da = (it.discount_amount as number) || 0
+            return {
+              line_number: idx + 1,
+              description: it.description as string,
+              quantity: qty,
+              unit: (it.unit as string) || 'C62',
+              unit_price: price,
+              vat_category: (it.vat_category as string) || 'S',
+              vat_rate: (it.vat_rate as number) || 20,
+              discount_percent: (it.discount_percent as number) || 0,
+              discount_amount: da,
+              line_total: Math.round((qty * price - da) * 100) / 100,
+              item_number: (it.item_number as string) || null,
+              buyer_item_number: (it.buyer_item_number as string) || null,
+            }
+          }) : [{ ...defaultItem }],
         }))
         toast.success('Udaje z povodnej faktury boli nacitane')
       }
@@ -199,18 +222,32 @@ export default function NewInvoicePage() {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
 
-  const totals = formData.items.reduce(
-    (acc, item) => {
-      const lineTotal = item.quantity * item.unit_price
-      const vatAmount = lineTotal * (item.vat_rate / 100)
-      return {
-        withoutVat: acc.withoutVat + lineTotal,
-        vat: acc.vat + vatAmount,
-        withVat: acc.withVat + lineTotal + vatAmount,
-      }
-    },
-    { withoutVat: 0, vat: 0, withVat: 0 }
-  )
+  const totals = (() => {
+    // Sum line totals (already include per-item discounts)
+    const lineSum = formData.items.reduce((acc, item) => {
+      const gross = item.quantity * item.unit_price
+      const discount = item.discount_amount || (gross * (item.discount_percent || 0) / 100)
+      return acc + (gross - discount)
+    }, 0)
+
+    // Apply global discount
+    const globalDiscount = lineSum * (formData.global_discount_percent || 0) / 100
+    const withoutVat = Math.round((lineSum - globalDiscount) * 100) / 100
+
+    // Calculate VAT on discounted amounts per tax rate
+    const vat = formData.items.reduce((acc, item) => {
+      const gross = item.quantity * item.unit_price
+      const itemDiscount = item.discount_amount || (gross * (item.discount_percent || 0) / 100)
+      const lineNet = gross - itemDiscount
+      // Proportional global discount per line
+      const lineGlobalDiscount = lineSum > 0 ? (lineNet / lineSum) * globalDiscount : 0
+      const taxBase = lineNet - lineGlobalDiscount
+      return acc + (taxBase * (item.vat_rate / 100))
+    }, 0)
+
+    const roundedVat = Math.round(vat * 100) / 100
+    return { withoutVat, vat: roundedVat, withVat: Math.round((withoutVat + roundedVat) * 100) / 100 }
+  })()
 
   async function handleCreate() {
     if (!activeSupplier) return
@@ -248,6 +285,8 @@ export default function NewInvoicePage() {
         total_without_vat: totals.withoutVat,
         total_vat: totals.vat,
         total_with_vat: totals.withVat,
+        global_discount_percent: formData.global_discount_percent || 0,
+        global_discount_amount: totals.withoutVat > 0 ? Math.round((formData.items.reduce((s, i) => s + i.quantity * i.unit_price - (i.discount_amount || 0), 0)) * (formData.global_discount_percent || 0) / 100 * 100) / 100 : 0,
         note: formData.note,
         status: 'draft',
       }
@@ -283,19 +322,25 @@ export default function NewInvoicePage() {
         invoiceId = invoice.id
       }
 
-      const items = formData.items.map((item) => ({
-        invoice_id: invoiceId,
-        line_number: item.line_number,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        unit_price: item.unit_price,
-        vat_category: item.vat_category,
-        vat_rate: item.vat_rate,
-        line_total: item.quantity * item.unit_price,
-        item_number: item.item_number,
-        buyer_item_number: item.buyer_item_number,
-      }))
+      const items = formData.items.map((item) => {
+        const gross = item.quantity * item.unit_price
+        const discountAmt = item.discount_amount || Math.round(gross * (item.discount_percent || 0) / 100 * 100) / 100
+        return {
+          invoice_id: invoiceId,
+          line_number: item.line_number,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price: item.unit_price,
+          vat_category: item.vat_category,
+          vat_rate: item.vat_rate,
+          discount_percent: item.discount_percent || 0,
+          discount_amount: discountAmt,
+          line_total: Math.round((gross - discountAmt) * 100) / 100,
+          item_number: item.item_number,
+          buyer_item_number: item.buyer_item_number,
+        }
+      })
 
       const { error: itemsError } = await supabase.from('invoice_items').insert(items)
       if (itemsError) throw itemsError

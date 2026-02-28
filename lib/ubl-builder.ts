@@ -27,7 +27,16 @@ export function buildUblXml(inv: PeppolInvoice): string {
     <cac:InvoiceLine>
       <cbc:ID>${escapeXml(line.id)}</cbc:ID>
       <cbc:InvoicedQuantity unitCode="${escapeXml(line.unitCode)}">${line.invoicedQuantity}</cbc:InvoicedQuantity>
-      <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>
+      <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>${
+          line.allowanceChargeAmount && line.allowanceChargeAmount > 0
+            ? `
+      <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+        <cbc:AllowanceChargeReason>${escapeXml(line.allowanceChargeReason || 'Zlava')}</cbc:AllowanceChargeReason>
+        <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.allowanceChargeAmount)}</cbc:Amount>
+      </cac:AllowanceCharge>`
+            : ''
+        }
       <cac:Item>
         <cbc:Name>${escapeXml(line.itemName)}</cbc:Name>${
           line.sellersItemIdentification
@@ -181,12 +190,26 @@ export function buildUblXml(inv: PeppolInvoice): string {
         : ''
     }
   </cac:PaymentMeans>
+  ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `<cac:AllowanceCharge>
+    <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+    <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>
+    <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>
+    <cac:TaxCategory>
+      <cbc:ID>${escapeXml(a.taxCategoryId)}</cbc:ID>
+      <cbc:Percent>${a.taxPercent}</cbc:Percent>
+      <cac:TaxScheme>
+        <cbc:ID>VAT</cbc:ID>
+      </cac:TaxScheme>
+    </cac:TaxCategory>
+  </cac:AllowanceCharge>`).join('\n  ')}
   <cac:TaxTotal>
     <cbc:TaxAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxAmountTotal)}</cbc:TaxAmount>
     ${taxSubtotals}
   </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.lineExtensionAmountTotal)}</cbc:LineExtensionAmount>
+    <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.lineExtensionAmountTotal)}</cbc:LineExtensionAmount>${
+    (inv.allowanceTotalAmount || 0) > 0 ? `
+    <cbc:AllowanceTotalAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.allowanceTotalAmount)}</cbc:AllowanceTotalAmount>` : ''}
     <cbc:TaxExclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxExclusiveAmount)}</cbc:TaxExclusiveAmount>
     <cbc:TaxInclusiveAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.taxInclusiveAmount)}</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.payableAmount)}</cbc:PayableAmount>

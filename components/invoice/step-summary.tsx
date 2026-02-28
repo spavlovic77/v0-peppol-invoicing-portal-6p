@@ -86,6 +86,14 @@ export function StepSummary({ formData, profile, totals }: Props) {
           <h2 className="font-semibold text-foreground">Platobne udaje</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Sposob platby</span>
+            <div className="text-foreground">
+              {
+                { '30': 'Bankovy prevod', '58': 'SEPA prevod', '48': 'Platba kartou', '10': 'Hotovost', '42': 'Na ucet', '1': 'Ine' }[formData.payment_means_code] || formData.payment_means_code
+              }
+            </div>
+          </div>
           {formData.bank_name && (
             <div>
               <span className="text-muted-foreground">Banka</span>
@@ -121,6 +129,7 @@ export function StepSummary({ formData, profile, totals }: Props) {
                 <th className="pb-2 font-medium">Popis</th>
                 <th className="pb-2 font-medium text-right">Mn.</th>
                 <th className="pb-2 font-medium text-right">Cena</th>
+                <th className="pb-2 font-medium text-right">Zlava</th>
                 <th className="pb-2 font-medium text-right">DPH</th>
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
@@ -132,9 +141,12 @@ export function StepSummary({ formData, profile, totals }: Props) {
                   <td className="py-2 text-foreground">{item.description || '-'}</td>
                   <td className="py-2 text-right text-foreground">{item.quantity}</td>
                   <td className="py-2 text-right text-foreground">{fmt(item.unit_price)}</td>
+                  <td className="py-2 text-right text-muted-foreground">
+                    {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
+                  </td>
                   <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
                   <td className="py-2 text-right text-foreground font-medium">
-                    {fmt(item.quantity * item.unit_price)}
+                    {fmt(item.line_total || item.quantity * item.unit_price)}
                   </td>
                 </tr>
               ))}
@@ -150,6 +162,12 @@ export function StepSummary({ formData, profile, totals }: Props) {
             <span className="text-muted-foreground">Zaklad dane:</span>
             <span className="text-foreground">{fmt(totals.withoutVat)} {formData.currency}</span>
           </div>
+          {(formData.global_discount_percent || 0) > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Zlava na fakturu ({formData.global_discount_percent}%):</span>
+              <span className="text-primary">zahrnuta v zaklade</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">DPH:</span>
             <span className="text-foreground">{fmt(totals.vat)} {formData.currency}</span>

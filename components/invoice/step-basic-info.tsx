@@ -1,5 +1,14 @@
 import { GlassCard } from '@/components/glass-card'
-import { CalendarDays, FileText } from 'lucide-react'
+import { CalendarDays, FileText, CreditCard } from 'lucide-react'
+
+const paymentMethods = [
+  { value: '30', label: 'Bankovy prevod' },
+  { value: '58', label: 'SEPA prevod' },
+  { value: '48', label: 'Platba kartou' },
+  { value: '10', label: 'Hotovost' },
+  { value: '42', label: 'Na ucet' },
+  { value: '1', label: 'Nezadane / ine' },
+]
 import type { InvoiceFormData } from '@/lib/schemas'
 
 interface Props {
@@ -43,6 +52,37 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               <option value="USD">USD - Americky dolar</option>
               <option value="GBP">GBP - Britska libra</option>
             </select>
+          </div>
+        </div>
+      </GlassCard>
+
+      <GlassCard>
+        <div className="flex items-center gap-3 mb-6">
+          <CreditCard className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-foreground">Forma uhrady</h2>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-muted-foreground mb-1.5">Sposob platby</label>
+            <select
+              value={formData.payment_means_code}
+              onChange={(e) => updateForm({ payment_means_code: e.target.value })}
+              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+            >
+              {paymentMethods.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-muted-foreground mb-1.5">Variabilny symbol</label>
+            <input
+              type="text"
+              value={formData.variable_symbol || ''}
+              onChange={(e) => updateForm({ variable_symbol: e.target.value || null })}
+              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+              placeholder="Variabilny symbol"
+            />
           </div>
         </div>
       </GlassCard>

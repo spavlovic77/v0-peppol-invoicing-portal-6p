@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, FileText, FileCode, Sparkles, ArrowLeft, CheckCircle2, XCircle, Copy, Pencil, Trash2, Send, Globe } from 'lucide-react'
+import { Loader2, FileText, FileCode, Zap, ArrowLeft, CheckCircle2, XCircle, Copy, Pencil, Trash2, Send, Globe } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationDisplay } from '@/components/invoice/validation-display'
 import Link from 'next/link'
@@ -54,6 +54,8 @@ interface InvoiceItem {
   unit: string
   unit_price: number
   vat_rate: number
+  discount_percent: number
+  discount_amount: number
   line_total: number
 }
 
@@ -341,7 +343,7 @@ export default function InvoiceDetailPage() {
               {generating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Sparkles className="w-4 h-4" />
+                <Zap className="w-4 h-4" />
               )}
               {generating ? 'Generujem...' : 'Generovat Peppol XML'}
             </button>
@@ -357,7 +359,7 @@ export default function InvoiceDetailPage() {
                 {generating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Zap className="w-4 h-4" />
                 )}
                 Regenerovat
               </button>
@@ -471,46 +473,6 @@ export default function InvoiceDetailPage() {
         </GlassCard>
       </div>
 
-      {/* AI Cost Info */}
-      {invoice.ai_total_tokens && (
-        <GlassCard>
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-foreground">AI generovanie</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Model</div>
-              <div className="text-foreground font-mono text-xs">{invoice.ai_model || 'N/A'}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Vstupne tokeny</div>
-              <div className="text-foreground font-medium">
-                {(invoice.ai_prompt_tokens || 0).toLocaleString('sk-SK')}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Vystupne tokeny</div>
-              <div className="text-foreground font-medium">
-                {(invoice.ai_completion_tokens || 0).toLocaleString('sk-SK')}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Celkom tokeny</div>
-              <div className="text-foreground font-medium">
-                {(invoice.ai_total_tokens || 0).toLocaleString('sk-SK')}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-0.5">Naklady</div>
-              <div className="text-primary font-bold">
-                ${(invoice.ai_cost_usd || 0).toFixed(4)}
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-      )}
-
       {/* Buyer */}
       <GlassCard>
         <h2 className="font-semibold text-foreground mb-3">Odberatel</h2>
@@ -541,6 +503,7 @@ export default function InvoiceDetailPage() {
                 <th className="pb-2 font-medium">Popis</th>
                 <th className="pb-2 font-medium text-right">Mn.</th>
                 <th className="pb-2 font-medium text-right">Cena</th>
+                <th className="pb-2 font-medium text-right">Zlava</th>
                 <th className="pb-2 font-medium text-right">DPH</th>
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
@@ -552,6 +515,9 @@ export default function InvoiceDetailPage() {
                   <td className="py-2 text-foreground">{item.description}</td>
                   <td className="py-2 text-right text-foreground">{item.quantity}</td>
                   <td className="py-2 text-right text-foreground">{fmt(item.unit_price)}</td>
+                  <td className="py-2 text-right text-muted-foreground">
+                    {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
+                  </td>
                   <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
                   <td className="py-2 text-right text-foreground font-medium">{fmt(item.line_total)}</td>
                 </tr>
