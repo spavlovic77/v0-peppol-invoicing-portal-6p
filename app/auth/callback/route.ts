@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 
 function getOrigin(headersList: Headers): string {
-  const host = headersList.get('host') || 'localhost:3000'
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || 'localhost:3000'
   const proto = headersList.get('x-forwarded-proto') || 'https'
   return `${proto}://${host}`
 }
