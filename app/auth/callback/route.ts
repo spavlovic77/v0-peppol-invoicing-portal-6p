@@ -1,8 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+
+function getOrigin(headersList: Headers): string {
+  const host = headersList.get('host') || 'localhost:3000'
+  const proto = headersList.get('x-forwarded-proto') || 'https'
+  return `${proto}://${host}`
+}
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const headersList = await headers()
+  const origin = getOrigin(headersList)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
