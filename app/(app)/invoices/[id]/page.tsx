@@ -35,11 +35,7 @@ interface InvoiceData {
   iban: string | null
   swift: string | null
   variable_symbol: string | null
-  ai_prompt_tokens: number | null
-  ai_completion_tokens: number | null
-  ai_total_tokens: number | null
-  ai_cost_usd: number | null
-  ai_model: string | null
+
   supplier_id: string | null
   peppol_send_status: string | null
   peppol_transaction_id: string | null
