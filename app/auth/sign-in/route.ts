@@ -29,10 +29,14 @@ function getSiteUrl(headersList: Headers): string {
   return `${proto}://${host}`
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
   const headersList = await headers()
   const siteUrl = getSiteUrl(headersList)
+
+  // Support provider selection via query param (?provider=apple)
+  const { searchParams } = new URL(request.url)
+  const provider = searchParams.get('provider') === 'apple' ? 'apple' : 'google'
 
   const options: Record<string, unknown> = {}
   if (siteUrl) {
@@ -40,7 +44,7 @@ export async function GET() {
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider,
     options,
   })
 
