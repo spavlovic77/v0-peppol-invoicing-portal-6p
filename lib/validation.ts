@@ -12,6 +12,8 @@ export interface ValidationPhase {
   description: string
   results: ValidationResult[]
   passed: boolean
+  /** true when results come from JS simulation, not real schematron */
+  simulated?: boolean
 }
 
 // ============================================================

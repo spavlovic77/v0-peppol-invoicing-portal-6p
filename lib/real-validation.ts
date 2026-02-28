@@ -240,10 +240,7 @@ async function validateViaExternalApi(xml: string): Promise<[ValidationPhase, Va
 // ─── JS simulation fallback (last resort) ────────────────────────────────────
 
 function jsFallback(inv: PeppolInvoice): [ValidationPhase, ValidationPhase] {
-  const tag = (phase: ValidationPhase): ValidationPhase => ({
-    ...phase,
-    description: phase.description + ' [SIMULACIA]',
-  })
+  const tag = (phase: ValidationPhase): ValidationPhase => ({ ...phase, simulated: true })
   return [tag(validateEN16931(inv)), tag(validatePeppolSchematron(inv))]
 }
 
