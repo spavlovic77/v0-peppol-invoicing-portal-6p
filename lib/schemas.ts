@@ -31,6 +31,8 @@ export const invoiceItemSchema = z.object({
   unit_price: z.number().min(0, 'Jednotkova cena nesmie byt zaporna'),
   vat_category: z.string().default('S'),
   vat_rate: z.number().min(0).max(100).default(20),
+  discount_percent: z.number().min(0).max(100).default(0),
+  discount_amount: z.number().min(0).default(0),
   line_total: z.number(),
   item_number: z.string().nullable(),
   buyer_item_number: z.string().nullable(),
@@ -63,6 +65,8 @@ export const invoiceSchema = z.object({
   swift: z.string().nullable(),
   variable_symbol: z.string().nullable(),
   note: z.string().nullable(),
+  global_discount_percent: z.number().min(0).max(100).default(0),
+  global_discount_amount: z.number().min(0).default(0),
   items: z.array(invoiceItemSchema).min(1, 'Faktura musi mat aspon jednu polozku'),
 })
 
@@ -80,6 +84,8 @@ export const peppolInvoiceLineSchema = z.object({
   priceAmount: z.number().describe('Price per unit without VAT'),
   sellersItemIdentification: z.string().nullable().describe('Seller item number'),
   buyersItemIdentification: z.string().nullable().describe('Buyer item number'),
+  allowanceChargeAmount: z.number().default(0).describe('Line-level discount amount'),
+  allowanceChargeReason: z.string().nullable().describe('Reason for discount, e.g. "Zlava"'),
 })
 
 export const peppolTaxSubtotalSchema = z.object({
@@ -129,6 +135,13 @@ export const peppolInvoiceSchema = z.object({
   taxExclusiveAmount: z.number().describe('Total without VAT'),
   taxInclusiveAmount: z.number().describe('Total with VAT'),
   payableAmount: z.number().describe('Amount to pay'),
+  allowanceTotalAmount: z.number().default(0).describe('Sum of all document-level allowances'),
+  documentAllowances: z.array(z.object({
+    amount: z.number(),
+    reason: z.string(),
+    taxCategoryId: z.string(),
+    taxPercent: z.number(),
+  })).default([]).describe('Document-level allowances (BG-20)'),
   invoiceLines: z.array(peppolInvoiceLineSchema).describe('Invoice line items'),
   invoiceNote: z.string().nullable().describe('Free-text note on invoice'),
   deliveryDate: z.string().nullable().describe('Delivery date if different from issue date'),
