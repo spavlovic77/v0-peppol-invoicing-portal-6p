@@ -66,8 +66,10 @@ export async function POST(req: Request) {
     }
 
     // Build prompt with all invoice data
-    const supplierPeppolId = profile.dic || profile.ico
-    const buyerPeppolId = invoice.buyer_dic || invoice.buyer_ico || 'N/A'
+    // Extract raw ID without scheme prefix for Peppol endpoints
+    const stripScheme = (id: string | null) => id?.replace(/^\d{4}:/, '') || null
+    const supplierPeppolId = stripScheme(profile.dic) || profile.ico
+    const buyerPeppolId = stripScheme(invoice.buyer_peppol_id) || invoice.buyer_dic || invoice.buyer_ico || 'N/A'
     
     const prompt = `You are a Peppol BIS 3.0 e-invoicing expert. Generate a complete, valid Peppol BIS Billing 3.0 UBL invoice JSON from the following data.
 
@@ -107,7 +109,7 @@ BUYER DATA:
 - City: ${invoice.buyer_city || ''}
 - Postal Code: ${invoice.buyer_postal_code || ''}
 - Country: ${invoice.buyer_country_code || 'SK'}
-- Buyer Peppol ID: ${invoice.buyer_peppol_id || buyerPeppolId}
+- Buyer Peppol Endpoint (9950, value without prefix): ${buyerPeppolId}
 
 INVOICE DATA:
 - Invoice Number: ${invoice.invoice_number}

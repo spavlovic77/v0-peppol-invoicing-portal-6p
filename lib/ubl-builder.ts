@@ -14,6 +14,12 @@ function amount(n: number): string {
   return n.toFixed(2)
 }
 
+// Strip scheme prefix (e.g. "9950:") from endpoint IDs to avoid duplication with schemeID attr
+function stripEndpointScheme(id: string | null | undefined): string {
+  if (!id) return ''
+  return id.replace(/^\d{4}:/, '')
+}
+
 export function buildUblXml(inv: PeppolInvoice): string {
   const lines = inv.invoiceLines
     .map(
@@ -88,7 +94,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
   </cac:OrderReference>` : ''}
   <cac:AccountingSupplierParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="${escapeXml(inv.supplierEndpointSchemeId)}">${escapeXml(inv.supplierEndpointId)}</cbc:EndpointID>
+      <cbc:EndpointID schemeID="${escapeXml(inv.supplierEndpointSchemeId)}">${escapeXml(stripEndpointScheme(inv.supplierEndpointId))}</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>${escapeXml(inv.supplierPartyName)}</cbc:Name>
       </cac:PartyName>
@@ -114,7 +120,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="${escapeXml(inv.customerEndpointSchemeId)}">${escapeXml(inv.customerEndpointId)}</cbc:EndpointID>
+      <cbc:EndpointID schemeID="${escapeXml(inv.customerEndpointSchemeId)}">${escapeXml(stripEndpointScheme(inv.customerEndpointId))}</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>${escapeXml(inv.customerPartyName)}</cbc:Name>
       </cac:PartyName>
