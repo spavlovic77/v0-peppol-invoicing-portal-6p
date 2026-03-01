@@ -1,5 +1,9 @@
+'use client'
+
 import { GlassCard } from '@/components/glass-card'
-import { CalendarDays, FileText, CreditCard, AlertTriangle } from 'lucide-react'
+import { CalendarDays, FileText, CreditCard, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
 const paymentMethods = [
   { value: '30', label: 'Bankovy prevod' },
@@ -21,11 +25,20 @@ interface Props {
 
 export function StepBasicInfo({ formData, updateForm }: Props) {
   const needsIban = bankTransferCodes.includes(formData.payment_means_code)
-  const rawIban = (formData.iban || '').replace(/\s/g, '').toUpperCase()
-  const ibanMissing = needsIban && !rawIban
-  // IBAN format: 2 letters + 2 digits + 4-30 alphanumeric chars (ISO 13616)
-  const ibanValid = !rawIban || /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(rawIban)
-  const ibanError = needsIban && rawIban && !ibanValid
+  const [ibanTouched, setIbanTouched] = useState(false)
+
+  // Live IBAN display: show formatted value in the input
+  const ibanDisplay = formatIban(cleanIban(formData.iban || ''))
+  const ibanResult = validateIban(formData.iban || '')
+  const ibanMissing = needsIban && !ibanResult.cleaned
+  const ibanHasError = needsIban && ibanTouched && ibanResult.cleaned.length > 0 && !ibanResult.valid
+
+  const handleIbanChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    // Store the cleaned value (no spaces, uppercase) in formData
+    const cleaned = cleanIban(e.target.value)
+    updateForm({ iban: cleaned || null })
+    if (!ibanTouched) setIbanTouched(true)
+  }, [updateForm, ibanTouched])
   return (
     <div className="space-y-6">
       <GlassCard>
@@ -99,28 +112,68 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
 
         {/* IBAN + Bank fields (shown when payment means requires bank transfer) */}
         {needsIban && (
-          <>
-            {(ibanMissing || ibanError) && (
-              <div className="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+          <div className="mt-4 space-y-3">
+            {/* Warning: IBAN missing */}
+            {ibanMissing && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
                 <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <p className="text-sm text-destructive">
-                  {ibanMissing
-                    ? 'Pre bankovy prevod je IBAN povinny (BR-61). Vyplnte ho tu alebo v profile dodavatela.'
-                    : 'IBAN nema platny format. Spravny format: SK89 7500 0000 0000 1234 5678 (2 pismena + 2 cisla + 4-30 znakov)'}
+                  Pre bankovy prevod je IBAN povinny (BR-61). Vyplnte ho tu alebo v profile dodavatela.
                 </p>
               </div>
             )}
-            <div className="grid md:grid-cols-2 gap-4 mt-4">
+
+            {/* Error: IBAN invalid format / checksum */}
+            {ibanHasError && ibanResult.error && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{ibanResult.error}</p>
+              </div>
+            )}
+
+            {/* Success: IBAN valid */}
+            {ibanResult.valid && ibanResult.cleaned.length > 0 && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-emerald-400">
+                  IBAN je platny ({ibanResult.country})
+                </p>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1.5">IBAN *</label>
                 <input
                   id="iban"
                   type="text"
-                  value={formData.iban || ''}
-                  onChange={(e) => updateForm({ iban: e.target.value.replace(/\s/g, '').toUpperCase() || null })}
-                  className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground font-mono text-sm ${ibanError ? 'ring-2 ring-destructive' : ''}`}
-                  placeholder="SK8975000000000012345678"
+                  value={ibanDisplay}
+                  onChange={handleIbanChange}
+                  onBlur={() => setIbanTouched(true)}
+                  className={`glass-input w-full px-4 py-2.5 rounded-xl font-mono text-sm tracking-wider ${
+                    ibanResult.valid && ibanResult.cleaned.length > 0
+                      ? 'text-emerald-400 ring-1 ring-emerald-500/30'
+                      : ibanHasError
+                        ? 'text-destructive ring-2 ring-destructive'
+                        : 'text-foreground'
+                  }`}
+                  placeholder="SK89 7500 0000 0001 2345 671"
+                  autoComplete="off"
+                  spellCheck={false}
                 />
+                {/* Character counter */}
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    {ibanResult.expectedLength
+                      ? `${ibanResult.cleaned.length} / ${ibanResult.expectedLength} znakov`
+                      : ibanResult.cleaned.length > 0
+                        ? `${ibanResult.cleaned.length} znakov`
+                        : 'Zadajte IBAN v lubovolnom formate'}
+                  </p>
+                  {ibanResult.country && ibanResult.cleaned.length >= 2 && (
+                    <p className="text-xs text-muted-foreground font-medium">{ibanResult.country}</p>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-muted-foreground mb-1.5">Nazov banky</label>
@@ -133,7 +186,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
                 />
               </div>
             </div>
-          </>
+          </div>
         )}
       </GlassCard>
 
