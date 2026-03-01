@@ -170,7 +170,7 @@ export default function NewInvoicePage() {
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
-          }) : [{ ...defaultItem }],
+          }) : [makeDefaultItem(invoiceMode)],
         }))
         setLoading(false)
         return // Skip invoice number generation
@@ -218,7 +218,7 @@ export default function NewInvoicePage() {
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
-          }) : [{ ...defaultItem }],
+          }) : [makeDefaultItem(invoiceMode)],
         }))
         toast.success('Udaje z povodnej faktury boli nacitane')
       }
