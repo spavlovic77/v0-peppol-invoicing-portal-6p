@@ -56,6 +56,11 @@ export function Navbar() {
 
   function handleNewInvoiceClick(e: React.MouseEvent) {
     e.preventDefault()
+    // Skip modal when there's only one supplier -- no choice to make
+    if (suppliers.length <= 1) {
+      router.push('/invoices/new')
+      return
+    }
     setModalSupplier(activeSupplier)
     setShowNewInvoiceModal(true)
   }
