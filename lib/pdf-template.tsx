@@ -1,10 +1,18 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+
+Font.register({
+  family: 'Roboto',
+  fonts: [
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf', fontWeight: 'normal' },
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf', fontWeight: 'bold' },
+  ],
+})
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
     fontSize: 9,
     color: '#1a1a2e',
   },
@@ -14,12 +22,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: '#7c3aed',
+    borderBottomColor: '#1e3a5f',
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Helvetica-Bold',
-    color: '#7c3aed',
+    fontFamily: 'Roboto', fontWeight: 'bold',
+    color: '#1e3a5f',
   },
   subtitle: {
     fontSize: 10,
@@ -36,7 +44,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 6,
   },
   partiesRow: {
@@ -46,21 +54,21 @@ const styles = StyleSheet.create({
   },
   partyBox: {
     flex: 1,
-    backgroundColor: '#f8f7ff',
+    backgroundColor: '#f0f4f8',
     padding: 12,
     borderRadius: 4,
   },
   partyTitle: {
     fontSize: 8,
-    color: '#7c3aed',
-    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a5f',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
   },
   partyName: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 4,
   },
   partyLine: {
@@ -73,14 +81,14 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#1e3a5f',
     padding: 8,
     borderRadius: 2,
   },
   tableHeaderText: {
     color: '#ffffff',
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
   },
   tableRow: {
@@ -92,7 +100,7 @@ const styles = StyleSheet.create({
   tableRowAlt: {
     flexDirection: 'row',
     padding: 8,
-    backgroundColor: '#faf9ff',
+    backgroundColor: '#f5f7fa',
     borderBottomWidth: 0.5,
     borderBottomColor: '#eee',
   },
@@ -122,33 +130,33 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   totalDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#7c3aed',
+    borderBottomColor: '#1e3a5f',
     marginVertical: 4,
   },
   grandTotalLabel: {
     fontSize: 12,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     color: '#1a1a2e',
   },
   grandTotalValue: {
     fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
-    color: '#7c3aed',
+    fontFamily: 'Roboto', fontWeight: 'bold',
+    color: '#1e3a5f',
   },
   paymentBox: {
-    backgroundColor: '#f8f7ff',
+    backgroundColor: '#f0f4f8',
     padding: 12,
     borderRadius: 4,
     marginBottom: 20,
   },
   paymentTitle: {
     fontSize: 8,
-    color: '#7c3aed',
-    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a5f',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
@@ -165,7 +173,7 @@ const styles = StyleSheet.create({
   },
   paymentValue: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   footer: {
     position: 'absolute',
@@ -186,13 +194,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#7c3aed',
-    backgroundColor: '#faf9ff',
+    borderLeftColor: '#1e3a5f',
+    backgroundColor: '#f5f7fa',
   },
   noteLabel: {
     fontSize: 8,
-    color: '#7c3aed',
-    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a5f',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 3,
   },
   noteText: {
@@ -204,22 +212,22 @@ const styles = StyleSheet.create({
   },
   recapTitle: {
     fontSize: 8,
-    color: '#7c3aed',
-    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a5f',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 6,
   },
   recapHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f0ecff',
+    backgroundColor: '#e8eef4',
     padding: 6,
     borderRadius: 2,
   },
   recapHeaderText: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
-    color: '#5b21b6',
+    fontFamily: 'Roboto', fontWeight: 'bold',
+    color: '#1e3a5f',
   },
   recapRow: {
     flexDirection: 'row',
@@ -240,7 +248,7 @@ const styles = StyleSheet.create({
   recapCol4: { width: '25%', textAlign: 'right' },
   recapBold: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   recapText: {
     fontSize: 9,
@@ -358,7 +366,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>FAKTURA</Text>
+            <Text style={styles.title}>FAKTÚRA</Text>
             <Text style={styles.subtitle}>{isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'}</Text>
           </View>
           <View style={styles.invoiceInfo}>
@@ -386,9 +394,9 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={styles.partyLine}>
               {String(profile.postal_code || '')} {String(profile.city || '')}
             </Text>
-            <Text style={styles.partyLine}>{'\n'}ICO: {String(profile.ico)}</Text>
-            {profile.dic && <Text style={styles.partyLine}>DIC: {String(profile.dic)}</Text>}
-            {profile.ic_dph && <Text style={styles.partyLine}>IC DPH: {String(profile.ic_dph)}</Text>}
+            <Text style={styles.partyLine}>{'\n'}IČO: {String(profile.ico)}</Text>
+            {profile.dic && <Text style={styles.partyLine}>DIČ: {String(profile.dic)}</Text>}
+            {profile.ic_dph && <Text style={styles.partyLine}>IČ DPH: {String(profile.ic_dph)}</Text>}
             {profile.registration_court && (
               <Text style={styles.partyLine}>
                 {String(profile.registration_court)}, vl. č. {String(profile.registration_number || '')}
@@ -402,9 +410,9 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={styles.partyLine}>
               {String(invoice.buyer_postal_code || '')} {String(invoice.buyer_city || '')}
             </Text>
-            {invoice.buyer_ico && <Text style={styles.partyLine}>{'\n'}ICO: {String(invoice.buyer_ico)}</Text>}
-            {invoice.buyer_dic && <Text style={styles.partyLine}>DIC: {String(invoice.buyer_dic)}</Text>}
-            {invoice.buyer_ic_dph && <Text style={styles.partyLine}>IC DPH: {String(invoice.buyer_ic_dph)}</Text>}
+            {invoice.buyer_ico && <Text style={styles.partyLine}>{'\n'}IČO: {String(invoice.buyer_ico)}</Text>}
+            {invoice.buyer_dic && <Text style={styles.partyLine}>DIČ: {String(invoice.buyer_dic)}</Text>}
+            {invoice.buyer_ic_dph && <Text style={styles.partyLine}>IČ DPH: {String(invoice.buyer_ic_dph)}</Text>}
           </View>
         </View>
 
@@ -551,7 +559,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             Vystavené v systéme Peppol Faktúra | Peppol BIS 3.0
           </Text>
           <Text style={styles.footerText}>
-            {String(profile.company_name)} | ICO: {String(profile.ico)}
+            {String(profile.company_name)} | IČO: {String(profile.ico)}
           </Text>
         </View>
       </Page>

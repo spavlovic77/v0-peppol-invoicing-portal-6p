@@ -592,16 +592,16 @@ export default function NewInvoicePage() {
   }
 
   const steps = [
-    { label: 'Zakladne udaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
-    { label: 'Odberatel', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} /> },
-    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} /> },
-    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} /> },
+    { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
+    { label: 'Odberateľ', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} /> },
+    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} /> },
+    { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} /> },
   ]
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : isCorrectionMode ? 'Opravny doklad' : 'Nova faktura'}</h1>
+        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : 'Nová faktúra'}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {activeSupplier.company_name}
         </p>
@@ -617,7 +617,7 @@ export default function NewInvoicePage() {
           disabled={step === 0}
           className="px-6 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-30"
         >
-          Spat
+          Späť
         </button>
 
         {step < steps.length - 1 ? (
@@ -625,7 +625,7 @@ export default function NewInvoicePage() {
             onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
             className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
-            Dalej
+            Ďalej
           </button>
         ) : (
           <button
