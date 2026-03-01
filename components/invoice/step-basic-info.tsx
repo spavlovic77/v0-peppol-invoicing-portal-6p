@@ -21,7 +21,11 @@ interface Props {
 
 export function StepBasicInfo({ formData, updateForm }: Props) {
   const needsIban = bankTransferCodes.includes(formData.payment_means_code)
-  const ibanMissing = needsIban && !formData.iban?.trim()
+  const rawIban = (formData.iban || '').replace(/\s/g, '').toUpperCase()
+  const ibanMissing = needsIban && !rawIban
+  // IBAN format: 2 letters + 2 digits + 4-30 alphanumeric chars (ISO 13616)
+  const ibanValid = !rawIban || /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(rawIban)
+  const ibanError = needsIban && rawIban && !ibanValid
   return (
     <div className="space-y-6">
       <GlassCard>
@@ -96,11 +100,13 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
         {/* IBAN + Bank fields (shown when payment means requires bank transfer) */}
         {needsIban && (
           <>
-            {ibanMissing && (
+            {(ibanMissing || ibanError) && (
               <div className="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
                 <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <p className="text-sm text-destructive">
-                  Pre bankovy prevod je IBAN povinny (BR-61). Vyplnte ho tu alebo v profile dodavatela.
+                  {ibanMissing
+                    ? 'Pre bankovy prevod je IBAN povinny (BR-61). Vyplnte ho tu alebo v profile dodavatela.'
+                    : 'IBAN nema platny format. Spravny format: SK89 7500 0000 0000 1234 5678 (2 pismena + 2 cisla + 4-30 znakov)'}
                 </p>
               </div>
             )}
@@ -112,8 +118,8 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
                   type="text"
                   value={formData.iban || ''}
                   onChange={(e) => updateForm({ iban: e.target.value.replace(/\s/g, '').toUpperCase() || null })}
-                  className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground font-mono text-sm"
-                  placeholder="SK89 7500 0000 0000 1234 5678"
+                  className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground font-mono text-sm ${ibanError ? 'ring-2 ring-destructive' : ''}`}
+                  placeholder="SK8975000000000012345678"
                 />
               </div>
               <div>
