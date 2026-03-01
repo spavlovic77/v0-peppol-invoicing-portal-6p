@@ -14,10 +14,10 @@ import { useState, useRef, useEffect } from 'react'
 import type { Supplier } from '@/lib/supplier-context'
 
 const tabs = [
-  { href: '/dashboard', label: 'Fakt\u00FAry', icon: ReceiptText },
-  { href: '/invoices/new', label: 'Nov\u00E1', icon: Plus },
+  { href: '/dashboard', label: 'Faktúry', icon: ReceiptText },
+  { href: '/invoices/new', label: 'Nová', icon: Plus },
   { href: '/suppliers', label: 'Firmy', icon: Building2 },
-  { href: '/buyers', label: 'Odberate\u013Eia', icon: Contact },
+  { href: '/buyers', label: 'Odberatelia', icon: Contact },
 ]
 
 export function Navbar() {
@@ -94,7 +94,7 @@ export function Navbar() {
                   <Building2 className="w-3.5 h-3.5 text-primary" />
                 </div>
                 <span className="text-sm font-semibold text-foreground truncate">
-                  {activeSupplier?.company_name ?? 'Vybra\u0165 dod\u00E1vate\u013Ea'}
+                  {activeSupplier?.company_name ?? 'Vybrať dodávateľa'}
                 </span>
                 <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform', showDropdown && 'rotate-180')} />
               </button>
@@ -128,7 +128,7 @@ export function Navbar() {
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Prida\u0165 dod\u00E1vate\u013Ea
+                      Pridať dodávateľa
                     </Link>
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export function Navbar() {
               <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
                 <FileText className="w-3.5 h-3.5 text-primary" />
               </div>
-              <span className="font-semibold text-foreground text-sm">Zrob e-fakt\u00FAru</span>
+              <span className="font-semibold text-foreground text-sm">Zrob e-faktúru</span>
             </Link>
           )}
 
@@ -148,7 +148,7 @@ export function Navbar() {
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              aria-label="Prepn\u00FA\u0165 t\u00E9mu"
+              aria-label="Prepnúť tému"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -174,7 +174,7 @@ export function Navbar() {
                       className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
-                      Odhl\u00E1si\u0165 sa
+                      Odhlásiť sa
                     </button>
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export function Navbar() {
           <div className="relative w-[90vw] max-w-sm bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                <h3 className="text-base font-semibold">Nov\u00E1 fakt\u00FAra</h3>
+                <h3 className="text-base font-semibold">Nová faktúra</h3>
               <button
                 onClick={() => setShowNewInvoiceModal(false)}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -263,7 +263,7 @@ export function Navbar() {
             {/* Body */}
             <div className="px-5 py-4 space-y-3">
               <p className="text-sm text-muted-foreground">
-                Fakt\u00FAra bude vystaven\u00E1 za dod\u00E1vate\u013Ea:
+                Faktúra bude vystavená za dodávateľa:
               </p>
 
               {/* Supplier pick list */}
@@ -303,14 +303,14 @@ export function Navbar() {
                 onClick={() => setShowNewInvoiceModal(false)}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
-                Zru\u0161i\u0165
+                Zrušiť
               </button>
               <button
                 onClick={handleModalConfirm}
                 disabled={!modalSupplier}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                Pokra\u010Dova\u0165
+                Pokračovať
               </button>
             </div>
           </div>

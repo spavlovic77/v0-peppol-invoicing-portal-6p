@@ -260,7 +260,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
         <div>
           <div className="flex items-center gap-2 mb-2.5">
             <Star className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">\u010Cast\u00ED odberate\u013Eia</span>
+            <span className="text-sm font-medium text-foreground">Častí odberatelia</span>
           </div>
           <div className="grid gap-2">
             {frequentBuyers.map((b) => {
@@ -298,7 +298,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Contact className="w-4 h-4" />
-            <span>{showAllContacts ? 'Skry\u0165 ostatn\u00FDch' : `Zobrazi\u0165 v\u0161etk\u00FDch (${restContacts.length})`}</span>
+            <span>{showAllContacts ? 'Skryť ostatných' : `Zobraziť všetkých (${restContacts.length})`}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllContacts ? 'rotate-180' : ''}`} />
           </button>
           {showAllContacts && (
@@ -325,7 +325,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-3">
           <Search className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Vyh\u013Eada\u0165 pod\u013Ea I\u010CO</h2>
+          <h2 className="text-sm font-semibold text-foreground">Vyhľadať podľa IČO</h2>
         </div>
         <div className="flex gap-2">
           <input
@@ -342,7 +342,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
             className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
           >
             {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            H\u013Eada\u0165
+            Hľadať
           </button>
         </div>
       </GlassCard>
@@ -351,14 +351,14 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <Building2 className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">\u00DAdaje odberate\u013Ea</h2>
+          <h2 className="text-sm font-semibold text-foreground">Údaje odberateľa</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-3">
           <div className="md:col-span-2">
-            <label className="block text-xs text-muted-foreground mb-1">N\u00E1zov firmy *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Názov firmy *</label>
             <input id="buyer_name" type="text" value={formData.buyer_name}
               onChange={(e) => updateForm({ buyer_name: e.target.value })}
-              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" placeholder="N\u00E1zov odberate\u013Ea" />
+              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" placeholder="Názov odberateľa" />
           </div>
           <div>
             <label className="block text-xs text-muted-foreground mb-1">ICO</label>
@@ -432,13 +432,13 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
             {peppolStatus === 'found' && (
               <>
                 <CheckCircle2 className="w-4 h-4 text-success" />
-                <span className="text-success font-medium">Odberate\u013E je registrovan\u00FD na Peppol</span>
+                <span className="text-success font-medium">Odberateľ je registrovaný na Peppol</span>
               </>
             )}
             {peppolStatus === 'not_found' && (
               <>
                 <XCircle className="w-4 h-4 text-warning" />
-                <span className="text-warning font-medium">Odberate\u013E nie je registrovan\u00FD na Peppol</span>
+                <span className="text-warning font-medium">Odberateľ nie je registrovaný na Peppol</span>
               </>
             )}
             {peppolStatus === 'no_key' && (

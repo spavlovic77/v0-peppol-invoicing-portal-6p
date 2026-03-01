@@ -6,12 +6,12 @@ import { useState, useCallback } from 'react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
 const paymentMethods = [
-  { value: '30', label: 'Bankov\u00FD prevod' },
+  { value: '30', label: 'Bankový prevod' },
   { value: '58', label: 'SEPA prevod' },
   { value: '48', label: 'Platba kartou' },
-  { value: '10', label: 'Hotovos\u0165' },
-  { value: '42', label: 'Na \u00FA\u010Det' },
-  { value: '1', label: 'Nezadan\u00E9 / in\u00E9' },
+  { value: '10', label: 'Hotovosť' },
+  { value: '42', label: 'Na účet' },
+  { value: '1', label: 'Nezadané / iné' },
 ]
 
 const bankTransferCodes = ['30', '58']
@@ -44,12 +44,12 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <FileText className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Z\u00E1kladn\u00E9 \u00FAdaje fakt\u00FAry</h2>
+          <h2 className="font-semibold text-foreground">Základné údaje faktúry</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              \u010C\u00EDslo fakt\u00FAry *
+              Číslo faktúry *
             </label>
             <input
               id="invoice_number"
@@ -60,7 +60,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               placeholder="FV-2026-0001"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Automaticky generovan\u00E9, m\u00F4\u017Eete zmeni\u0165
+              Automaticky generované, môžete zmeniť
             </p>
           </div>
           <div>
@@ -72,9 +72,9 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
             >
               <option value="EUR">EUR - Euro</option>
-              <option value="CZK">CZK - \u010Cesk\u00E1 koruna</option>
-              <option value="USD">USD - Americk\u00FD dol\u00E1r</option>
-              <option value="GBP">GBP - Britsk\u00E1 libra</option>
+              <option value="CZK">CZK - Česká koruna</option>
+              <option value="USD">USD - Americký dolár</option>
+              <option value="GBP">GBP - Britská libra</option>
             </select>
           </div>
         </div>
@@ -83,11 +83,11 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <CreditCard className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Forma \u00FAhrady</h2>
+          <h2 className="font-semibold text-foreground">Forma úhrady</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-muted-foreground mb-1.5">Sp\u00F4sob platby</label>
+            <label className="block text-sm text-muted-foreground mb-1.5">Spôsob platby</label>
             <select
               value={formData.payment_means_code}
               onChange={(e) => updateForm({ payment_means_code: e.target.value })}
@@ -99,7 +99,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-muted-foreground mb-1.5">Variabiln\u00FD symbol</label>
+            <label className="block text-sm text-muted-foreground mb-1.5">Variabilný symbol</label>
             <input
               type="text"
               value={formData.variable_symbol || ''}
@@ -118,7 +118,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
                 <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <p className="text-sm text-destructive">
-                  Pre bankov\u00FD prevod je IBAN povinn\u00FD (BR-61). Vypl\u0148te ho tu alebo v profile dod\u00E1vate\u013Ea.
+                  Pre bankový prevod je IBAN povinný (BR-61). Vyplňte ho tu alebo v profile dodávateľa.
                 </p>
               </div>
             )}
@@ -136,7 +136,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-emerald-400">
-                  IBAN je platn\u00FD ({ibanResult.country})
+                  IBAN je platný ({ibanResult.country})
                 </p>
               </div>
             )}
@@ -168,7 +168,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
                       ? `${ibanResult.cleaned.length} / ${ibanResult.expectedLength} znakov`
                       : ibanResult.cleaned.length > 0
                         ? `${ibanResult.cleaned.length} znakov`
-                        : 'Zadajte IBAN v \u013Eubovo\u013Enom form\u00E1te'}
+                        : 'Zadajte IBAN v ľubovoľnom formáte'}
                   </p>
                   {ibanResult.country && ibanResult.cleaned.length >= 2 && (
                     <p className="text-xs text-muted-foreground font-medium">{ibanResult.country}</p>
@@ -176,7 +176,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-muted-foreground mb-1.5">N\u00E1zov banky</label>
+                <label className="block text-sm text-muted-foreground mb-1.5">Názov banky</label>
                 <input
                   type="text"
                   value={formData.bank_name || ''}
@@ -193,12 +193,12 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <CalendarDays className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">D\u00E1tumy</h2>
+          <h2 className="font-semibold text-foreground">Dátumy</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              D\u00E1tum vystavenia *
+              Dátum vystavenia *
             </label>
             <input
               id="issue_date"
@@ -210,7 +210,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              D\u00E1tum splatnosti *
+              Dátum splatnosti *
             </label>
             <input
               id="due_date"
@@ -222,7 +222,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              D\u00E1tum dodania
+              Dátum dodania
             </label>
             <input
               type="date"
@@ -238,19 +238,19 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              Referencia objedn\u00E1vky
+              Referencia objednávky
             </label>
             <input
               type="text"
               value={formData.order_reference || ''}
               onChange={(e) => updateForm({ order_reference: e.target.value || null })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
-              placeholder="\u010C\u00EDslo objedn\u00E1vky"
+              placeholder="Číslo objednávky"
             />
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              Referencia odberate\u013Ea
+              Referencia odberateľa
             </label>
             <input
               id="buyer_reference"
@@ -263,14 +263,14 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm text-muted-foreground mb-1.5">
-              Pozn\u00E1mka na fakt\u00FAre
+              Poznámka na faktúre
             </label>
             <textarea
               value={formData.note || ''}
               onChange={(e) => updateForm({ note: e.target.value || null })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground resize-none"
               rows={2}
-              placeholder="Volite\u013En\u00E1 pozn\u00E1mka..."
+              placeholder="Voliteľná poznámka..."
             />
           </div>
         </div>

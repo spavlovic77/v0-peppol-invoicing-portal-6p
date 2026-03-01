@@ -154,7 +154,7 @@ export default function OnboardingPage() {
             Vitajte v Peppol Portal
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Zadajte I\u010CO va\u0161ej spolo\u010Dnosti a automaticky vypln\u00EDme v\u0161etky \u00FAdaje
+            Zadajte IČO vašej spoločnosti a automaticky vyplníme všetky údaje
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="ico" className="block text-sm font-medium text-foreground mb-2">
-                I\u010CO spolo\u010Dnosti
+                IČO spoločnosti
               </label>
               <div className="relative">
                 <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
               {phase === 'searching' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  H\u013Ead\u00E1m v registri...
+                  Hľadám v registri...
                 </>
               ) : phase === 'saving' ? (
                 <>
@@ -213,7 +213,7 @@ export default function OnboardingPage() {
               ) : (
                 <>
                   <Search className="w-5 h-5" />
-                  Vyh\u013Eada\u0165 a pokra\u010Dova\u0165
+                  Vyhľadať a pokračovať
                 </>
               )}
             </button>
@@ -245,7 +245,7 @@ export default function OnboardingPage() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
             >
               <Building2 className="w-3.5 h-3.5" />
-              Pou\u017Ei\u0165 demo \u00FA\u010Det
+              Použiť demo účet
             </button>
           </div>
         )}

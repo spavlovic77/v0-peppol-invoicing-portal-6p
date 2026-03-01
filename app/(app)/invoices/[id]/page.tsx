@@ -205,9 +205,9 @@ export default function InvoiceDetailPage() {
       : 'text-warning bg-warning/15'
 
   const statusLabel =
-    invoice.status === 'valid' ? 'Validn\u00E1'
-      : invoice.status === 'sent' ? 'Odoslan\u00E1'
-      : invoice.status === 'invalid' ? 'Nevalidn\u00E1'
+    invoice.status === 'valid' ? 'Validná'
+      : invoice.status === 'sent' ? 'Odoslaná'
+      : invoice.status === 'invalid' ? 'Nevalidná'
       : 'Koncept'
 
   const isValid = invoice.status === 'valid' || invoice.status === 'sent'
@@ -262,27 +262,27 @@ export default function InvoiceDetailPage() {
             href={`/invoices/new?edit=${invoice.id}`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
           >
-            <Pencil className="w-3.5 h-3.5" /> Upravi\u0165
+            <Pencil className="w-3.5 h-3.5" /> Upraviť
           </Link>
         ) : (
           <button
             onClick={() => setShowEditModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
           >
-            <Pencil className="w-3.5 h-3.5" /> Upravi\u0165
+            <Pencil className="w-3.5 h-3.5" /> Upraviť
           </button>
         )}
         <Link
           href={`/invoices/new?duplicate=${invoice.id}`}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
         >
-          <Copy className="w-3.5 h-3.5" /> Duplikova\u0165
+          <Copy className="w-3.5 h-3.5" /> Duplikovať
         </Link>
         <button
           onClick={handleDelete}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
-          <Trash2 className="w-3.5 h-3.5" /> Zmaza\u0165
+          <Trash2 className="w-3.5 h-3.5" /> Zmazať
         </button>
         {!invoice.xml_content && (
           <button
@@ -295,7 +295,7 @@ export default function InvoiceDetailPage() {
             }`}
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-            {generating ? 'Generujem...' : 'Generova\u0165 XML'}
+            {generating ? 'Generujem...' : 'Generovať XML'}
           </button>
         )}
       </div>
@@ -329,7 +329,7 @@ export default function InvoiceDetailPage() {
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
         >
           <RotateCcw className="w-4 h-4" />
-          Vytvori\u0165 opravn\u00FD doklad (dobropis)
+          Vytvoriť opravný doklad (dobropis)
         </Link>
       )}
 
@@ -347,7 +347,7 @@ export default function InvoiceDetailPage() {
                 <div className="w-8 h-8 rounded-lg bg-warning/15 flex items-center justify-center">
                   <AlertTriangle className="w-4 h-4 text-warning" />
                 </div>
-                <h3 className="text-base font-semibold">\u00DAprava fakt\u00FAry</h3>
+                <h3 className="text-base font-semibold">Úprava faktúry</h3>
               </div>
               <button
                 onClick={() => setShowEditModal(false)}
@@ -381,7 +381,7 @@ export default function InvoiceDetailPage() {
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-warning text-warning-foreground text-sm font-medium hover:bg-warning/90 transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Vytvori\u0165 dobropis (odpor\u00FA\u010Dan\u00E9)
+                  Vytvoriť dobropis (odporúčané)
                 </Link>
               )}
               <div className="flex gap-2">
@@ -389,14 +389,14 @@ export default function InvoiceDetailPage() {
                   onClick={() => setShowEditModal(false)}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                 >
-                  Zru\u0161i\u0165
+                  Zrušiť
                 </button>
                 <Link
                   href={`/invoices/new?edit=${invoice.id}`}
                   onClick={() => setShowEditModal(false)}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-center"
                 >
-                  Upravi\u0165 aj tak
+                  Upraviť aj tak
                 </Link>
               </div>
             </div>
@@ -419,12 +419,12 @@ export default function InvoiceDetailPage() {
                 {invoice.peppol_send_status === 'sent' && (
                   <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">
                     {polling && <Loader2 className="w-3 h-3 animate-spin" />}
-                    Odoslan\u00E9
+                    Odoslané
                   </span>
                 )}
                 {invoice.peppol_send_status === 'delivered' && (
                   <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/15 text-success">
-                    <CheckCircle2 className="w-3 h-3" /> Doru\u010Den\u00E9
+                    <CheckCircle2 className="w-3 h-3" /> Doručené
                   </span>
                 )}
                 {invoice.peppol_send_status === 'failed' && (

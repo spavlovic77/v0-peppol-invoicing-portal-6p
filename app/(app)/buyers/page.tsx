@@ -185,7 +185,7 @@ export default function BuyersPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Odberate\u013Eia</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Odberatelia</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Kontakty pre {activeSupplier.company_name}
           </p>
@@ -196,7 +196,7 @@ export default function BuyersPage() {
             className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Prida\u0165 odberate\u013Ea
+            Pridať odberateľa
           </button>
         )}
       </div>
@@ -206,7 +206,7 @@ export default function BuyersPage() {
         <GlassCard>
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-semibold text-foreground">
-              {editingId ? 'Upravi\u0165 odberate\u013Ea' : 'Nov\u00FD odberate\u013E'}
+              {editingId ? 'Upraviť odberateľa' : 'Nový odberateľ'}
             </h2>
             <button onClick={() => { setShowForm(false); setEditingId(null) }} className="text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
@@ -228,7 +228,7 @@ export default function BuyersPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
-            <BField label="N\u00E1zov firmy *" value={form.company_name} onChange={(v) => setForm({ ...form, company_name: v })} />
+            <BField label="Názov firmy *" value={form.company_name} onChange={(v) => setForm({ ...form, company_name: v })} />
             <BField label="DIC" value={form.dic || ''} onChange={(v) => setForm({ ...form, dic: v })} />
             <BField label="IC DPH" value={form.ic_dph || ''} onChange={(v) => setForm({ ...form, ic_dph: v })} />
             <BField label="E-mail" value={form.email || ''} onChange={(v) => setForm({ ...form, email: v })} />
@@ -243,7 +243,7 @@ export default function BuyersPage() {
               className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {editingId ? 'Ulo\u017Ei\u0165 zmeny' : 'Prida\u0165 kontakt'}
+              {editingId ? 'Uložiť zmeny' : 'Pridať kontakt'}
             </button>
           </div>
         </GlassCard>
@@ -253,7 +253,7 @@ export default function BuyersPage() {
       {buyers.length === 0 && !showForm ? (
         <GlassCard className="text-center py-16">
           <Contact className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">\u017Diadne ulo\u017Een\u00E9 kontakty</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Žiadne uložené kontakty</h2>
           <p className="text-muted-foreground">
             Pridajte odberatelov, aby ste ich mohli rychlo pouzit pri tvorbe faktury
           </p>
