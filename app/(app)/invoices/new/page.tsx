@@ -23,6 +23,7 @@ function mapRuleToField(ruleId: string): { step: number; field: string } {
   if (r.includes('STRUCT-02')) return { step: 0, field: 'issue_date' }
   if (r.includes('STRUCT-03')) return { step: 0, field: 'due_date' }
   if (r.includes('BR-05')) return { step: 0, field: 'currency' }
+  if (r.includes('BR-61') || r.includes('BANK-R001') || r.includes('R041')) return { step: 0, field: 'iban' }
   if (r.includes('PEPPOL') && r.includes('R003')) return { step: 0, field: 'buyer_reference' }
   if (r.includes('PEPPOL') && r.includes('R007')) return { step: 0, field: 'buyer_reference' }
   if (r.includes('STRUCT-07') || r.includes('BR-07')) return { step: 1, field: 'buyer_name' }

@@ -1,5 +1,5 @@
 import { GlassCard } from '@/components/glass-card'
-import { CalendarDays, FileText, CreditCard } from 'lucide-react'
+import { CalendarDays, FileText, CreditCard, AlertTriangle } from 'lucide-react'
 
 const paymentMethods = [
   { value: '30', label: 'Bankovy prevod' },
@@ -9,6 +9,9 @@ const paymentMethods = [
   { value: '42', label: 'Na ucet' },
   { value: '1', label: 'Nezadane / ine' },
 ]
+
+const bankTransferCodes = ['30', '58']
+
 import type { InvoiceFormData } from '@/lib/schemas'
 
 interface Props {
@@ -17,6 +20,8 @@ interface Props {
 }
 
 export function StepBasicInfo({ formData, updateForm }: Props) {
+  const needsIban = bankTransferCodes.includes(formData.payment_means_code)
+  const ibanMissing = needsIban && !formData.iban?.trim()
   return (
     <div className="space-y-6">
       <GlassCard>
@@ -87,6 +92,43 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
             />
           </div>
         </div>
+
+        {/* IBAN + Bank fields (shown when payment means requires bank transfer) */}
+        {needsIban && (
+          <>
+            {ibanMissing && (
+              <div className="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
+                  Pre bankovy prevod je IBAN povinny (BR-61). Vyplnte ho tu alebo v profile dodavatela.
+                </p>
+              </div>
+            )}
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1.5">IBAN *</label>
+                <input
+                  id="iban"
+                  type="text"
+                  value={formData.iban || ''}
+                  onChange={(e) => updateForm({ iban: e.target.value.replace(/\s/g, '').toUpperCase() || null })}
+                  className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground font-mono text-sm"
+                  placeholder="SK89 7500 0000 0000 1234 5678"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1.5">Nazov banky</label>
+                <input
+                  type="text"
+                  value={formData.bank_name || ''}
+                  onChange={(e) => updateForm({ bank_name: e.target.value || null })}
+                  className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+                  placeholder="Nazov banky"
+                />
+              </div>
+            </div>
+          </>
+        )}
       </GlassCard>
 
       <GlassCard>
