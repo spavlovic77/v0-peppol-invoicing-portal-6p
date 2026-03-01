@@ -38,7 +38,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const provider = searchParams.get('provider') === 'apple' ? 'apple' : 'google'
 
-  const options: Record<string, unknown> = {}
+  const options: Record<string, unknown> = {
+    queryParams: { prompt: 'select_account' },
+  }
   if (siteUrl) {
     options.redirectTo = `${siteUrl}/auth/callback`
   }
