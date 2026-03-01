@@ -601,7 +601,7 @@ export default function NewInvoicePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : isCorrectionMode ? 'Opravny doklad' : 'Nova faktura'}</h1>
+        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : 'Nová faktúra'}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {activeSupplier.company_name}
         </p>
