@@ -4,9 +4,20 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, FileText, FileCode, Zap, ArrowLeft, CheckCircle2, XCircle, Copy, Pencil, Trash2, Send, Globe } from 'lucide-react'
+import {
+  Loader2,
+  Zap,
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Copy,
+  Pencil,
+  Trash2,
+  Globe,
+} from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
-import { ValidationDisplay } from '@/components/invoice/validation-display'
+import { ValidationPipeline } from '@/components/invoice/validation-pipeline'
+import { DownloadActions } from '@/components/invoice/download-actions'
 import Link from 'next/link'
 
 interface InvoiceData {
@@ -35,7 +46,6 @@ interface InvoiceData {
   iban: string | null
   swift: string | null
   variable_symbol: string | null
-
   supplier_id: string | null
   peppol_send_status: string | null
   peppol_transaction_id: string | null
@@ -93,7 +103,6 @@ export default function InvoiceDetailPage() {
       setValidation(inv.validation_errors)
     }
 
-    // Check if the supplier has an AP API key
     if (inv.supplier_id) {
       const { data: supplier } = await supabase
         .from('suppliers')
@@ -113,6 +122,7 @@ export default function InvoiceDetailPage() {
   async function handleGenerate() {
     if (!invoice) return
     setGenerating(true)
+    setValidation(null) // Reset to trigger fresh animation
 
     try {
       const res = await fetch('/api/invoice/generate', {
@@ -128,7 +138,9 @@ export default function InvoiceDetailPage() {
       }
 
       setValidation(data.validation)
-      toast.success(data.allPassed ? 'Faktura uspesne vygenerovana a validna' : 'Faktura vygenerovana s chybami')
+      toast.success(
+        data.allPassed ? 'Faktura uspesne vygenerovana a validna' : 'Faktura vygenerovana s chybami'
+      )
       loadInvoice()
     } catch (err) {
       toast.error((err as Error).message)
@@ -137,38 +149,9 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  function downloadXml() {
-    if (!invoice?.xml_content) return
-    const blob = new Blob([invoice.xml_content], { type: 'application/xml' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${invoice.invoice_number}.xml`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  async function downloadPdf() {
-    if (!invoice) return
-    try {
-      const res = await fetch(`/api/invoice/pdf?id=${invoice.id}`)
-      if (!res.ok) throw new Error('PDF generation failed')
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${invoice.invoice_number}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      toast.error('Chyba pri generovani PDF: ' + (err as Error).message)
-    }
-  }
-
   async function handleDelete() {
     if (!invoice) return
-    if (!confirm(`Naozaj chcete zmazat fakturu ${invoice.invoice_number}? Tuto akciu nie je mozne vratit.`)) return
-    // Delete items first (cascade should handle it, but be explicit)
+    if (!confirm(`Naozaj chcete zmazat fakturu ${invoice.invoice_number}?`)) return
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     const { error } = await supabase.from('invoices').delete().eq('id', invoice.id)
     if (error) {
@@ -195,7 +178,6 @@ export default function InvoiceDetailPage() {
       toast.success('Faktura bola odoslana na Peppol siet')
       await loadInvoice()
 
-      // Start polling for delivery status
       if (data.transactionId) {
         pollDeliveryStatus(data.transactionId, invoice.id)
       }
@@ -209,7 +191,7 @@ export default function InvoiceDetailPage() {
   const pollingRef = React.useRef(false)
 
   async function pollDeliveryStatus(txId: string, invId: string) {
-    if (pollingRef.current) return // prevent double-polling
+    if (pollingRef.current) return
     pollingRef.current = true
     setPolling(true)
     let attempts = 0
@@ -234,7 +216,7 @@ export default function InvoiceDetailPage() {
         }
 
         if (attempts < maxAttempts) {
-          setTimeout(poll, 5000) // poll every 5s
+          setTimeout(poll, 5000)
         } else {
           pollingRef.current = false
           setPolling(false)
@@ -249,7 +231,6 @@ export default function InvoiceDetailPage() {
     poll()
   }
 
-  // Auto-poll if invoice was already sent but pending (only once on mount)
   const autoPolledRef = React.useRef(false)
   useEffect(() => {
     if (autoPolledRef.current) return
@@ -294,10 +275,10 @@ export default function InvoiceDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Spat na prehlad
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            Faktura {invoice.invoice_number}
-          </h1>
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              Faktura {invoice.invoice_number}
+            </h1>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
               {statusLabel}
             </span>
@@ -306,6 +287,7 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
+        {/* Compact action bar */}
         <div className="flex flex-wrap gap-2">
           {invoice.status === 'draft' && (
             <Link
@@ -330,80 +312,55 @@ export default function InvoiceDetailPage() {
             <Trash2 className="w-4 h-4" />
             <span className="hidden md:inline">Zmazat</span>
           </button>
-          {!invoice.xml_content && (
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {generating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Zap className="w-4 h-4" />
-              )}
-              {generating ? 'Generujem...' : 'Generovat Peppol XML'}
-            </button>
-          )}
-
-          {invoice.xml_content && (
-            <>
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-50"
-              >
-                {generating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Zap className="w-4 h-4" />
-                )}
-                Regenerovat
-              </button>
-              <button
-                onClick={downloadXml}
-                disabled={invoice.status === 'invalid'}
-                title={invoice.status === 'invalid' ? 'Faktura obsahuje validacne chyby' : 'Stiahnut XML'}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-              >
-                <FileCode className="w-4 h-4" />
-                XML
-              </button>
-              <button
-                onClick={downloadPdf}
-                disabled={invoice.status === 'invalid'}
-                title={invoice.status === 'invalid' ? 'Faktura obsahuje validacne chyby' : 'Stiahnut PDF'}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary/40"
-              >
-                <FileText className="w-4 h-4" />
-                PDF
-              </button>
-              {hasApKey && invoice.status === 'valid' && !invoice.peppol_send_status && (
-                <button
-                  onClick={handleSendPeppol}
-                  disabled={sending}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-success text-white font-medium hover:bg-success/90 transition-colors disabled:opacity-50"
-                >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {sending ? 'Odosielam...' : 'Odoslat cez Peppol'}
-                </button>
-              )}
-            </>
-          )}
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 ml-auto"
+          >
+            {generating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4" />
+            )}
+            {generating
+              ? 'Generujem...'
+              : invoice.xml_content
+              ? 'Regenerovat'
+              : 'Generovat Peppol XML'}
+          </button>
         </div>
       </div>
 
-      {/* Validation Accordion */}
-      {validation && Array.isArray(validation) && (
-        <ValidationDisplay phases={validation} />
+      {/* Validation Pipeline -- the star of the show */}
+      {(generating || (validation && Array.isArray(validation))) && (
+        <ValidationPipeline
+          phases={Array.isArray(validation) ? validation : []}
+          isGenerating={generating && !validation}
+        />
+      )}
+
+      {/* Download Actions -- large cards */}
+      {invoice.xml_content && (
+        <DownloadActions
+          invoice={invoice}
+          hasApKey={hasApKey}
+          peppolStatus={invoice.peppol_send_status}
+          onSendPeppol={handleSendPeppol}
+          sending={sending}
+        />
       )}
 
       {/* Peppol Delivery Status */}
       {invoice.peppol_send_status && (
-        <GlassCard className={
-          invoice.peppol_send_status === 'delivered' ? 'border-success/30' :
-          invoice.peppol_send_status === 'failed' ? 'border-destructive/30' :
-          'border-primary/30'
-        }>
+        <GlassCard
+          className={
+            invoice.peppol_send_status === 'delivered'
+              ? 'border-success/30'
+              : invoice.peppol_send_status === 'failed'
+              ? 'border-destructive/30'
+              : 'border-primary/30'
+          }
+        >
           <div className="flex items-center gap-3">
             <Globe className="w-5 h-5 text-primary shrink-0" />
             <div className="flex-1">
@@ -429,14 +386,15 @@ export default function InvoiceDetailPage() {
                 )}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {invoice.peppol_sent_at && `Odoslane: ${new Date(invoice.peppol_sent_at).toLocaleString('sk-SK')}`}
+                {invoice.peppol_sent_at &&
+                  `Odoslane: ${new Date(invoice.peppol_sent_at).toLocaleString('sk-SK')}`}
                 {invoice.peppol_transaction_id && (
-                  <span className="ml-2 font-mono">TX: {invoice.peppol_transaction_id.slice(0, 12)}...</span>
+                  <span className="ml-2 font-mono">
+                    TX: {invoice.peppol_transaction_id.slice(0, 12)}...
+                  </span>
                 )}
               </div>
-              {polling && (
-                <div className="text-xs text-primary mt-1">Overujem dorucenie...</div>
-              )}
+              {polling && <div className="text-xs text-primary mt-1">Overujem dorucenie...</div>}
             </div>
             {invoice.peppol_send_status === 'failed' && hasApKey && (
               <button
@@ -451,8 +409,8 @@ export default function InvoiceDetailPage() {
         </GlassCard>
       )}
 
-      {/* Invoice Info */}
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* Invoice Info Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Datum vystavenia</div>
           <div className="text-foreground font-medium">{invoice.issue_date}</div>
@@ -460,6 +418,12 @@ export default function InvoiceDetailPage() {
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Datum splatnosti</div>
           <div className="text-foreground font-medium">{invoice.due_date}</div>
+        </GlassCard>
+        <GlassCard>
+          <div className="text-xs text-muted-foreground mb-1">Zaklad dane</div>
+          <div className="text-foreground font-medium">
+            {fmt(invoice.total_without_vat)} {invoice.currency}
+          </div>
         </GlassCard>
         <GlassCard>
           <div className="text-xs text-muted-foreground mb-1">Na uhradu</div>
@@ -475,15 +439,23 @@ export default function InvoiceDetailPage() {
         <div className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
             <div className="text-foreground font-medium">{invoice.buyer_name}</div>
-            {invoice.buyer_street && <div className="text-muted-foreground">{invoice.buyer_street}</div>}
+            {invoice.buyer_street && (
+              <div className="text-muted-foreground">{invoice.buyer_street}</div>
+            )}
             <div className="text-muted-foreground">
               {invoice.buyer_postal_code} {invoice.buyer_city}
             </div>
           </div>
           <div className="space-y-1">
-            {invoice.buyer_ico && <div className="text-muted-foreground">ICO: {invoice.buyer_ico}</div>}
-            {invoice.buyer_dic && <div className="text-muted-foreground">DIC: {invoice.buyer_dic}</div>}
-            {invoice.buyer_ic_dph && <div className="text-muted-foreground">IC DPH: {invoice.buyer_ic_dph}</div>}
+            {invoice.buyer_ico && (
+              <div className="text-muted-foreground">ICO: {invoice.buyer_ico}</div>
+            )}
+            {invoice.buyer_dic && (
+              <div className="text-muted-foreground">DIC: {invoice.buyer_dic}</div>
+            )}
+            {invoice.buyer_ic_dph && (
+              <div className="text-muted-foreground">IC DPH: {invoice.buyer_ic_dph}</div>
+            )}
           </div>
         </div>
       </GlassCard>
@@ -515,7 +487,9 @@ export default function InvoiceDetailPage() {
                     {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
                   </td>
                   <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
-                  <td className="py-2 text-right text-foreground font-medium">{fmt(item.line_total)}</td>
+                  <td className="py-2 text-right text-foreground font-medium">
+                    {fmt(item.line_total)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -525,20 +499,24 @@ export default function InvoiceDetailPage() {
         <div className="mt-4 pt-4 border-t border-border space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Zaklad dane:</span>
-            <span className="text-foreground">{fmt(invoice.total_without_vat)} {invoice.currency}</span>
+            <span className="text-foreground">
+              {fmt(invoice.total_without_vat)} {invoice.currency}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">DPH:</span>
-            <span className="text-foreground">{fmt(invoice.total_vat)} {invoice.currency}</span>
+            <span className="text-foreground">
+              {fmt(invoice.total_vat)} {invoice.currency}
+            </span>
           </div>
           <div className="flex justify-between font-bold">
             <span className="text-foreground">Na uhradu:</span>
-            <span className="text-primary">{fmt(invoice.total_with_vat)} {invoice.currency}</span>
+            <span className="text-primary">
+              {fmt(invoice.total_with_vat)} {invoice.currency}
+            </span>
           </div>
         </div>
       </GlassCard>
-
-
     </div>
   )
 }
