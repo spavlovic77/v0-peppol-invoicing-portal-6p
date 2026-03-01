@@ -134,6 +134,7 @@ export function LandingContent() {
           </div>
           <span className="text-2xl font-bold text-foreground">{'Zrobenie e-faktúry'}</span>
         </div>
+        <p className="text-lg text-muted-foreground mb-8">pre drobečkov</p>
 
         {/* Google Sign In - server-side route to avoid localhost redirect */}
         <a
