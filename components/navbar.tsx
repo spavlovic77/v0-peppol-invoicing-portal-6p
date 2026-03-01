@@ -10,7 +10,6 @@ import {
   ChevronDown, Contact, Sun, Moon, ReceiptText, X, Check,
   ArrowLeftRight, RefreshCw, Sparkles,
 } from 'lucide-react'
-import { useAiPanel } from '@/lib/ai-context'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
 import type { Supplier } from '@/lib/supplier-context'
@@ -26,8 +25,19 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
-  const { isOpen: aiOpen, togglePanel: toggleAi } = useAiPanel()
   const { suppliers, activeSupplier, setActiveSupplier } = useActiveSupplier()
+  const [aiOpen, setAiOpen] = useState(false)
+
+  // Listen for AI panel state broadcasts (from AiAssistantPanel)
+  useEffect(() => {
+    const handler = (e: CustomEvent) => setAiOpen(!!e.detail?.open)
+    window.addEventListener('ai-panel-state' as string, handler as EventListener)
+    return () => window.removeEventListener('ai-panel-state' as string, handler as EventListener)
+  }, [])
+
+  function toggleAi() {
+    window.dispatchEvent(new CustomEvent('ai-panel-toggle'))
+  }
   const [showDropdown, setShowDropdown] = useState(false)
   const [showUser, setShowUser] = useState(false)
   const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false)
