@@ -29,11 +29,16 @@ interface Props {
   formData: InvoiceFormData
   updateForm: (u: Partial<InvoiceFormData>) => void
   supplierId?: string
+  supplierIco?: string
 }
 
-export function StepBuyer({ formData, updateForm, supplierId }: Props) {
+const DEMO_SUPPLIER_ICO = '36353582'
+const DEMO_BUYER_ICO = '51431041'
+
+export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Props) {
   const [lookingUp, setLookingUp] = useState(false)
-  const [buyerIco, setBuyerIco] = useState(formData.buyer_ico || '')
+  const isDemo = supplierIco === DEMO_SUPPLIER_ICO
+  const [buyerIco, setBuyerIco] = useState(formData.buyer_ico || (isDemo ? DEMO_BUYER_ICO : ''))
   const [contacts, setContacts] = useState<BuyerContact[]>([])
   const [frequentBuyers, setFrequentBuyers] = useState<FrequentBuyer[]>([])
   const [showAllContacts, setShowAllContacts] = useState(false)

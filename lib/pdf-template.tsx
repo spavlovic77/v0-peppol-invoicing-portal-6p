@@ -287,6 +287,15 @@ function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<s
   rows: TaxRecapRow[]
   corrections: CorrectionRow[]
 } {
+  const unitLabel = (code: string) => {
+    const map: Record<string, string> = {
+      C62: 'ks', HUR: 'hod', DAY: 'deň', MON: 'mes', KGM: 'kg',
+      MTR: 'm', LTR: 'l', MTK: 'm²', MTQ: 'm³', KMT: 'km',
+      TNE: 't', SET: 'sada', XPK: 'bal',
+    }
+    return map[code] || code
+  }
+
   const lineExtTotal = items.reduce((s, it) => s + Number(it.line_total || 0), 0)
   const globalDiscountPct = Number(invoice.global_discount_percent || 0)
   const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
@@ -461,7 +470,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
               <Text style={styles.col1}>{i + 1}</Text>
               <Text style={styles.col2}>{String(item.description)}</Text>
               <Text style={styles.col3}>{String(item.quantity)}</Text>
-              <Text style={styles.col4}>{String(item.unit || 'ks')}</Text>
+              <Text style={styles.col4}>{unitLabel(String(item.unit || 'C62'))}</Text>
               <Text style={styles.col5}>{fmt(item.unit_price as number)}</Text>
               {isVatPayer && <Text style={styles.col6}>{String(item.vat_rate)}%</Text>}
               <Text style={styles.col7}>{fmt(item.line_total as number)}</Text>
