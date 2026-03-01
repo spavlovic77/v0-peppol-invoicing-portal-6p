@@ -26,6 +26,8 @@ interface Invoice {
   currency: string
   status: string
   created_at: string
+  correction_of: string | null
+  invoice_type_code: string | null
 }
 
 function monthKey(dateStr: string) {
@@ -129,9 +131,21 @@ export default function DashboardPage() {
       )
     : invoices
 
-  // Group by month
+  // Build parent -> corrections map
+  const correctionsMap = new Map<string, Invoice[]>()
+  const correctionIds = new Set<string>()
+  for (const inv of filtered) {
+    if (inv.correction_of) {
+      correctionIds.add(inv.id)
+      if (!correctionsMap.has(inv.correction_of)) correctionsMap.set(inv.correction_of, [])
+      correctionsMap.get(inv.correction_of)!.push(inv)
+    }
+  }
+
+  // Group by month (only top-level invoices; corrections rendered under their parent)
   const grouped = new Map<string, Invoice[]>()
   for (const inv of filtered) {
+    if (correctionIds.has(inv.id)) continue // skip corrections from top level
     const key = monthKey(inv.issue_date)
     if (!grouped.has(key)) grouped.set(key, [])
     grouped.get(key)!.push(inv)
@@ -244,54 +258,103 @@ export default function DashboardPage() {
 
               {/* Invoice rows as cards */}
               <div className="glass-card rounded-2xl divide-y divide-border overflow-hidden">
-                {monthInvoices.map((inv) => (
-                  <div
-                    key={inv.id}
-                    onClick={() => router.push(`/invoices/${inv.id}`)}
-                    className="flex items-center gap-3 px-3 py-3 cursor-pointer hover:bg-secondary/40 active:bg-secondary/60 transition-colors"
-                  >
-                    {/* Left: invoice info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm font-medium font-mono text-foreground">
-                          {inv.invoice_number}
-                        </span>
-                        <StatusBadge status={inv.status} />
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{inv.buyer_name}</p>
-                    </div>
+                {monthInvoices.map((inv) => {
+                  const corrections = correctionsMap.get(inv.id) || []
+                  const hasCorrections = corrections.length > 0
+                  return (
+                    <div key={inv.id}>
+                      {/* Parent invoice row */}
+                      <div
+                        onClick={() => router.push(`/invoices/${inv.id}`)}
+                        className="flex items-center gap-3 px-3 py-3 cursor-pointer hover:bg-secondary/40 active:bg-secondary/60 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm font-medium font-mono text-foreground">
+                              {inv.invoice_number}
+                            </span>
+                            <StatusBadge status={inv.status} />
+                            {hasCorrections && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">
+                                {corrections.length}x dobropis
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{inv.buyer_name}</p>
+                        </div>
 
-                    {/* Right: amount + actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-foreground">{fmt(inv.total_with_vat)}</p>
-                        <p className="text-xs text-muted-foreground">{inv.currency}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-foreground">{fmt(inv.total_with_vat)}</p>
+                            <p className="text-xs text-muted-foreground">{inv.currency}</p>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            {(inv.status === 'valid' || inv.status === 'sent') && !inv.correction_of && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); router.push(`/invoices/new?correct=${inv.id}`) }}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                                title="Vytvorit dobropis"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => handleDelete(e, inv)}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Zmazat"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                        </div>
                       </div>
 
-                      {/* Quick actions */}
-                      <div className="flex items-center gap-0.5">
-                        {(inv.status === 'valid' || inv.status === 'sent') && !inv.invoice_number.startsWith('CN-') && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); router.push(`/invoices/new?correct=${inv.id}`) }}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
-                            title="Vytvorit dobropis"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => handleDelete(e, inv)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          title="Zmazat"
+                      {/* Indented correction rows */}
+                      {corrections.map((cn) => (
+                        <div
+                          key={cn.id}
+                          onClick={() => router.push(`/invoices/${cn.id}`)}
+                          className="flex items-center gap-3 pl-7 pr-3 py-2.5 cursor-pointer hover:bg-secondary/40 active:bg-secondary/60 transition-colors border-t border-border/50"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          {/* Connecting line */}
+                          <div className="w-4 flex items-center justify-center shrink-0">
+                            <div className="w-px h-full bg-amber-500/30 absolute" />
+                            <RotateCcw className="w-3 h-3 text-amber-500/60" />
+                          </div>
 
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-xs font-medium font-mono text-muted-foreground">
+                                {cn.invoice_number}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">
+                                Dobropis
+                              </span>
+                              <StatusBadge status={cn.status} />
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">{cn.buyer_name}</p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right">
+                              <p className="text-xs font-bold text-destructive">-{fmt(Math.abs(cn.total_with_vat))}</p>
+                              <p className="text-[10px] text-muted-foreground">{cn.currency}</p>
+                            </div>
+                            <button
+                              onClick={(e) => handleDelete(e, cn)}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Zmazat"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}

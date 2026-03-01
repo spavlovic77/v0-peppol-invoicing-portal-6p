@@ -240,7 +240,7 @@ export default function NewInvoicePage() {
             line_total: it.line_total as number,
           })),
         })
-        // Pre-fill buyer data from original
+        // Pre-fill buyer + payment data from original
         setFormData((prev) => ({
           ...prev,
           buyer_ico: srcInv.buyer_ico,
@@ -255,6 +255,12 @@ export default function NewInvoicePage() {
           buyer_peppol_id: srcInv.buyer_peppol_id,
           order_reference: srcInv.order_reference,
           buyer_reference: srcInv.buyer_reference,
+          // Carry over payment/bank details from the original invoice
+          iban: srcInv.iban || prev.iban,
+          bank_name: srcInv.bank_name || prev.bank_name,
+          swift: srcInv.swift || prev.swift,
+          payment_means_code: srcInv.payment_means_code || prev.payment_means_code,
+          variable_symbol: srcInv.variable_symbol || prev.variable_symbol,
         }))
       }
     }

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Building2, Plus, Pencil, CreditCard, Trash2 } from 'lucide-react'
+import { Building2, Plus, Pencil, CreditCard, Trash2, Receipt } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { SupplierCardSkeleton } from '@/components/skeleton'
@@ -11,6 +11,27 @@ import { SupplierCardSkeleton } from '@/components/skeleton'
 export default function SuppliersPage() {
   const { suppliers, activeSupplier, setActiveSupplier, loading, refreshSuppliers } = useActiveSupplier()
   const supabase = createClient()
+
+  async function handleSetBilling(id: string, name: string) {
+    // First, unset billing flag on all suppliers for this user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase
+      .from('suppliers')
+      .update({ is_billing_entity: false })
+      .eq('user_id', user.id)
+    // Then set the selected one
+    const { error } = await supabase
+      .from('suppliers')
+      .update({ is_billing_entity: true })
+      .eq('id', id)
+    if (error) {
+      toast.error('Chyba pri nastaveni fakturacneho subjektu: ' + error.message)
+    } else {
+      toast.success(`${name} je teraz fakturacny subjekt`)
+      await refreshSuppliers()
+    }
+  }
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Naozaj chcete zmazat dodavatela "${name}"? Vsetky faktury tohto dodavatela stratia priradenie.`)) return
@@ -107,6 +128,12 @@ export default function SuppliersPage() {
                             Aktivny
                           </span>
                         )}
+                        {s.is_billing_entity && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 shrink-0 flex items-center gap-1">
+                            <Receipt className="w-3 h-3" />
+                            Fakturacny subjekt
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                         <span>{'ICO: '}{s.ico}</span>
@@ -127,6 +154,16 @@ export default function SuppliersPage() {
                   </div>
 
                   <div className="flex items-center gap-2 pl-12" onClick={(e) => e.stopPropagation()}>
+                    {!s.is_billing_entity && (
+                      <button
+                        onClick={() => handleSetBilling(s.id, s.company_name)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 border border-border transition-colors"
+                        title="Nastavit ako fakturacny subjekt"
+                      >
+                        <Receipt className="w-3.5 h-3.5" />
+                        Fakturovat sem
+                      </button>
+                    )}
                     <Link
                       href={`/suppliers/${s.id}/edit`}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
