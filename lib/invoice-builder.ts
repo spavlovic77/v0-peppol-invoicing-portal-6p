@@ -86,10 +86,11 @@ export function buildPeppolInvoice(
   profile: SupplierProfile
 ): PeppolInvoice {
   const currency = invoice.currency || 'EUR'
-  const typeCode = invoice.invoice_type_code || '380'
   const invoiceMode = invoice.invoice_mode || 'standard'
   const isSelfBilling = invoiceMode === 'selfbilling'
   const isReverseCharge = invoiceMode === 'reversecharge'
+  // Self-billing MUST use 389, regardless of what is stored
+  const typeCode = isSelfBilling ? '389' : (invoice.invoice_type_code || '380')
   const isCreditNote381 = typeCode === '381'
   const isVatPayer = profile.is_vat_payer !== false
 
