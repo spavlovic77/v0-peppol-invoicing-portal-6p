@@ -63,7 +63,6 @@
     "@react-pdf/renderer": "^4.3.0",
     "zod": "^3.24.1",
     "ai": "^6.0.0",
-    "@ai-sdk/react": "^3.0.0",
     "react-markdown": "^9.0.0",
     "remark-gfm": "^4.0.0"
   },

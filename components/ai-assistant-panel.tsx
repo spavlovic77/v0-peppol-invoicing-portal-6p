@@ -1,13 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
-import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import type { UIMessage } from 'ai'
 
 const SUGGESTIONS = [
   'Co je pravidlo BR-AE-10?',
@@ -16,38 +13,81 @@ const SUGGESTIONS = [
   'Ako opravit prazdne XML elementy?',
 ]
 
-function getMessageText(msg: UIMessage): string {
-  if (!msg.parts || !Array.isArray(msg.parts)) return ''
-  return msg.parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('')
+interface ChatMsg {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
 }
+
+let msgCounter = 0
 
 export function AiAssistantPanel() {
   const { isOpen, closePanel, pageContext } = useAiPanel()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
+  const pageContextRef = useRef(pageContext)
+  pageContextRef.current = pageContext
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: '/api/ai/chat',
-        prepareSendMessagesRequest: ({ id, messages }) => ({
-          body: {
-            id,
-            messages,
-            pageContext,
-          },
-        }),
-      }),
-    [pageContext]
-  )
+  const sendMessage = useCallback(async (text: string) => {
+    const userMsg: ChatMsg = { id: `u-${++msgCounter}`, role: 'user', content: text }
+    const asstMsg: ChatMsg = { id: `a-${++msgCounter}`, role: 'assistant', content: '' }
+    setMessages((prev) => [...prev, userMsg, asstMsg])
+    setIsLoading(true)
 
-  const { messages, sendMessage, status, setMessages } = useChat({ transport })
+    const history = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }))
 
-  const isLoading = status === 'streaming' || status === 'submitted'
+    try {
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history, pageContext: pageContextRef.current }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok || !res.body) throw new Error('Failed')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let fullText = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+          const data = trimmed.slice(5).trim()
+          if (data === '[DONE]') continue
+          try {
+            const parsed = JSON.parse(data)
+            if (parsed.type === 'text-delta' && parsed.textDelta) {
+              fullText += parsed.textDelta
+              setMessages((prev) => prev.map((m) => m.id === asstMsg.id ? { ...m, content: fullText } : m))
+            }
+          } catch { /* skip */ }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') {
+        setMessages((prev) => prev.map((m) => m.id === asstMsg.id ? { ...m, content: 'Chyba pri komunikacii s AI. Skuste to znova.' } : m))
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [messages])
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -66,7 +106,7 @@ export function AiAssistantPanel() {
   function handleSubmit(text?: string) {
     const msg = (text || input).trim()
     if (!msg || isLoading) return
-    sendMessage({ text: msg })
+    sendMessage(msg)
     setInput('')
   }
 
@@ -161,7 +201,7 @@ export function AiAssistantPanel() {
                 ))
               )}
 
-              {isLoading && messages.length > 0 && getMessageText(messages[messages.length - 1]) === '' && (
+              {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="flex items-center gap-2 px-3 py-2">
                   <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
                   <span className="text-xs text-muted-foreground">Premyslam...</span>
@@ -209,9 +249,9 @@ export function AiAssistantPanel() {
   )
 }
 
-function MessageBubble({ message }: { message: UIMessage }) {
+function MessageBubble({ message }: { message: ChatMsg }) {
   const isUser = message.role === 'user'
-  const text = getMessageText(message)
+  const text = message.content
 
   if (!text) return null
 

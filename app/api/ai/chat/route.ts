@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from 'ai'
+import { streamText } from 'ai'
 
 const SYSTEM_PROMPT = `Si odborny AI asistent pre elektronicku fakturaciu. Tvoja expertiza pokryva:
 
@@ -77,10 +77,15 @@ export async function POST(req: Request) {
     contextInjection = `\n\n---\n[AKTUALNY KONTEXT STRANKY]\n${JSON.stringify(pageContext, null, 2)}\n---\nPouzi tento kontext pri odpovedani. Ak sa pyta na konkretne pravidlo alebo chybu, odkazuj sa na tieto data.`
   }
 
+  const modelMessages = (messages || []).map((m: { role: string; content: string }) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }))
+
   const result = streamText({
     model: 'openai/gpt-4o-mini',
     system: SYSTEM_PROMPT + contextInjection,
-    messages: await convertToModelMessages(messages),
+    messages: modelMessages,
     maxOutputTokens: 2048,
   })
 
