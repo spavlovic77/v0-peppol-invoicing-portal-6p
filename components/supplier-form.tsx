@@ -168,7 +168,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <input
             type="text"
             value={icoInput}
-            onChange={(e) => setIcoInput(e.target.value)}
+            onChange={(e) => setIcoInput(e.target.value.replace(/\s/g, ''))}
             placeholder="Zadajte ICO (napr. 36421928)"
             className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
             maxLength={10}
