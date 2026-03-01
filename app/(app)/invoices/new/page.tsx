@@ -73,20 +73,6 @@ export default function NewInvoicePage() {
   const isCorrectionMode = !!correctId
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
 
-  // Feed AI assistant with wizard context
-  useEffect(() => {
-    const stepNames = ['zakladne-udaje', 'odberatel', 'polozky', 'sumar']
-    setPageContext({
-      page: 'invoice-wizard',
-      step: stepNames[step] || step,
-      invoice_mode: invoiceMode,
-      invoice_number: formData.invoice_number,
-      buyer_name: formData.buyer_name,
-      items_count: formData.items?.length || 0,
-      is_correction: isCorrectionMode,
-    })
-  }, [step, invoiceMode, formData.invoice_number, formData.buyer_name, formData.items?.length, isCorrectionMode, setPageContext])
-
   const [originalInvoice, setOriginalInvoice] = useState<{
     id: string; invoice_number: string; issue_date: string; buyer_name: string;
     items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
@@ -122,6 +108,20 @@ export default function NewInvoicePage() {
     invoice_type_code: isSelfBilling ? '389' : '380',
     items: [makeDefaultItem(invoiceMode)],
   })
+
+  // Feed AI assistant with wizard context
+  useEffect(() => {
+    const stepNames = ['zakladne-udaje', 'odberatel', 'polozky', 'sumar']
+    setPageContext({
+      page: 'invoice-wizard',
+      step: stepNames[step] || step,
+      invoice_mode: invoiceMode,
+      invoice_number: formData.invoice_number,
+      buyer_name: formData.buyer_name,
+      items_count: formData.items?.length || 0,
+      is_correction: isCorrectionMode,
+    })
+  }, [step, invoiceMode, formData.invoice_number, formData.buyer_name, formData.items?.length, isCorrectionMode, setPageContext])
 
   const loadData = useCallback(async () => {
     if (!activeSupplier) { setLoading(false); return }
