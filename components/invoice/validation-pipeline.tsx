@@ -132,6 +132,9 @@ export function ValidationPipeline({ phases, isGenerating }: Props) {
 
   if (!phases.length) return null
 
+  // When all validations passed, show nothing -- the green status badge in the header is enough
+  if (allPassed && isFullyRevealed) return null
+
   return (
     <div className="space-y-4">
       {/* Summary banner */}
