@@ -20,7 +20,8 @@ interface ChatMsg {
 let msgCounter = 0
 
 export function AiAssistantPanel() {
-  const { isOpen, closePanel, pageContext } = useAiPanel()
+  const { pageContext } = useAiPanel()
+  const [isOpen, setIsOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [input, setInput] = useState('')
@@ -29,6 +30,22 @@ export function AiAssistantPanel() {
   const abortRef = useRef<AbortController | null>(null)
   const pageContextRef = useRef(pageContext)
   pageContextRef.current = pageContext
+
+  // Listen for toggle events from navbar
+  useEffect(() => {
+    const handler = () => setIsOpen((v) => !v)
+    window.addEventListener('ai-panel-toggle', handler)
+    return () => window.removeEventListener('ai-panel-toggle', handler)
+  }, [])
+
+  // Broadcast state back to navbar
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ai-panel-state', { detail: { open: isOpen } }))
+  }, [isOpen])
+
+  function closePanel() {
+    setIsOpen(false)
+  }
 
   const sendMessage = useCallback(async (text: string) => {
     const userMsg: ChatMsg = { id: `u-${++msgCounter}`, role: 'user', content: text }
