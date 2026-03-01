@@ -271,6 +271,13 @@ const styles = StyleSheet.create({
   },
 })
 
+/** Format ISO date YYYY-MM-DD to EU DD.MM.YYYY for PDF display */
+function fmtDateEu(iso: string): string {
+  const parts = iso.split('T')[0].split('-')
+  if (parts.length !== 3) return iso
+  return `${parts[2]}.${parts[1]}.${parts[0]}`
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
@@ -398,13 +405,13 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={styles.infoLabel}>Číslo faktúry</Text>
             <Text style={styles.infoValue}>{String(invoice.invoice_number)}</Text>
             <Text style={styles.infoLabel}>Dátum vystavenia</Text>
-            <Text style={styles.infoValue}>{String(invoice.issue_date)}</Text>
+            <Text style={styles.infoValue}>{fmtDateEu(String(invoice.issue_date))}</Text>
             <Text style={styles.infoLabel}>Dátum splatnosti</Text>
-            <Text style={styles.infoValue}>{String(invoice.due_date)}</Text>
+            <Text style={styles.infoValue}>{fmtDateEu(String(invoice.due_date))}</Text>
             {invoice.delivery_date && (
               <>
                 <Text style={styles.infoLabel}>Dátum dodania</Text>
-                <Text style={styles.infoValue}>{String(invoice.delivery_date)}</Text>
+                <Text style={styles.infoValue}>{fmtDateEu(String(invoice.delivery_date))}</Text>
               </>
             )}
           </View>
