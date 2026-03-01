@@ -206,14 +206,21 @@ export function validatePeppolSchematron(inv: PeppolInvoice): ValidationPhase {
   // PEPPOL-EN16931-R003: BuyerReference must be provided
   check('PEPPOL-EN16931-R003', !!inv.buyerReference, 'Referencia odberatela (BuyerReference) je povinna')
 
-  // PEPPOL-EN16931-R004: Specification identifier must be Peppol BIS 3.0 or Self-Billing
-  check('PEPPOL-EN16931-R004',
-    inv.customizationID.includes('peppol.eu:2017:poacc:billing:3.0') ||
-    inv.customizationID.includes('peppol.eu:2017:poacc:selfbilling:3.0'),
-    'CustomizationID musi obsahovat Peppol BIS 3.0 alebo Self-Billing identifikator')
+  // PEPPOL-EN16931-R004: Specification identifier MUST have the value
+  const validCustomizationIDs = [
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0',
+  ]
+  check('PEPPOL-EN16931-R004', validCustomizationIDs.includes(inv.customizationID),
+    `CustomizationID musi byt '${validCustomizationIDs[0]}' alebo self-billing ekvivalent`)
 
-  // PEPPOL-EN16931-R007: Buyer reference OR purchase order ref required
-  check('PEPPOL-EN16931-R007', !!inv.buyerReference || !!inv.orderReferenceId, 'Musi byt uvedena referencia odberatela alebo cislo objednavky')
+  // PEPPOL-EN16931-R007: Business process MUST be in the format 'urn:fdc:peppol.eu:2017:poacc:billing:NN:1.0' (or selfbilling equivalent)
+  const profilePattern = /^urn:fdc:peppol\.eu:2017:poacc:(billing|selfbilling):\d{2}:1\.0$/
+  check('PEPPOL-EN16931-R007', profilePattern.test(inv.profileID),
+    'ProfileID musi byt vo formate urn:fdc:peppol.eu:2017:poacc:billing:NN:1.0 (alebo selfbilling ekvivalent)')
+
+  // PEPPOL-EN16931-R006: Buyer reference OR purchase order ref required
+  check('PEPPOL-EN16931-R006', !!inv.buyerReference || !!inv.orderReferenceId, 'Musi byt uvedena referencia odberatela alebo cislo objednavky')
 
   // PEPPOL-EN16931-R008: Document currency code must be 3 letters
   check('PEPPOL-EN16931-R008', /^[A-Z]{3}$/.test(inv.documentCurrencyCode), 'Kod meny musi byt 3-pismenny ISO 4217 kod')

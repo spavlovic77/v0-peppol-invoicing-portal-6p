@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   -- Document identity
   invoice_number          VARCHAR(50) NOT NULL,
   invoice_type_code       TEXT DEFAULT '380',        -- 380=Invoice, 381=CreditNote
+  invoice_mode            TEXT DEFAULT 'standard',   -- standard, selfbilling, reversecharge
   issue_date              DATE NOT NULL,
   due_date                DATE NOT NULL,
   delivery_date           DATE,
@@ -306,3 +307,30 @@ CREATE TABLE IF NOT EXISTS vat_rates (
   sort_order  INTEGER DEFAULT 0,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- --------------------------------------------------------
+-- 8. Seed Data -- Slovak VAT rates
+-- Source: Zákon č. 222/2004 Z.z. o dani z pridanej hodnoty
+-- --------------------------------------------------------
+INSERT INTO vat_rates (rate, label_sk, label_en, category_id, valid_from, is_active, sort_order) VALUES
+  (23.00, 'Základná sadzba (od 2025)',     'Standard rate (from 2025)',    'S', '2025-01-01', TRUE,  10),
+  (19.00, 'Znížená sadzba (od 2025)',      'Reduced rate (from 2025)',     'S', '2025-01-01', TRUE,  20),
+  (10.00, 'Znížená sadzba',               'Reduced rate',                 'S', '2025-01-01', TRUE,  30),
+  (5.00,  'Znížená sadzba',               'Super-reduced rate',           'S', '2025-01-01', TRUE,  40),
+  (0.00,  'Oslobodené od dane',            'Exempt / zero rate',           'O', '2025-01-01', TRUE,  50)
+ON CONFLICT (rate) DO UPDATE SET
+  label_sk    = EXCLUDED.label_sk,
+  label_en    = EXCLUDED.label_en,
+  category_id = EXCLUDED.category_id,
+  is_active   = EXCLUDED.is_active,
+  sort_order  = EXCLUDED.sort_order;
+
+-- Historical rate (inactive, kept for older invoices)
+INSERT INTO vat_rates (rate, label_sk, label_en, category_id, valid_from, valid_to, is_active, sort_order) VALUES
+  (20.00, 'Základná sadzba (do 2024)',     'Standard rate (until 2024)',   'S', '2004-01-01', '2024-12-31', FALSE, 60)
+ON CONFLICT (rate) DO UPDATE SET
+  label_sk    = EXCLUDED.label_sk,
+  label_en    = EXCLUDED.label_en,
+  valid_to    = EXCLUDED.valid_to,
+  is_active   = EXCLUDED.is_active,
+  sort_order  = EXCLUDED.sort_order;
