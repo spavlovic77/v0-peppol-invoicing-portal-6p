@@ -7,10 +7,11 @@ import { useActiveSupplier } from '@/lib/supplier-context'
 import { useTheme } from '@/lib/theme-provider'
 import {
   FileText, Plus, LogOut, Building2,
-  ChevronDown, Contact, Sun, Moon, ReceiptText,
+  ChevronDown, Contact, Sun, Moon, ReceiptText, X, Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
+import type { Supplier } from '@/lib/supplier-context'
 
 const tabs = [
   { href: '/dashboard', label: 'Faktury', icon: ReceiptText },
@@ -26,6 +27,8 @@ export function Navbar() {
   const { suppliers, activeSupplier, setActiveSupplier } = useActiveSupplier()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showUser, setShowUser] = useState(false)
+  const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false)
+  const [modalSupplier, setModalSupplier] = useState<Supplier | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -49,6 +52,25 @@ export function Navbar() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  function handleNewInvoiceClick(e: React.MouseEvent) {
+    e.preventDefault()
+    // Skip modal when there's only one supplier -- no choice to make
+    if (suppliers.length <= 1) {
+      router.push('/invoices/new')
+      return
+    }
+    setModalSupplier(activeSupplier)
+    setShowNewInvoiceModal(true)
+  }
+
+  function handleModalConfirm() {
+    if (modalSupplier && modalSupplier.id !== activeSupplier?.id) {
+      setActiveSupplier(modalSupplier)
+    }
+    setShowNewInvoiceModal(false)
+    router.push('/invoices/new')
   }
 
   const isTabActive = (href: string) => {
@@ -167,10 +189,12 @@ export function Navbar() {
         <div className="flex items-stretch justify-around h-14">
           {tabs.map(({ href, label, icon: Icon }) => {
             const active = isTabActive(href)
+            const isNova = href === '/invoices/new'
             return (
               <Link
                 key={href}
                 href={href}
+                onClick={isNova ? handleNewInvoiceClick : undefined}
                 className={cn(
                   'flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors',
                   active ? 'text-primary' : 'text-muted-foreground'
@@ -194,10 +218,12 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-3 flex items-center gap-1 h-10">
           {tabs.map(({ href, label, icon: Icon }) => {
             const active = isTabActive(href)
+            const isNova = href === '/invoices/new'
             return (
               <Link
                 key={href}
                 href={href}
+                onClick={isNova ? handleNewInvoiceClick : undefined}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
                   active
@@ -212,6 +238,84 @@ export function Navbar() {
           })}
         </div>
       </nav>
+
+      {/* ───── New Invoice Supplier Confirmation Modal ───── */}
+      {showNewInvoiceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowNewInvoiceModal(false)}
+          />
+          {/* Modal card */}
+          <div className="relative w-[90vw] max-w-sm bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="text-base font-semibold">Nova faktura</h3>
+              <button
+                onClick={() => setShowNewInvoiceModal(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Faktura bude vystavena za dodavatela:
+              </p>
+
+              {/* Supplier pick list */}
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {suppliers.map((s) => {
+                  const isSelected = s.id === modalSupplier?.id
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setModalSupplier(s)}
+                      className={cn(
+                        'w-full text-left px-3.5 py-3 rounded-xl text-sm transition-colors flex items-center gap-3',
+                        isSelected
+                          ? 'bg-primary/15 border border-primary/30'
+                          : 'border border-border hover:bg-secondary'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0',
+                        isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                      )}>
+                        {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground truncate">{s.company_name}</div>
+                        <div className="text-xs text-muted-foreground">ICO: {s.ico}</div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-5 py-4 border-t border-border">
+              <button
+                onClick={() => setShowNewInvoiceModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                Zrusit
+              </button>
+              <button
+                onClick={handleModalConfirm}
+                disabled={!modalSupplier}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                Pokracovat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -16,6 +16,24 @@ import { GlassCard } from '@/components/glass-card'
 import type { InvoiceFormData } from '@/lib/schemas'
 import Link from 'next/link'
 
+// Maps validation rule IDs to { step, field } for auto-focus on failure
+function mapRuleToField(ruleId: string): { step: number; field: string } {
+  const r = ruleId.toUpperCase()
+  if (r.includes('STRUCT-01') || r.includes('BR-02')) return { step: 0, field: 'invoice_number' }
+  if (r.includes('STRUCT-02')) return { step: 0, field: 'issue_date' }
+  if (r.includes('STRUCT-03')) return { step: 0, field: 'due_date' }
+  if (r.includes('BR-05')) return { step: 0, field: 'currency' }
+  if (r.includes('PEPPOL') && r.includes('R003')) return { step: 0, field: 'buyer_reference' }
+  if (r.includes('PEPPOL') && r.includes('R007')) return { step: 0, field: 'buyer_reference' }
+  if (r.includes('STRUCT-07') || r.includes('BR-07')) return { step: 1, field: 'buyer_name' }
+  if (r.includes('STRUCT-10')) return { step: 1, field: 'buyer_dic' }
+  if (r.includes('STRUCT-12') || r.includes('BR-09')) return { step: 1, field: 'buyer_country_code' }
+  if (r.includes('STRUCT-08') || r.includes('BR-21') || r.includes('BR-23')) return { step: 2, field: 'item_desc_0' }
+  if (r.includes('BR-22')) return { step: 2, field: 'item_qty_0' }
+  if (r.includes('BR-24') || r.includes('BR-25')) return { step: 2, field: 'item_price_0' }
+  return { step: 0, field: 'invoice_number' }
+}
+
 const defaultItem = {
   line_number: 1,
   description: '',
@@ -270,6 +288,31 @@ export default function NewInvoicePage() {
     if (!supplierLoading) loadData()
   }, [loadData, supplierLoading])
 
+  // Auto-focus on the field that caused a validation failure (when redirected back from handleCreate)
+  useEffect(() => {
+    const focusStepParam = searchParams.get('focusStep')
+    const focusFieldParam = searchParams.get('focusField')
+    if (focusStepParam !== null) {
+      const targetStep = parseInt(focusStepParam)
+      if (!isNaN(targetStep) && targetStep >= 0 && targetStep <= 3) {
+        setStep(targetStep)
+        // Delay focus to allow the step to render
+        if (focusFieldParam) {
+          setTimeout(() => {
+            const el = document.getElementById(focusFieldParam)
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              el.focus()
+              // Flash a red ring briefly to draw attention
+              el.classList.add('ring-2', 'ring-destructive')
+              setTimeout(() => el.classList.remove('ring-2', 'ring-destructive'), 3000)
+            }
+          }, 400)
+        }
+      }
+    }
+  }, [searchParams])
+
   function updateForm(updates: Partial<InvoiceFormData>) {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
@@ -447,11 +490,25 @@ export default function NewInvoicePage() {
           router.push('/dashboard')
           return
         }
+
+        // Validation failed -> find first failed rule, redirect back to edit mode
+        if (genData.validation) {
+          type Phase = { checks: { ruleId: string; passed: boolean; message: string }[] }
+          const firstFailed = (genData.validation as Phase[])
+            .flatMap((p) => p.checks)
+            .find((c) => !c.passed)
+          if (firstFailed) {
+            const { step: focusStep, field: focusField } = mapRuleToField(firstFailed.ruleId)
+            toast.error(firstFailed.message)
+            router.push(`/invoices/new?edit=${invoiceId}&focusStep=${focusStep}&focusField=${focusField}`)
+            return
+          }
+        }
       } catch {
         // Generation failed silently, redirect to detail to let user manually retry
       }
 
-      // Validation failed or generation error -> redirect to detail page to show errors
+      // Fallback: generation error without validation -> go to detail
       toast.warning(isEditMode ? 'Faktura ulozena, ale validacia nepresla' : 'Faktura vytvorena, ale najdene chyby')
       router.push(`/invoices/${invoiceId}`)
     } catch (err) {

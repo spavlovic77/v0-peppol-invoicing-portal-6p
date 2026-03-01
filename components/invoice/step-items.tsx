@@ -118,6 +118,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Popis *</label>
                 <input
+                  id={`item_desc_${i}`}
                   type="text"
                   value={item.description}
                   onChange={(e) => updateItem(i, { description: e.target.value })}
@@ -130,6 +131,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Mnozstvo</label>
                   <input
+                    id={`item_qty_${i}`}
                     type="number"
                     value={item.quantity}
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
@@ -153,6 +155,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">{isVatPayer ? 'Cena/j. bez DPH' : 'Cena/j.'}</label>
                   <input
+                    id={`item_price_${i}`}
                     type="number"
                     value={item.unit_price}
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
