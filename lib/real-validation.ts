@@ -71,6 +71,21 @@ function buildPhaseFromResults(
   return { name, description, results, passed: errors.length === 0 }
 }
 
+/**
+ * Self-billing invoices use different CustomizationID / ProfileID URNs
+ * (poacc:selfbilling:3.0 / poacc:selfbilling:01:1.0).
+ * peppolvalidator.com runs the standard BIS 3.0 schematron which rejects them.
+ * We suppress R004 / R007 false positives for self-billing XML.
+ */
+const SELF_BILLING_SUPPRESSED_RULES = new Set([
+  'PEPPOL-EN16931-R004',
+  'PEPPOL-EN16931-R007',
+])
+
+function isSelfBillingXml(xml: string): boolean {
+  return xml.includes('poacc:selfbilling:')
+}
+
 async function validateViaApi(xml: string): Promise<[ValidationPhase, ValidationPhase, ValidationPhase]> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
@@ -89,6 +104,8 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
     clearTimeout(timer)
   }
 
+  const selfBilling = isSelfBillingXml(xml)
+
   // Split items into 3 buckets
   const xsdResults: ValidationResult[] = []
   const enResults: ValidationResult[] = []
@@ -97,6 +114,12 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
   const bucketMap = { xsd: xsdResults, en: enResults, peppol: peppolResults }
 
   for (const item of body.errors ?? []) {
+    const ruleId = (item.id ?? item.rule ?? '').toUpperCase()
+    // Suppress false positives for self-billing URNs
+    if (selfBilling && SELF_BILLING_SUPPRESSED_RULES.has(ruleId)) {
+      peppolResults.push(apiItemToResult(item, true, 'warning'))
+      continue
+    }
     const bucket = bucketMap[classifyItem(item)]
     bucket.push(apiItemToResult(item, false, 'error'))
   }
