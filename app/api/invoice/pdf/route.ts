@@ -65,7 +65,16 @@ export async function GET(req: Request) {
       profile,
     })
 
-    const buffer = await renderToBuffer(element)
+    console.log('[v0] PDF element created, starting renderToBuffer...')
+    let buffer: Buffer
+    try {
+      buffer = await renderToBuffer(element)
+      console.log('[v0] PDF buffer generated, size:', buffer.length)
+    } catch (renderErr) {
+      const re = renderErr as Error
+      console.error('[v0] renderToBuffer failed:', re.message, re.stack)
+      throw renderErr
+    }
 
     return new NextResponse(buffer, {
       headers: {
@@ -75,9 +84,9 @@ export async function GET(req: Request) {
     })
   } catch (err) {
     const e = err as Error
-    console.error('PDF generation error:', e.message)
+    console.error('[v0] PDF generation error:', e.message, e.stack)
     return NextResponse.json(
-      { error: 'Chyba pri generovani PDF: ' + e.message },
+      { error: 'PDF generation failed', detail: e.message },
       { status: 500 }
     )
   }

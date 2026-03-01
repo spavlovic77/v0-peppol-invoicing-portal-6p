@@ -39,7 +39,10 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
     setDownloadingPdf(true)
     try {
       const res = await fetch(`/api/invoice/pdf?id=${invoice.id}`)
-      if (!res.ok) throw new Error('PDF generation failed')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || body.error || `HTTP ${res.status}`)
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -71,7 +74,10 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
       await new Promise((r) => setTimeout(r, 300))
       // Download PDF
       const res = await fetch(`/api/invoice/pdf?id=${invoice.id}`)
-      if (!res.ok) throw new Error('PDF generation failed')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || body.error || `HTTP ${res.status}`)
+      }
       const pdfBlob = await res.blob()
       const pdfUrl = URL.createObjectURL(pdfBlob)
       const pdfA = document.createElement('a')
