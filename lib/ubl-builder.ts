@@ -95,29 +95,29 @@ export function buildUblXml(inv: PeppolInvoice): string {
       <cbc:ID>${escapeXml(inv.billingReferenceNumber)}</cbc:ID>${inv.billingReferenceDate ? `
       <cbc:IssueDate>${escapeXml(inv.billingReferenceDate)}</cbc:IssueDate>` : ''}
     </cac:InvoiceDocumentReference>
-  </cac:BillingReference>\n  ` : ''}<cac:AccountingSupplierParty>
+  </cac:BillingReference>\n  ` : ''}  <cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="${escapeXml(inv.supplierEndpointSchemeId)}">${escapeXml(stripEndpointScheme(inv.supplierEndpointId))}</cbc:EndpointID>
       <cac:PartyName>
         <cbc:Name>${escapeXml(inv.supplierPartyName)}</cbc:Name>
       </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>${escapeXml(inv.supplierStreet)}</cbc:StreetName>
-        <cbc:CityName>${escapeXml(inv.supplierCity)}</cbc:CityName>
-        <cbc:PostalZone>${escapeXml(inv.supplierPostalCode)}</cbc:PostalZone>
+      <cac:PostalAddress>${inv.supplierStreet ? `
+        <cbc:StreetName>${escapeXml(inv.supplierStreet)}</cbc:StreetName>` : ''}${inv.supplierCity ? `
+        <cbc:CityName>${escapeXml(inv.supplierCity)}</cbc:CityName>` : ''}${inv.supplierPostalCode ? `
+        <cbc:PostalZone>${escapeXml(inv.supplierPostalCode)}</cbc:PostalZone>` : ''}
         <cac:Country>
           <cbc:IdentificationCode>${escapeXml(inv.supplierCountryCode)}</cbc:IdentificationCode>
         </cac:Country>
-      </cac:PostalAddress>
+      </cac:PostalAddress>${inv.supplierTaxId ? `
       <cac:PartyTaxScheme>
         <cbc:CompanyID>${escapeXml(inv.supplierTaxId)}</cbc:CompanyID>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
-      </cac:PartyTaxScheme>
+      </cac:PartyTaxScheme>` : ''}
       <cac:PartyLegalEntity>
-        <cbc:RegistrationName>${escapeXml(inv.supplierPartyName)}</cbc:RegistrationName>
-        <cbc:CompanyID>${escapeXml(inv.supplierCompanyId)}</cbc:CompanyID>
+        <cbc:RegistrationName>${escapeXml(inv.supplierPartyName)}</cbc:RegistrationName>${inv.supplierCompanyId ? `
+        <cbc:CompanyID>${escapeXml(inv.supplierCompanyId)}</cbc:CompanyID>` : ''}
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingSupplierParty>
@@ -127,10 +127,10 @@ export function buildUblXml(inv: PeppolInvoice): string {
       <cac:PartyName>
         <cbc:Name>${escapeXml(inv.customerPartyName)}</cbc:Name>
       </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>${escapeXml(inv.customerStreet)}</cbc:StreetName>
-        <cbc:CityName>${escapeXml(inv.customerCity)}</cbc:CityName>
-        <cbc:PostalZone>${escapeXml(inv.customerPostalCode)}</cbc:PostalZone>
+      <cac:PostalAddress>${inv.customerStreet ? `
+        <cbc:StreetName>${escapeXml(inv.customerStreet)}</cbc:StreetName>` : ''}${inv.customerCity ? `
+        <cbc:CityName>${escapeXml(inv.customerCity)}</cbc:CityName>` : ''}${inv.customerPostalCode ? `
+        <cbc:PostalZone>${escapeXml(inv.customerPostalCode)}</cbc:PostalZone>` : ''}
         <cac:Country>
           <cbc:IdentificationCode>${escapeXml(inv.customerCountryCode)}</cbc:IdentificationCode>
         </cac:Country>
@@ -164,16 +164,16 @@ export function buildUblXml(inv: PeppolInvoice): string {
   }
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>${escapeXml(inv.paymentMeansCode)}</cbc:PaymentMeansCode>${
-      inv.paymentId
+      inv.paymentId && inv.paymentId.trim()
         ? `
     <cbc:PaymentID>${escapeXml(inv.paymentId)}</cbc:PaymentID>`
         : ''
     }${
-      inv.iban
+      inv.iban && inv.iban.trim()
         ? `
     <cac:PayeeFinancialAccount>
       <cbc:ID>${escapeXml(inv.iban)}</cbc:ID>${
-          inv.bic
+          inv.bic && inv.bic.trim()
             ? `
       <cac:FinancialInstitutionBranch>
         <cbc:ID>${escapeXml(inv.bic)}</cbc:ID>
@@ -186,8 +186,8 @@ export function buildUblXml(inv: PeppolInvoice): string {
   </cac:PaymentMeans>
 ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:AllowanceCharge>
     <cbc:ChargeIndicator>${a.isCharge ? 'true' : 'false'}</cbc:ChargeIndicator>
-    <cbc:AllowanceChargeReasonCode>${escapeXml(a.reasonCode || '95')}</cbc:AllowanceChargeReasonCode>
-    <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>
+    <cbc:AllowanceChargeReasonCode>${escapeXml(a.reasonCode || '95')}</cbc:AllowanceChargeReasonCode>${a.reason ? `
+    <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>` : ''}
     <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>
     <cac:TaxCategory>
       <cbc:ID>${escapeXml(a.taxCategoryId)}</cbc:ID>
