@@ -1,33 +1,22 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
-import path from 'path'
-import fs from 'fs'
 
-let PDF_FONT = 'Helvetica'
-let PDF_FONT_BOLD = 'Helvetica-Bold'
+// Noto Sans – Google's font designed for universal Unicode coverage.
+// latin-ext subset includes all Slovak diacritics (ľ, š, č, ť, ž, ý, á, í, é, ú, ä, ô, ň, ď, ŕ).
+// Served from jsdelivr CDN (Cloudflare + Fastly backed, 99.99% uptime).
+// react-pdf supports .woff format natively.
+const FONT_BASE = 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest'
 
-try {
-  const fontsDir = path.join(process.cwd(), 'node_modules', '@fontsource', 'roboto', 'files')
-  const regularPath = path.join(fontsDir, 'roboto-latin-400-normal.woff')
-  const boldPath = path.join(fontsDir, 'roboto-latin-700-normal.woff')
+Font.register({
+  family: 'NotoSans',
+  fonts: [
+    { src: `${FONT_BASE}/latin-ext-400-normal.woff`, fontWeight: 'normal' },
+    { src: `${FONT_BASE}/latin-ext-700-normal.woff`, fontWeight: 'bold' },
+  ],
+})
 
-  if (fs.existsSync(regularPath) && fs.existsSync(boldPath)) {
-    Font.register({
-      family: 'Roboto',
-      fonts: [
-        { src: regularPath, fontWeight: 'normal' },
-        { src: boldPath, fontWeight: 'bold' },
-      ],
-    })
-    PDF_FONT = 'Roboto'
-    PDF_FONT_BOLD = 'Roboto'
-    console.log('[pdf] Roboto font registered successfully')
-  } else {
-    console.warn('[pdf] Roboto font files not found, falling back to Helvetica')
-  }
-} catch (e) {
-  console.warn('[pdf] Font registration failed, falling back to Helvetica:', e)
-}
+const PDF_FONT = 'NotoSans'
+const PDF_FONT_BOLD = 'NotoSans'
 
 const styles = StyleSheet.create({
   page: {
