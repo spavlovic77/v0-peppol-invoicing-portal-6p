@@ -60,6 +60,7 @@
     "swr": "^2.2.5",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.1",
+    "@fontsource/roboto": "^5.0.0",
     "@react-pdf/renderer": "^4.3.0",
     "zod": "^3.24.1"
   },
