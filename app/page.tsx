@@ -25,7 +25,7 @@ export default async function RootPage({
           .limit(1)
 
         if (!suppliers || suppliers.length === 0) {
-          redirect('/suppliers/new')
+          redirect('/onboarding')
         }
       }
       redirect('/dashboard')
