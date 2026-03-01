@@ -45,6 +45,9 @@ interface InvoiceData {
   buyer_reference: string | null
   payment_means_code: string
   variable_symbol: string | null
+  iban: string | null
+  bank_name: string | null
+  swift: string | null
   note: string | null
   global_discount_percent: number
   global_discount_amount: number
