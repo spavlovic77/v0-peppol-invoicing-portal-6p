@@ -1,21 +1,38 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
 import path from 'path'
+import fs from 'fs'
 
-const fontsDir = path.join(process.cwd(), 'public', 'fonts')
+let PDF_FONT = 'Helvetica'
+let PDF_FONT_BOLD = 'Helvetica-Bold'
 
-Font.register({
-  family: 'Roboto',
-  fonts: [
-    { src: path.join(fontsDir, 'Roboto-Regular.ttf'), fontWeight: 'normal' },
-    { src: path.join(fontsDir, 'Roboto-Bold.ttf'), fontWeight: 'bold' },
-  ],
-})
+try {
+  const fontsDir = path.join(process.cwd(), 'node_modules', '@fontsource', 'roboto', 'files')
+  const regularPath = path.join(fontsDir, 'roboto-latin-400-normal.woff')
+  const boldPath = path.join(fontsDir, 'roboto-latin-700-normal.woff')
+
+  if (fs.existsSync(regularPath) && fs.existsSync(boldPath)) {
+    Font.register({
+      family: 'Roboto',
+      fonts: [
+        { src: regularPath, fontWeight: 'normal' },
+        { src: boldPath, fontWeight: 'bold' },
+      ],
+    })
+    PDF_FONT = 'Roboto'
+    PDF_FONT_BOLD = 'Roboto'
+    console.log('[pdf] Roboto font registered successfully')
+  } else {
+    console.warn('[pdf] Roboto font files not found, falling back to Helvetica')
+  }
+} catch (e) {
+  console.warn('[pdf] Font registration failed, falling back to Helvetica:', e)
+}
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Roboto',
+    fontFamily: PDF_FONT,
     fontSize: 9,
     color: '#1a1a2e',
   },
@@ -29,7 +46,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     color: '#1e3a5f',
   },
   subtitle: {
@@ -47,7 +64,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 10,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     marginBottom: 6,
   },
   partiesRow: {
@@ -64,14 +81,14 @@ const styles = StyleSheet.create({
   partyTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
   },
   partyName: {
     fontSize: 11,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     marginBottom: 4,
   },
   partyLine: {
@@ -91,7 +108,7 @@ const styles = StyleSheet.create({
   tableHeaderText: {
     color: '#ffffff',
     fontSize: 8,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     textTransform: 'uppercase',
   },
   tableRow: {
@@ -133,7 +150,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 9,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
   },
   totalDivider: {
     borderBottomWidth: 1,
@@ -142,12 +159,12 @@ const styles = StyleSheet.create({
   },
   grandTotalLabel: {
     fontSize: 12,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     color: '#1a1a2e',
   },
   grandTotalValue: {
     fontSize: 14,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     color: '#1e3a5f',
   },
   paymentBox: {
@@ -159,7 +176,7 @@ const styles = StyleSheet.create({
   paymentTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
@@ -176,7 +193,7 @@ const styles = StyleSheet.create({
   },
   paymentValue: {
     fontSize: 9,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
   },
   footer: {
     position: 'absolute',
@@ -203,7 +220,7 @@ const styles = StyleSheet.create({
   noteLabel: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     marginBottom: 3,
   },
   noteText: {
@@ -216,7 +233,7 @@ const styles = StyleSheet.create({
   recapTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 6,
@@ -229,7 +246,7 @@ const styles = StyleSheet.create({
   },
   recapHeaderText: {
     fontSize: 8,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
     color: '#1e3a5f',
   },
   recapRow: {
@@ -251,7 +268,7 @@ const styles = StyleSheet.create({
   recapCol4: { width: '25%', textAlign: 'right' },
   recapBold: {
     fontSize: 9,
-    fontFamily: 'Roboto', fontWeight: 'bold',
+    fontFamily: PDF_FONT_BOLD, fontWeight: 'bold',
   },
   recapText: {
     fontSize: 9,
