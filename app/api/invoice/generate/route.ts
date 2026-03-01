@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { buildPeppolInvoice } from '@/lib/invoice-builder'
 import { buildUblXml } from '@/lib/ubl-builder'
+import { buildCreditNoteXml } from '@/lib/ubl-creditnote-builder'
 import { validateInvoiceXml } from '@/lib/real-validation'
 import { NextResponse } from 'next/server'
 
@@ -66,8 +67,9 @@ export async function POST(req: Request) {
     // Deterministic build -- no AI, no cost, instant
     const peppolInvoice = buildPeppolInvoice(invoice, items, profile)
 
-    // Build UBL XML
-    const xml = buildUblXml(peppolInvoice)
+    // Build UBL XML -- CreditNote (381) or Invoice (380)
+    const isCreditNote = invoice.invoice_type_code === '381'
+    const xml = isCreditNote ? buildCreditNoteXml(peppolInvoice) : buildUblXml(peppolInvoice)
 
     // Validate
     const validationResults = await validateInvoiceXml(xml, peppolInvoice)

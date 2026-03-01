@@ -348,6 +348,10 @@ interface InvoicePdfProps {
 }
 
 export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps) {
+  // Detect non-VAT payer: check profile flag or if all items are category O / rate 0
+  const isVatPayer = profile.is_vat_payer !== false &&
+    !(items.length > 0 && items.every((it) => Number(it.vat_rate || 0) === 0 && (it.vat_category === 'O' || !it.vat_category)))
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -355,7 +359,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>FAKTURA</Text>
-            <Text style={styles.subtitle}>Danovy doklad</Text>
+            <Text style={styles.subtitle}>{isVatPayer ? 'Danovy doklad' : 'Faktura - dodavatel nie je platcom DPH'}</Text>
           </View>
           <View style={styles.invoiceInfo}>
             <Text style={styles.infoLabel}>Cislo faktury</Text>
@@ -412,7 +416,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={[styles.tableHeaderText, styles.col3]}>Mn.</Text>
             <Text style={[styles.tableHeaderText, styles.col4]}>MJ</Text>
             <Text style={[styles.tableHeaderText, styles.col5]}>Cena/MJ</Text>
-            <Text style={[styles.tableHeaderText, styles.col6]}>DPH</Text>
+            {isVatPayer && <Text style={[styles.tableHeaderText, styles.col6]}>DPH</Text>}
             <Text style={[styles.tableHeaderText, styles.col7]}>Celkom</Text>
           </View>
           {items.map((item, i) => (
@@ -422,14 +426,14 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
               <Text style={styles.col3}>{String(item.quantity)}</Text>
               <Text style={styles.col4}>{String(item.unit || 'ks')}</Text>
               <Text style={styles.col5}>{fmt(item.unit_price as number)}</Text>
-              <Text style={styles.col6}>{String(item.vat_rate)}%</Text>
+              {isVatPayer && <Text style={styles.col6}>{String(item.vat_rate)}%</Text>}
               <Text style={styles.col7}>{fmt(item.line_total as number)}</Text>
             </View>
           ))}
         </View>
 
         {/* VAT Recapitulation */}
-        {(() => {
+        {isVatPayer && (() => {
           const { rows, corrections } = buildRecapitulation(items, invoice)
           const currency = String(invoice.currency || 'EUR')
           return (
@@ -476,12 +480,14 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
                 {fmt(invoice.total_without_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>DPH:</Text>
-              <Text style={styles.totalValue}>
-                {fmt(invoice.total_vat as number)} {String(invoice.currency || 'EUR')}
-              </Text>
-            </View>
+            {isVatPayer && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>DPH:</Text>
+                <Text style={styles.totalValue}>
+                  {fmt(invoice.total_vat as number)} {String(invoice.currency || 'EUR')}
+                </Text>
+              </View>
+            )}
             <View style={styles.totalDivider} />
             <View style={styles.totalRow}>
               <Text style={styles.grandTotalLabel}>Na uhradu:</Text>
@@ -491,6 +497,16 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             </View>
           </View>
         </View>
+
+        {/* Non-VAT payer note */}
+        {!isVatPayer && (
+          <View style={styles.noteBox}>
+            <Text style={styles.noteLabel}>Upozornenie</Text>
+            <Text style={styles.noteText}>
+              Dodavatel nie je platcom DPH podla zakona c. 222/2004 Z.z. o dani z pridanej hodnoty.
+            </Text>
+          </View>
+        )}
 
         {/* Payment Details */}
         <View style={styles.paymentBox}>

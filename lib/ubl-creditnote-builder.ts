@@ -11,21 +11,25 @@ function escapeXml(str: string | null | undefined): string {
 }
 
 function amount(n: number): string {
-  return n.toFixed(2)
+  return Math.abs(n).toFixed(2)
 }
 
-// Strip scheme prefix (e.g. "9950:") from endpoint IDs to avoid duplication with schemeID attr
 function stripEndpointScheme(id: string | null | undefined): string {
   if (!id) return ''
   return id.replace(/^\d{4}:/, '')
 }
 
-export function buildUblXml(inv: PeppolInvoice): string {
+/**
+ * Builds UBL 2.1 CreditNote XML for Peppol BIS 3.0.
+ * All amounts are POSITIVE (the CreditNote document type implies reversal).
+ * Uses CreditNoteLine with CreditedQuantity instead of InvoiceLine/InvoicedQuantity.
+ */
+export function buildCreditNoteXml(inv: PeppolInvoice): string {
   const lines = inv.invoiceLines
     .map(
-      (line) => `<cac:InvoiceLine>
+      (line) => `<cac:CreditNoteLine>
       <cbc:ID>${escapeXml(line.id)}</cbc:ID>
-      <cbc:InvoicedQuantity unitCode="${escapeXml(line.unitCode)}">${line.invoicedQuantity}</cbc:InvoicedQuantity>
+      <cbc:CreditedQuantity unitCode="${escapeXml(line.unitCode)}">${Math.abs(line.invoicedQuantity)}</cbc:CreditedQuantity>
       <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>
       <cac:Item>
         <cbc:Name>${escapeXml(line.itemName)}</cbc:Name>${
@@ -54,7 +58,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
       <cac:Price>
         <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.priceAmount)}</cbc:PriceAmount>
       </cac:Price>
-    </cac:InvoiceLine>`
+    </cac:CreditNoteLine>`
     )
     .join('\n  ')
 
@@ -77,15 +81,14 @@ export function buildUblXml(inv: PeppolInvoice): string {
     .join('\n    ')
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"
   xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
   xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
   <cbc:CustomizationID>${escapeXml(inv.customizationID)}</cbc:CustomizationID>
   <cbc:ProfileID>${escapeXml(inv.profileID)}</cbc:ProfileID>
   <cbc:ID>${escapeXml(inv.invoiceId)}</cbc:ID>
   <cbc:IssueDate>${escapeXml(inv.issueDate)}</cbc:IssueDate>
-  <cbc:DueDate>${escapeXml(inv.dueDate)}</cbc:DueDate>
-  <cbc:InvoiceTypeCode>${escapeXml(inv.invoiceTypeCode)}</cbc:InvoiceTypeCode>
+  <cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>
   ${inv.invoiceNote ? `<cbc:Note>${escapeXml(inv.invoiceNote)}</cbc:Note>\n  ` : ''}<cbc:DocumentCurrencyCode>${escapeXml(inv.documentCurrencyCode)}</cbc:DocumentCurrencyCode>
   <cbc:BuyerReference>${escapeXml(inv.buyerReference)}</cbc:BuyerReference>
   ${inv.orderReferenceId ? `<cac:OrderReference>
@@ -154,14 +157,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
         }
       </cac:PartyLegalEntity>
     </cac:Party>
-  </cac:AccountingCustomerParty>${
-    inv.deliveryDate
-      ? `
-  <cac:Delivery>
-    <cbc:ActualDeliveryDate>${escapeXml(inv.deliveryDate)}</cbc:ActualDeliveryDate>
-  </cac:Delivery>`
-      : ''
-  }
+  </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>${escapeXml(inv.paymentMeansCode)}</cbc:PaymentMeansCode>${
       inv.paymentId
@@ -212,5 +208,5 @@ ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:Allo
     <cbc:PayableAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(inv.payableAmount)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   ${lines}
-</Invoice>`
+</CreditNote>`
 }

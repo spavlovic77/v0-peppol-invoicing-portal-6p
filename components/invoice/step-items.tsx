@@ -8,6 +8,7 @@ interface Props {
   formData: InvoiceFormData
   updateForm: (u: Partial<InvoiceFormData>) => void
   totals: { withoutVat: number; vat: number; withVat: number }
+  isVatPayer?: boolean
 }
 
 const unitOptions = [
@@ -23,13 +24,14 @@ const unitOptions = [
 
 const vatRates = [
   { value: 23, label: '23% (zakladna od 2025)' },
+  { value: 19, label: '19% (znizena od 2025)' },
   { value: 20, label: '20% (zakladna do 2024)' },
   { value: 10, label: '10% (znizena)' },
   { value: 5, label: '5% (znizena)' },
   { value: 0, label: '0% (oslobodene)' },
 ]
 
-export function StepItems({ formData, updateForm, totals }: Props) {
+export function StepItems({ formData, updateForm, totals, isVatPayer = true }: Props) {
   function addItem() {
     const newItem: InvoiceItem = {
       line_number: formData.items.length + 1,
@@ -37,8 +39,8 @@ export function StepItems({ formData, updateForm, totals }: Props) {
       quantity: 1,
       unit: 'C62',
       unit_price: 0,
-      vat_category: 'S',
-      vat_rate: 23,
+      vat_category: isVatPayer ? 'S' : 'O',
+      vat_rate: isVatPayer ? 23 : 0,
       discount_percent: 0,
       discount_amount: 0,
       line_total: 0,
@@ -124,7 +126,7 @@ export function StepItems({ formData, updateForm, totals }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className={`grid grid-cols-2 ${isVatPayer ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Mnozstvo</label>
                   <input
@@ -149,7 +151,7 @@ export function StepItems({ formData, updateForm, totals }: Props) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Cena/j. bez DPH</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{isVatPayer ? 'Cena/j. bez DPH' : 'Cena/j.'}</label>
                   <input
                     type="number"
                     value={item.unit_price}
@@ -159,18 +161,20 @@ export function StepItems({ formData, updateForm, totals }: Props) {
                     step="0.01"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1">DPH</label>
-                  <select
-                    value={item.vat_rate}
-                    onChange={(e) => updateItem(i, { vat_rate: parseFloat(e.target.value) })}
-                    className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                  >
-                    {vatRates.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
-                </div>
+                {isVatPayer && (
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">DPH</label>
+                    <select
+                      value={item.vat_rate}
+                      onChange={(e) => updateItem(i, { vat_rate: parseFloat(e.target.value) })}
+                      className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                    >
+                      {vatRates.map((r) => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Zlava %</label>
                   <input
@@ -244,10 +248,12 @@ export function StepItems({ formData, updateForm, totals }: Props) {
               </div>
             </>
           )}
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">DPH celkom:</span>
-            <span className="text-foreground">{fmt(totals.vat)} {formData.currency}</span>
-          </div>
+          {isVatPayer && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">DPH celkom:</span>
+              <span className="text-foreground">{fmt(totals.vat)} {formData.currency}</span>
+            </div>
+          )}
           <div className="h-px bg-border my-2" />
           <div className="flex justify-between">
             <span className="font-semibold text-foreground">Celkom na uhradu:</span>
@@ -255,6 +261,9 @@ export function StepItems({ formData, updateForm, totals }: Props) {
               {fmt(totals.withVat)} {formData.currency}
             </span>
           </div>
+          {!isVatPayer && (
+            <p className="text-xs text-muted-foreground mt-2">Dodavatel nie je platcom DPH</p>
+          )}
         </div>
       </GlassCard>
     </div>

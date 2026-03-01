@@ -10,6 +10,7 @@ import { StepBuyer } from '@/components/invoice/step-buyer'
 import { StepItems } from '@/components/invoice/step-items'
 import { StepSummary } from '@/components/invoice/step-summary'
 import { InvoiceWizardStepper } from '@/components/invoice/wizard-stepper'
+import { CorrectionWizard, type CorrectionScenario } from '@/components/invoice/correction-wizard'
 import { useActiveSupplier, type Supplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
 import type { InvoiceFormData } from '@/lib/schemas'
@@ -40,7 +41,14 @@ export default function NewInvoicePage() {
   const [creating, setCreating] = useState(false)
   const duplicateId = searchParams.get('duplicate')
   const editId = searchParams.get('edit')
+  const correctId = searchParams.get('correct')
   const isEditMode = !!editId
+  const isCorrectionMode = !!correctId
+  const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
+  const [originalInvoice, setOriginalInvoice] = useState<{
+    id: string; invoice_number: string; issue_date: string; buyer_name: string;
+    items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
+  } | null>(null)
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     invoice_number: '',
@@ -189,6 +197,49 @@ export default function NewInvoicePage() {
       }
     }
 
+    // If correcting, load original invoice for wizard
+    if (correctId) {
+      const { data: srcInv } = await supabase.from('invoices').select('*').eq('id', correctId).eq('user_id', user.id).single()
+      const { data: srcItems } = await supabase.from('invoice_items').select('*').eq('invoice_id', correctId).order('line_number')
+      if (srcInv && srcItems) {
+        setOriginalInvoice({
+          id: srcInv.id,
+          invoice_number: srcInv.invoice_number,
+          issue_date: srcInv.issue_date,
+          buyer_name: srcInv.buyer_name,
+          items: srcItems.map((it: Record<string, unknown>) => ({
+            description: it.description as string,
+            quantity: it.quantity as number,
+            unit: (it.unit as string) || 'C62',
+            unit_price: it.unit_price as number,
+            vat_rate: (it.vat_rate as number) || 23,
+            vat_category: (it.vat_category as string) || 'S',
+            item_number: (it.item_number as string) || null,
+            buyer_item_number: (it.buyer_item_number as string) || null,
+            discount_percent: (it.discount_percent as number) || 0,
+            discount_amount: (it.discount_amount as number) || 0,
+            line_total: it.line_total as number,
+          })),
+        })
+        // Pre-fill buyer data from original
+        setFormData((prev) => ({
+          ...prev,
+          buyer_ico: srcInv.buyer_ico,
+          buyer_dic: srcInv.buyer_dic,
+          buyer_ic_dph: srcInv.buyer_ic_dph,
+          buyer_name: srcInv.buyer_name,
+          buyer_street: srcInv.buyer_street,
+          buyer_city: srcInv.buyer_city,
+          buyer_postal_code: srcInv.buyer_postal_code,
+          buyer_country_code: srcInv.buyer_country_code || 'SK',
+          buyer_email: srcInv.buyer_email,
+          buyer_peppol_id: srcInv.buyer_peppol_id,
+          order_reference: srcInv.order_reference,
+          buyer_reference: srcInv.buyer_reference,
+        }))
+      }
+    }
+
     // Generate invoice number scoped to supplier
     const year = new Date().getFullYear()
     const { data: seq } = await supabase
@@ -204,7 +255,8 @@ export default function NewInvoicePage() {
       nextNum = (seq.last_number || 0) + 1
     }
 
-    const invoiceNumber = `FV-${year}-${String(nextNum).padStart(4, '0')}`
+    const prefix = correctId ? 'CN' : 'FV'
+    const invoiceNumber = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`
     setFormData((prev) => ({
       ...prev,
       invoice_number: invoiceNumber,
@@ -212,7 +264,7 @@ export default function NewInvoicePage() {
     }))
 
     setLoading(false)
-  }, [supabase, router, activeSupplier, duplicateId, editId])
+  }, [supabase, router, activeSupplier, duplicateId, editId, correctId])
 
   useEffect(() => {
     if (!supplierLoading) loadData()
@@ -221,6 +273,8 @@ export default function NewInvoicePage() {
   function updateForm(updates: Partial<InvoiceFormData>) {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
+
+  const isVatPayer = activeSupplier?.is_vat_payer ?? true
 
   const totals = (() => {
     const r2 = (n: number) => Math.round(n * 100) / 100
@@ -234,7 +288,12 @@ export default function NewInvoicePage() {
 
     // Apply global discount
     const globalDiscount = lineSum * (formData.global_discount_percent || 0) / 100
-    const taxBase_EN = r2(lineSum - globalDiscount)
+
+    // Non-VAT payer: no tax at all
+    if (!isVatPayer) {
+      const total = r2(lineSum - globalDiscount)
+      return { withoutVat: total, vat: 0, withVat: total }
+    }
 
     // Slovak reverse method: calculate VAT per tax rate group
     // Group items by tax rate
@@ -311,6 +370,11 @@ export default function NewInvoicePage() {
         global_discount_amount: totals.withoutVat > 0 ? Math.round((formData.items.reduce((s, i) => s + i.quantity * i.unit_price - (i.discount_amount || 0), 0)) * (formData.global_discount_percent || 0) / 100 * 100) / 100 : 0,
         note: formData.note,
         status: 'draft',
+        invoice_type_code: formData.invoice_type_code || '380',
+        correction_of: formData.correction_of || null,
+        correction_reason: formData.correction_reason || null,
+        billing_reference_number: formData.billing_reference_number || null,
+        billing_reference_date: formData.billing_reference_date || null,
       }
 
       let invoiceId: string
@@ -330,8 +394,9 @@ export default function NewInvoicePage() {
         // Create new invoice
         const year = new Date().getFullYear()
         const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
+        const seqPrefix = isCorrectionMode ? 'CN' : 'FV'
         await supabase.from('invoice_sequences').upsert(
-          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: 'FV' },
+          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
           { onConflict: 'user_id,supplier_id,year' }
         )
 
@@ -417,19 +482,42 @@ export default function NewInvoicePage() {
     web: activeSupplier.web,
     registration_court: activeSupplier.registration_court,
     registration_number: activeSupplier.registration_number,
+    is_vat_payer: activeSupplier.is_vat_payer,
+  }
+
+  // Correction wizard callback
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, _scenario: CorrectionScenario, _docType: '380' | '381') {
+    setFormData((prev) => ({ ...prev, ...updates }))
+    setCorrectionStep('form')
+    setStep(2) // Jump to Items step so user can review
+  }
+
+  // If in correction wizard mode, show the wizard first
+  if (isCorrectionMode && correctionStep === 'wizard' && originalInvoice) {
+    return (
+      <div className="max-w-lg mx-auto space-y-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravny doklad</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
+          </p>
+        </div>
+        <CorrectionWizard original={originalInvoice} onApply={handleCorrectionApply} />
+      </div>
+    )
   }
 
   const steps = [
     { label: 'Zakladne udaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
     { label: 'Odberatel', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} /> },
-    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} /> },
-    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} /> },
+    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} /> },
+    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} /> },
   ]
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : 'Nova faktura'}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : isCorrectionMode ? 'Opravny doklad' : 'Nova faktura'}</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
         </p>
@@ -462,7 +550,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isEditMode ? 'Ulozit zmeny' : 'Vytvorit fakturu'}
+            {isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : 'Vytvorit fakturu'}
           </button>
         )}
       </div>

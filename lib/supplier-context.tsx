@@ -22,6 +22,7 @@ export interface Supplier {
   web: string | null
   registration_court: string | null
   registration_number: string | null
+  is_vat_payer: boolean
 }
 
 interface SupplierContextType {

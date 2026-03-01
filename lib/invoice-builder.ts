@@ -23,6 +23,7 @@ interface SupplierProfile {
   country_code: string
   iban: string | null
   swift: string | null
+  is_vat_payer?: boolean
 }
 
 interface InvoiceData {
@@ -47,6 +48,9 @@ interface InvoiceData {
   note: string | null
   global_discount_percent: number
   global_discount_amount: number
+  invoice_type_code?: string
+  billing_reference_number?: string | null
+  billing_reference_date?: string | null
 }
 
 interface InvoiceItemData {
@@ -78,22 +82,33 @@ export function buildPeppolInvoice(
   profile: SupplierProfile
 ): PeppolInvoice {
   const currency = invoice.currency || 'EUR'
+  const typeCode = invoice.invoice_type_code || '380'
+  const isCreditNote381 = typeCode === '381'
+  const isVatPayer = profile.is_vat_payer !== false
+
+  // Non-VAT payer: force all items to category O (outside scope), 0% rate
+  if (!isVatPayer) {
+    items = items.map((it) => ({ ...it, vat_category: 'O', vat_rate: 0 }))
+  }
 
   // ================================================================
   // 1. Build invoice lines with per-item discounts
+  // For CreditNote (381): quantities and amounts are always POSITIVE
+  // For Negative Invoice (380): quantities can be negative
   // ================================================================
   const invoiceLines = items.map((item) => {
-    const grossAmount = round2(item.quantity * item.unit_price)
-    const discountAmt = round2(item.discount_amount || (grossAmount * (item.discount_percent || 0)) / 100)
+    const qty = isCreditNote381 ? Math.abs(item.quantity) : item.quantity
+    const grossAmount = round2(qty * item.unit_price)
+    const discountAmt = round2(item.discount_amount ? Math.abs(item.discount_amount) : (Math.abs(grossAmount) * (item.discount_percent || 0)) / 100)
     const lineExtension = round2(grossAmount - discountAmt)
 
     // R120: LineExtensionAmount MUST equal qty * PriceAmount (exactly)
-    const netPricePerUnit = item.quantity > 0 ? round2(lineExtension / item.quantity) : item.unit_price
-    const adjustedLineExtension = round2(item.quantity * netPricePerUnit)
+    const netPricePerUnit = qty !== 0 ? round2(lineExtension / qty) : item.unit_price
+    const adjustedLineExtension = round2(qty * netPricePerUnit)
 
     return {
       id: String(item.line_number),
-      invoicedQuantity: item.quantity,
+      invoicedQuantity: qty,
       unitCode: item.unit || 'C62',
       lineExtensionAmount: adjustedLineExtension,
       itemName: item.description,
@@ -125,6 +140,7 @@ export function buildPeppolInvoice(
   const documentAllowances: PeppolInvoice['documentAllowances'] = []
 
   // Group lines by tax rate -- track both net total and per-line gross sum
+  // For negative invoices (380), lineExtensionAmount can be negative; SK method uses absolute
   const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number; grossSum: number }>()
   for (const line of invoiceLines) {
     const key = `${line.classifiedTaxCategoryId}-${line.taxPercent}`
@@ -284,7 +300,7 @@ export function buildPeppolInvoice(
     invoiceId: invoice.invoice_number,
     issueDate: invoice.issue_date,
     dueDate: invoice.due_date,
-    invoiceTypeCode: '380',
+    invoiceTypeCode: typeCode,
     documentCurrencyCode: currency,
     buyerReference: invoice.buyer_reference || invoice.order_reference || invoice.invoice_number,
     orderReferenceId: invoice.order_reference || null,
@@ -296,8 +312,10 @@ export function buildPeppolInvoice(
     supplierPostalCode: profile.postal_code || '',
     supplierCountryCode: profile.country_code || 'SK',
     supplierCompanyId: profile.ico,
-    supplierTaxId: profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico),
-    supplierVatId: profile.dic || null,
+    supplierTaxId: isVatPayer
+      ? (profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico))
+      : (profile.dic || profile.ico),
+    supplierVatId: isVatPayer ? (profile.dic || null) : null,
     customerEndpointId: buyerEndpointId,
     customerEndpointSchemeId: '9950',
     customerPartyName: invoice.buyer_name,
@@ -323,5 +341,7 @@ export function buildPeppolInvoice(
     invoiceLines,
     invoiceNote: invoice.note || null,
     deliveryDate: invoice.delivery_date || null,
+    billingReferenceNumber: invoice.billing_reference_number || null,
+    billingReferenceDate: invoice.billing_reference_date || null,
   }
 }
