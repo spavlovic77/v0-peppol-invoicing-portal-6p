@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff } from 'lucide-react'
+import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
 export interface SupplierFormData {
   ico: string
@@ -245,7 +246,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <Field label="Nazov banky" value={form.bank_name} onChange={(v) => updateField('bank_name', v)} />
-          <Field label="IBAN" value={form.iban} onChange={(v) => updateField('iban', v)} />
+          <IbanField value={form.iban} onChange={(v) => updateField('iban', v)} />
           <Field label="SWIFT/BIC" value={form.swift} onChange={(v) => updateField('swift', v)} />
         </div>
       </GlassCard>
@@ -354,6 +355,59 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
       />
+    </div>
+  )
+}
+
+function IbanField({ value, onChange }: { value: string | null | undefined; onChange: (v: string) => void }) {
+  const [touched, setTouched] = useState(false)
+  const display = formatIban(cleanIban(value || ''))
+  const result = validateIban(value || '')
+  const hasError = touched && result.cleaned.length > 0 && !result.valid
+
+  return (
+    <div>
+      <label className="block text-sm text-muted-foreground mb-1.5">IBAN</label>
+      <input
+        type="text"
+        value={display}
+        onChange={(e) => onChange(cleanIban(e.target.value))}
+        onBlur={() => setTouched(true)}
+        className={`glass-input w-full px-4 py-2.5 rounded-xl font-mono text-sm tracking-wider ${
+          result.valid && result.cleaned.length > 0
+            ? 'text-emerald-400 ring-1 ring-emerald-500/30'
+            : hasError
+              ? 'text-destructive ring-2 ring-destructive'
+              : 'text-foreground'
+        }`}
+        placeholder="SK89 7500 0000 0001 2345 671"
+        autoComplete="off"
+        spellCheck={false}
+      />
+      <div className="flex items-center justify-between mt-1">
+        {hasError && result.error ? (
+          <p className="text-xs text-destructive flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            {result.error}
+          </p>
+        ) : result.valid && result.cleaned.length > 0 ? (
+          <p className="text-xs text-emerald-400 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            IBAN platny ({result.country})
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {result.expectedLength
+              ? `${result.cleaned.length} / ${result.expectedLength}`
+              : result.cleaned.length > 0
+                ? `${result.cleaned.length} znakov`
+                : 'Zadajte IBAN'}
+          </p>
+        )}
+        {result.country && result.cleaned.length >= 2 && (
+          <span className="text-xs text-muted-foreground font-medium">{result.country}</span>
+        )}
+      </div>
     </div>
   )
 }
