@@ -1,6 +1,7 @@
 import { GlassCard } from '@/components/glass-card'
 import { FileText, Building2, CreditCard, Package, Calculator } from 'lucide-react'
 import type { InvoiceFormData, CompanyProfile } from '@/lib/schemas'
+import { fmtDate } from '@/lib/utils'
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100
@@ -104,15 +105,15 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">Vystavena</span>
-            <div className="text-foreground font-medium">{formData.issue_date}</div>
+            <div className="text-foreground font-medium">{fmtDate(formData.issue_date)}</div>
           </div>
           <div>
             <span className="text-muted-foreground">Splatnost</span>
-            <div className="text-foreground font-medium">{formData.due_date}</div>
+            <div className="text-foreground font-medium">{fmtDate(formData.due_date)}</div>
           </div>
           <div>
             <span className="text-muted-foreground">Dodanie</span>
-            <div className="text-foreground font-medium">{formData.delivery_date || '-'}</div>
+            <div className="text-foreground font-medium">{fmtDate(formData.delivery_date)}</div>
           </div>
           <div>
             <span className="text-muted-foreground">Mena</span>

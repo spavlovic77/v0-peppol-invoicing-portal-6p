@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 import { Ban, Hash, DollarSign, PenLine, Percent, FileText, FileX2, ChevronRight } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
+import { fmtDate } from '@/lib/utils'
 
 export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rate' | 'freeform'
 
@@ -301,7 +302,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
           <FileText className="w-5 h-5 text-primary shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">Korekcia k fakture {original.invoice_number}</p>
-            <p className="text-xs text-muted-foreground">{original.buyer_name} &middot; {original.issue_date}</p>
+            <p className="text-xs text-muted-foreground">{original.buyer_name} &middot; {fmtDate(original.issue_date)}</p>
           </div>
         </div>
       </GlassCard>
