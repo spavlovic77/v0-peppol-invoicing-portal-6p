@@ -109,13 +109,33 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
   const allCategoryO = inv.taxSubtotals.every((ts) => ts.taxCategoryId === 'O')
   check('BR-11', allCategoryO || !!inv.supplierTaxId, 'Predavajuci musi mat danove cislo (IC DPH)')
 
-  // BR-AE-01 .. BR-AE-05: Reverse charge checks
+  // BR-AE-01 .. BR-AE-10: Reverse charge checks
   const hasAE = inv.taxSubtotals.some((ts) => ts.taxCategoryId === 'AE')
   const allAE = inv.taxSubtotals.every((ts) => ts.taxCategoryId === 'AE')
   if (hasAE) {
-    check('BR-AE-01', inv.taxSubtotals.filter((ts) => ts.taxCategoryId === 'AE').length === 1, 'Pre reverse charge musi byt prave jeden danovy rozpis s kategoriou AE')
+    const aeSubtotals = inv.taxSubtotals.filter((ts) => ts.taxCategoryId === 'AE')
+    // BR-AE-01: Exactly one AE tax breakdown
+    check('BR-AE-01', aeSubtotals.length === 1, 'Pre reverse charge musi byt prave jeden danovy rozpis s kategoriou AE')
+    // BR-AE-02: Seller VAT identifier required
     check('BR-AE-02', !!inv.supplierTaxId, 'Reverse charge: dodavatel musi mat IC DPH')
-    check('BR-AE-05', allAE, 'Reverse charge: vsetky polozky musia mat kategoriu AE (EN16931 BR-AE-05)')
+    // BR-AE-05: All invoice lines must use AE category
+    const allLinesAE = inv.invoiceLines.every((l) => l.classifiedTaxCategoryId === 'AE')
+    check('BR-AE-05', allLinesAE && allAE, 'Reverse charge: vsetky polozky faktury musia mat kategoriu AE (BR-AE-05)')
+    // BR-AE-05 line-level: each line VAT rate must be 0
+    inv.invoiceLines.forEach((line, i) => {
+      if (line.classifiedTaxCategoryId === 'AE') {
+        check(`BR-AE-05-L${i + 1}`, line.taxPercent === 0, `Riadok ${i + 1}: Pri reverse charge (AE) musi byt sadzba DPH 0%`)
+      }
+    })
+    // BR-AE-09: Tax amount in AE breakdown must be 0
+    aeSubtotals.forEach((ts, i) => {
+      check(`BR-AE-09${aeSubtotals.length > 1 ? `-T${i + 1}` : ''}`, ts.taxAmount === 0, 'Danovy suctot AE: suma DPH musi byt 0 (BR-AE-09)')
+    })
+    // BR-AE-10: AE breakdown must have exemption reason code or text "Reverse charge"
+    aeSubtotals.forEach((ts, i) => {
+      const hasExemption = !!ts.taxExemptionReasonCode || (!!ts.taxExemptionReason && ts.taxExemptionReason.toLowerCase().includes('reverse charge'))
+      check(`BR-AE-10${aeSubtotals.length > 1 ? `-T${i + 1}` : ''}`, hasExemption, 'Danovy rozpis AE musi mat dovod oslobodenia (TaxExemptionReasonCode) alebo text "Reverse charge" (BR-AE-10)')
+    })
   }
 
   // BR-12: Line extension amount calculation
@@ -155,8 +175,7 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
       return
     }
     if (ts.taxCategoryId === 'AE') {
-      check(`BR-AE-07-T${i + 1}`, ts.taxAmount === 0, `Danovy suctot ${i + 1}: Pre kategoriu AE (reverse charge) musi byt DPH 0`)
-      check(`BR-AE-06-T${i + 1}`, ts.taxPercent === 0, `Danovy suctot ${i + 1}: Pre kategoriu AE sadzba musi byt 0%`)
+      // Already checked by BR-AE-09 and BR-AE-10 above, skip per-subtotal forward calc
       return
     }
     // SK method: tax = gross * rate / (100+rate), taxBase = gross - tax
