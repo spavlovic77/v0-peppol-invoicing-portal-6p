@@ -165,10 +165,6 @@ export function LandingContent() {
           )}
           {appleLoading ? 'Prihlasovanie...' : 'Prihlásiť sa cez Apple'}
         </button>
-
-        <p className="text-sm text-muted-foreground mt-6">
-          {'Prihlasenim suhlasite s podmienkami pouzivania'}
-        </p>
       </div>
     </div>
   )
