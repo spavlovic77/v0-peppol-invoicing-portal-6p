@@ -2,10 +2,19 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, FileText, FileX2, ChevronRight } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, FileX2, ChevronRight } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 
-export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'freeform'
+export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rate' | 'freeform'
+
+const SK_VAT_RATES = [
+  { value: 23, label: '23%' },
+  { value: 19, label: '19%' },
+  { value: 20, label: '20%' },
+  { value: 10, label: '10%' },
+  { value: 5, label: '5%' },
+  { value: 0, label: '0%' },
+]
 
 interface OriginalInvoice {
   id: string
@@ -61,6 +70,15 @@ const scenarios = [
     bgActive: 'bg-blue-500/20 border-blue-500/50 ring-2 ring-blue-500/30',
   },
   {
+    id: 'vat_rate' as const,
+    icon: Percent,
+    label: 'Zmena sadzby DPH',
+    desc: 'Nespravne pouzita sadzba dane',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20',
+    bgActive: 'bg-emerald-500/20 border-emerald-500/50 ring-2 ring-emerald-500/30',
+  },
+  {
     id: 'freeform' as const,
     icon: PenLine,
     label: 'Volna korekcia',
@@ -83,6 +101,11 @@ export function CorrectionWizard({ original, onApply }: Props) {
   // For price scenario: track new prices per line
   const [priceOverrides, setPriceOverrides] = useState<Record<number, number>>(
     Object.fromEntries(original.items.map((it, i) => [i, it.unit_price]))
+  )
+
+  // For VAT rate scenario: track correct rate per line
+  const [vatOverrides, setVatOverrides] = useState<Record<number, number>>(
+    Object.fromEntries(original.items.map((it, i) => [i, it.vat_rate]))
   )
 
   const r2 = (n: number) => Math.round(n * 100) / 100
@@ -186,6 +209,66 @@ export function CorrectionWizard({ original, onApply }: Props) {
           }]
         }
         correctionItems = correctionItems.map((it, i) => ({ ...it, line_number: i + 1 }))
+        break
+      }
+      case 'vat_rate': {
+        // VAT rate correction: for each changed line, emit two lines:
+        // 1) Reversal of original at WRONG rate (negative/credit)
+        // 2) Re-issue at CORRECT rate (positive)
+        // The net amount is zero, but the VAT difference is corrected
+        reason = 'Zmena sadzby DPH'
+        const vatLines: InvoiceFormData['items'] = []
+        let lineNum = 1
+
+        for (let idx = 0; idx < original.items.length; idx++) {
+          const it = original.items[idx]
+          const oldRate = it.vat_rate
+          const newRate = vatOverrides[idx] ?? oldRate
+          if (newRate === oldRate) continue // No change
+
+          // Line 1: reverse original at WRONG rate
+          vatLines.push({
+            line_number: lineNum++,
+            description: `${it.description} (storno ${oldRate}% DPH)`,
+            quantity: isCreditNote ? it.quantity : -it.quantity,
+            unit: it.unit,
+            unit_price: it.unit_price,
+            vat_category: it.vat_category || 'S',
+            vat_rate: oldRate,
+            discount_percent: it.discount_percent || 0,
+            discount_amount: it.discount_amount || 0,
+            line_total: isCreditNote ? it.line_total : -it.line_total,
+            item_number: it.item_number,
+            buyer_item_number: it.buyer_item_number,
+          })
+
+          // Line 2: re-issue at CORRECT rate (opposite sign -- adds back)
+          vatLines.push({
+            line_number: lineNum++,
+            description: `${it.description} (spravne ${newRate}% DPH)`,
+            quantity: isCreditNote ? -it.quantity : it.quantity,
+            unit: it.unit,
+            unit_price: it.unit_price,
+            vat_category: it.vat_category || 'S',
+            vat_rate: newRate,
+            discount_percent: it.discount_percent || 0,
+            discount_amount: it.discount_amount || 0,
+            line_total: isCreditNote ? -it.line_total : it.line_total,
+            item_number: it.item_number,
+            buyer_item_number: it.buyer_item_number,
+          })
+        }
+
+        if (vatLines.length === 0) {
+          // Nothing changed -- add placeholder
+          vatLines.push({
+            line_number: 1, description: 'Korekcia DPH', quantity: isCreditNote ? 1 : -1,
+            unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: 23,
+            discount_percent: 0, discount_amount: 0, line_total: 0,
+            item_number: null, buyer_item_number: null,
+          })
+        }
+        correctionItems = vatLines
         break
       }
       case 'freeform': {
@@ -293,6 +376,42 @@ export function CorrectionWizard({ original, onApply }: Props) {
               </div>
             ))}
           </div>
+        </GlassCard>
+      )}
+
+      {/* VAT rate adjustment UI */}
+      {selected === 'vat_rate' && (
+        <GlassCard>
+          <h3 className="text-sm font-medium text-foreground mb-3">Vyberte spravnu sadzbu DPH</h3>
+          <div className="space-y-2">
+            {original.items.map((it, idx) => {
+              const currentOverride = vatOverrides[idx] ?? it.vat_rate
+              const isChanged = currentOverride !== it.vat_rate
+              return (
+                <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isChanged ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-secondary/30'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{it.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Povodne: {it.vat_rate}%
+                      {isChanged && <span className="text-emerald-400 ml-1"> &rarr; {currentOverride}%</span>}
+                    </p>
+                  </div>
+                  <select
+                    value={currentOverride}
+                    onChange={(e) => setVatOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
+                    className="w-24 px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm text-center appearance-none"
+                  >
+                    {SK_VAT_RATES.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Vysledkom budu 2 riadky na kazdu zmenu: storno povodnej sadzby + nova spravna sadzba. Zaklad dane zostava rovnaky, meni sa iba DPH.
+          </p>
         </GlassCard>
       )}
 

@@ -23,6 +23,7 @@ const unitOptions = [
 
 const vatRates = [
   { value: 23, label: '23% (zakladna od 2025)' },
+  { value: 19, label: '19% (znizena od 2025)' },
   { value: 20, label: '20% (zakladna do 2024)' },
   { value: 10, label: '10% (znizena)' },
   { value: 5, label: '5% (znizena)' },
