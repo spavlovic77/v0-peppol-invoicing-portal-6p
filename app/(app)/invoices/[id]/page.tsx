@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
   Loader2, Zap, ArrowLeft, CheckCircle2, XCircle, Copy,
-  Pencil, Trash2, Globe, RotateCcw,
+  Pencil, Trash2, Globe, RotateCcw, AlertTriangle, X,
 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationPipeline } from '@/components/invoice/validation-pipeline'
@@ -57,6 +57,7 @@ export default function InvoiceDetailPage() {
   const [sending, setSending] = useState(false)
   const [polling, setPolling] = useState(false)
   const [hasApKey, setHasApKey] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const loadInvoice = useCallback(async () => {
     const { data: inv } = await supabase
@@ -256,13 +257,20 @@ export default function InvoiceDetailPage() {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        {(invoice.status === 'draft' || invoice.status === 'invalid') && (
+        {(invoice.status === 'draft' || invoice.status === 'invalid') ? (
           <Link
             href={`/invoices/new?edit=${invoice.id}`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" /> Upravit
           </Link>
+        ) : (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Upravit
+          </button>
         )}
         <Link
           href={`/invoices/new?duplicate=${invoice.id}`}
@@ -321,6 +329,77 @@ export default function InvoiceDetailPage() {
           <RotateCcw className="w-4 h-4" />
           Vytvorit opravny doklad (dobropis)
         </Link>
+      )}
+
+      {/* Edit confirmation modal (for valid/sent invoices) */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowEditModal(false)}
+          />
+          <div className="relative w-[90vw] max-w-md bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-warning/15 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                </div>
+                <h3 className="text-base font-semibold">Uprava faktura</h3>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-sm text-foreground leading-relaxed">
+                Ak bola faktura <strong>{invoice.invoice_number}</strong> uz odoslana odberatelovi cez poskytovatela sluzieb (Peppol, email, posta), <strong>nesmiete ju upravovat</strong>.
+              </p>
+              <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
+                <p className="text-sm text-warning leading-relaxed">
+                  V takom pripade musite vytvorit <strong>opravny doklad (dobropis)</strong>, ktory stornuje povodnu fakturu a nasledne vystavit novu.
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Upravou uz odoslanej faktury porusite zakonnu povinnost a fakturu nebude mozne akceptovat v uctovnictve odberatela.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex flex-col gap-2 px-5 py-4 border-t border-border">
+              {!isCreditNote && (
+                <Link
+                  href={`/invoices/new?correct=${invoice.id}`}
+                  onClick={() => setShowEditModal(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-warning text-warning-foreground text-sm font-medium hover:bg-warning/90 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Vytvorit dobropis (odporucane)
+                </Link>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  Zrusit
+                </button>
+                <Link
+                  href={`/invoices/new?edit=${invoice.id}`}
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-center"
+                >
+                  Upravit aj tak
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Peppol delivery status */}
