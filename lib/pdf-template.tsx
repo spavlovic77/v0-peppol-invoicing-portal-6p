@@ -431,7 +431,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           )}
           {invoice.variable_symbol && (
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Variabiln\u00FD symbol:</Text>
+              <Text style={styles.paymentLabel}>Variabilný symbol:</Text>
               <Text style={styles.paymentValue}>{String(invoice.variable_symbol)}</Text>
             </View>
           )}
@@ -441,7 +441,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, styles.col1]}>#</Text>
-            <Text style={[styles.tableHeaderText, styles.col2]}>Popis polo\u017Eky</Text>
+            <Text style={[styles.tableHeaderText, styles.col2]}>Popis položky</Text>
             <Text style={[styles.tableHeaderText, styles.col3]}>Mn.</Text>
             <Text style={[styles.tableHeaderText, styles.col4]}>MJ</Text>
             <Text style={[styles.tableHeaderText, styles.col5]}>Cena/MJ</Text>
@@ -467,10 +467,10 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           const currency = String(invoice.currency || 'EUR')
           return (
             <View style={styles.recapSection}>
-              <Text style={styles.recapTitle}>Rekapitul\u00E1cia DPH</Text>
+              <Text style={styles.recapTitle}>Rekapitulácia DPH</Text>
               <View style={styles.recapHeader}>
                 <Text style={[styles.recapHeaderText, styles.recapCol1]}>Sadzba DPH</Text>
-                <Text style={[styles.recapHeaderText, styles.recapCol2]}>Z\u00E1klad dane</Text>
+                <Text style={[styles.recapHeaderText, styles.recapCol2]}>Základ dane</Text>
                 <Text style={[styles.recapHeaderText, styles.recapCol3]}>DPH</Text>
                 <Text style={[styles.recapHeaderText, styles.recapCol4]}>Spolu</Text>
               </View>
@@ -492,7 +492,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
                   </Text>
                   <Text style={[styles.recapCorrText, styles.recapCol3]}></Text>
                   <Text style={[styles.recapCorrText, styles.recapCol4]}>
-                    Zaokr\u00FAhlovacia korekcia
+                    Zaokrúhlovacia korekcia
                   </Text>
                 </View>
               ))}
@@ -504,7 +504,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         <View style={styles.totalsBox}>
           <View style={styles.totalsInner}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Z\u00E1klad dane:</Text>
+              <Text style={styles.totalLabel}>Základ dane:</Text>
               <Text style={styles.totalValue}>
                 {fmt(invoice.total_without_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
@@ -519,7 +519,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             )}
             <View style={styles.totalDivider} />
             <View style={styles.totalRow}>
-              <Text style={styles.grandTotalLabel}>Na \u00FAhradu:</Text>
+              <Text style={styles.grandTotalLabel}>Na úhradu:</Text>
               <Text style={styles.grandTotalValue}>
                 {fmt(invoice.total_with_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
@@ -532,7 +532,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           <View style={styles.noteBox}>
             <Text style={styles.noteLabel}>Upozornenie</Text>
             <Text style={styles.noteText}>
-              Dod\u00E1vate\u013E nie je platcom DPH pod\u013Ea z\u00E1kona \u010D. 222/2004 Z.z. o dani z pridanej hodnoty.
+              Dodávateľ nie je platcom DPH podľa zákona č. 222/2004 Z.z. o dani z pridanej hodnoty.
             </Text>
           </View>
         )}
@@ -540,7 +540,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Note */}
         {invoice.note && (
           <View style={styles.noteBox}>
-            <Text style={styles.noteLabel}>Pozn\u00E1mka:</Text>
+            <Text style={styles.noteLabel}>Poznámka:</Text>
             <Text style={styles.noteText}>{String(invoice.note)}</Text>
           </View>
         )}
@@ -548,7 +548,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Vystavene v syst\u00E9me Peppol Fakt\u00FAra | Peppol BIS 3.0
+            Vystavené v systéme Peppol Faktúra | Peppol BIS 3.0
           </Text>
           <Text style={styles.footerText}>
             {String(profile.company_name)} | ICO: {String(profile.ico)}

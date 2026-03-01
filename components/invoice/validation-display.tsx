@@ -68,12 +68,12 @@ export function ValidationDisplay({ phases }: Props) {
           </div>
           <div className="text-left">
             <h3 className="font-semibold text-foreground text-sm sm:text-base">
-              {allPassed ? 'Faktura je validna' : 'Faktura obsahuje chyby'}
+              {allPassed ? 'Faktúra je validná' : 'Faktúra obsahuje chyby'}
             </h3>
             <p className="text-xs text-muted-foreground">
-              {passedRules}/{totalRules} pravidiel splnenych
-              {totalErrors > 0 && ` \u00b7 ${totalErrors} chyb`}
-              {totalWarnings > 0 && ` \u00b7 ${totalWarnings} varovani`}
+              {passedRules}/{totalRules} pravidiel splnených
+              {totalErrors > 0 && ` · ${totalErrors} chýb`}
+              {totalWarnings > 0 && ` · ${totalWarnings} varovaní`}
             </p>
           </div>
         </div>
@@ -97,9 +97,9 @@ export function ValidationDisplay({ phases }: Props) {
         <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
           <FlaskConical className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-semibold text-warning">Simulacia validacie</p>
+            <p className="text-xs font-semibold text-warning">Simulácia validácie</p>
             <p className="text-xs text-muted-foreground">
-              Schematron subory nie su skompilované a externá API je nedostupná. Výsledky sú orientačné — nespúšťajú sa skutočné PEPPOL pravidlá.
+              Schematron súbory nie sú skompilované a externá API je nedostupná. Výsledky sú orientačné — nespúšťajú sa skutočné PEPPOL pravidlá.
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export function ValidationDisplay({ phases }: Props) {
                     <div className="text-left">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-mono text-muted-foreground">
-                          Faza {phaseIdx + 1}
+                          Fáza {phaseIdx + 1}
                         </span>
                         <span className="font-medium text-foreground text-sm">
                           {phase.name}
@@ -142,7 +142,7 @@ export function ValidationDisplay({ phases }: Props) {
                         {phase.simulated && (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-xs font-medium">
                             <FlaskConical className="w-3 h-3" />
-                            SIMULACIA
+                            SIMULÁCIA
                           </span>
                         )}
                       </div>
