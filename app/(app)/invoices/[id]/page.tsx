@@ -16,6 +16,7 @@ import { InvoiceDetailSkeleton } from '@/components/skeleton'
 import Link from 'next/link'
 import { fmtDate } from '@/lib/utils'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { useAiPanel } from '@/lib/ai-context'
 
 interface InvoiceData {
   id: string
@@ -65,6 +66,32 @@ export default function InvoiceDetailPage() {
   const [polling, setPolling] = useState(false)
   const [hasApKey, setHasApKey] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const { setPageContext } = useAiPanel()
+
+  // Feed AI assistant with invoice context
+  useEffect(() => {
+    if (!invoice) return
+    const failedRules = Array.isArray(validation)
+      ? (validation as Array<{ results: Array<{ rule: string; passed: boolean; message: string }> }>)
+          .flatMap((p) => p.results.filter((r) => !r.passed).map((r) => ({ rule: r.rule, message: r.message })))
+      : []
+    setPageContext({
+      page: 'invoice-detail',
+      invoice_number: invoice.invoice_number,
+      invoice_type_code: invoice.invoice_type_code,
+      invoice_mode: invoice.invoice_mode,
+      buyer_name: invoice.buyer_name,
+      currency: invoice.currency,
+      total_without_vat: invoice.total_without_vat,
+      total_vat: invoice.total_vat,
+      total_with_vat: invoice.total_with_vat,
+      status: invoice.status,
+      has_xml: !!invoice.xml_content,
+      peppol_status: invoice.peppol_send_status,
+      failed_rules: failedRules,
+      failed_count: failedRules.length,
+    })
+  }, [invoice, validation, setPageContext])
 
   const loadInvoice = useCallback(async () => {
     const { data: inv } = await supabase
