@@ -66,9 +66,6 @@ function buildPhaseFromResults(
   description: string,
   results: ValidationResult[]
 ): ValidationPhase {
-  if (results.length === 0) {
-    results.push({ rule: 'OK', severity: 'error', message: 'Vsetky pravidla su splnene', passed: true })
-  }
   const errors = results.filter((r) => !r.passed && r.severity === 'error')
   return { name, description, results, passed: errors.length === 0 }
 }
@@ -143,12 +140,6 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
   const pos = (tag: string): number => xml.indexOf(tag)
 
   // --- Root Invoice element order ---
-  // Required order: CustomizationID < ProfileID < ID < IssueDate < DueDate < InvoiceTypeCode
-  //   < Note < DocumentCurrencyCode < BuyerReference < OrderReference
-  //   < AccountingSupplierParty < AccountingCustomerParty < Delivery
-  //   < PaymentMeans < PaymentTerms < AllowanceCharge < TaxTotal
-  //   < LegalMonetaryTotal < InvoiceLine
-
   const rootOrder = [
     'cbc:CustomizationID', 'cbc:ProfileID', 'cbc:ID', 'cbc:IssueDate',
     'cbc:InvoiceTypeCode', 'cbc:DocumentCurrencyCode', 'cbc:BuyerReference',
@@ -159,11 +150,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
   for (let i = 0; i < rootOrder.length - 1; i++) {
     const a = pos(`<${rootOrder[i]}`)
     const b = pos(`<${rootOrder[i + 1]}`)
-    if (a !== -1 && b !== -1 && a > b) {
+    if (a !== -1 && b !== -1) {
+      const ok = a < b
       check(
-        `XSD-ORDER-ROOT-${i}`,
-        false,
-        `Element <${rootOrder[i]}> musi byt pred <${rootOrder[i + 1]}> v Invoice`
+        `XSD-ROOT-${rootOrder[i].replace(':', '-')}`,
+        ok,
+        ok
+          ? `<${rootOrder[i]}> je pred <${rootOrder[i + 1]}>`
+          : `Element <${rootOrder[i]}> musi byt pred <${rootOrder[i + 1]}> v Invoice`
       )
     }
   }
@@ -181,11 +175,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
     for (let i = 0; i < lmtOrder.length - 1; i++) {
       const a = lmt.indexOf(`<${lmtOrder[i]}`)
       const b = lmt.indexOf(`<${lmtOrder[i + 1]}`)
-      if (a !== -1 && b !== -1 && a > b) {
+      if (a !== -1 && b !== -1) {
+        const ok = a < b
         check(
-          `XSD-ORDER-LMT-${i}`,
-          false,
-          `Element <${lmtOrder[i]}> musi byt pred <${lmtOrder[i + 1]}> v LegalMonetaryTotal`
+          `XSD-LMT-${lmtOrder[i].replace(':', '-')}`,
+          ok,
+          ok
+            ? `LMT: <${lmtOrder[i]}> je pred <${lmtOrder[i + 1]}>`
+            : `LMT: <${lmtOrder[i]}> musi byt pred <${lmtOrder[i + 1]}>`
         )
       }
     }
@@ -210,11 +207,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
       for (let i = 0; i < itemOrder.length - 1; i++) {
         const a = itemXml.indexOf(`<${itemOrder[i]}`)
         const b = itemXml.indexOf(`<${itemOrder[i + 1]}`)
-        if (a !== -1 && b !== -1 && a > b) {
+        if (a !== -1 && b !== -1) {
+          const ok = a < b
           check(
-            `XSD-ORDER-ITEM-L${lineIdx}-${i}`,
-            false,
-            `Riadok ${lineIdx}: <${itemOrder[i]}> musi byt pred <${itemOrder[i + 1]}> v Item`
+            `XSD-ITEM-L${lineIdx}-${itemOrder[i].replace(':', '-')}`,
+            ok,
+            ok
+              ? `Riadok ${lineIdx}: <${itemOrder[i]}> je pred <${itemOrder[i + 1]}>`
+              : `Riadok ${lineIdx}: <${itemOrder[i]}> musi byt pred <${itemOrder[i + 1]}> v Item`
           )
         }
       }
@@ -236,11 +236,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
     for (let i = 0; i < partyOrder.length - 1; i++) {
       const a = partyXml.indexOf(`<${partyOrder[i]}`)
       const b = partyXml.indexOf(`<${partyOrder[i + 1]}`)
-      if (a !== -1 && b !== -1 && a > b) {
+      if (a !== -1 && b !== -1) {
+        const ok = a < b
         check(
-          `XSD-ORDER-PARTY-${partyIdx}-${i}`,
-          false,
-          `Party ${partyIdx}: <${partyOrder[i]}> musi byt pred <${partyOrder[i + 1]}>`
+          `XSD-PARTY-${partyIdx}-${partyOrder[i].replace(':', '-')}`,
+          ok,
+          ok
+            ? `Party ${partyIdx}: <${partyOrder[i]}> je pred <${partyOrder[i + 1]}>`
+            : `Party ${partyIdx}: <${partyOrder[i]}> musi byt pred <${partyOrder[i + 1]}>`
         )
       }
     }
@@ -259,11 +262,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
     for (let i = 0; i < acOrder.length - 1; i++) {
       const a = acXml.indexOf(`<${acOrder[i]}`)
       const b = acXml.indexOf(`<${acOrder[i + 1]}`)
-      if (a !== -1 && b !== -1 && a > b) {
+      if (a !== -1 && b !== -1) {
+        const ok = a < b
         check(
-          'XSD-ORDER-AC',
-          false,
-          `AllowanceCharge: <${acOrder[i]}> musi byt pred <${acOrder[i + 1]}>`
+          `XSD-AC-${acOrder[i].replace(':', '-')}`,
+          ok,
+          ok
+            ? `AllowanceCharge: <${acOrder[i]}> je pred <${acOrder[i + 1]}>`
+            : `AllowanceCharge: <${acOrder[i]}> musi byt pred <${acOrder[i + 1]}>`
         )
       }
     }
@@ -283,11 +289,14 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
     for (let i = 0; i < lineOrder.length - 1; i++) {
       const a = lineXml.indexOf(`<${lineOrder[i]}`)
       const b = lineXml.indexOf(`<${lineOrder[i + 1]}`)
-      if (a !== -1 && b !== -1 && a > b) {
+      if (a !== -1 && b !== -1) {
+        const ok = a < b
         check(
-          `XSD-ORDER-LINE-${lineIdx}-${i}`,
-          false,
-          `Riadok ${lineIdx}: <${lineOrder[i]}> musi byt pred <${lineOrder[i + 1]}> v InvoiceLine`
+          `XSD-LINE-${lineIdx}-${lineOrder[i].replace(':', '-')}`,
+          ok,
+          ok
+            ? `Riadok ${lineIdx}: <${lineOrder[i]}> je pred <${lineOrder[i + 1]}>`
+            : `Riadok ${lineIdx}: <${lineOrder[i]}> musi byt pred <${lineOrder[i + 1]}> v InvoiceLine`
         )
       }
     }
@@ -303,18 +312,17 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
     for (let i = 0; i < priceOrder.length - 1; i++) {
       const a = priceXml.indexOf(`<${priceOrder[i]}`)
       const b = priceXml.indexOf(`<${priceOrder[i + 1]}`)
-      if (a !== -1 && b !== -1 && a > b) {
+      if (a !== -1 && b !== -1) {
+        const ok = a < b
         check(
-          'XSD-ORDER-PRICE',
-          false,
-          `Price: <${priceOrder[i]}> musi byt pred <${priceOrder[i + 1]}>`
+          `XSD-PRICE-${priceOrder[i].replace(':', '-')}`,
+          ok,
+          ok
+            ? `Price: <${priceOrder[i]}> je pred <${priceOrder[i + 1]}>`
+            : `Price: <${priceOrder[i]}> musi byt pred <${priceOrder[i + 1]}>`
         )
       }
     }
-  }
-
-  if (results.length === 0) {
-    results.push({ rule: 'XSD-OK', severity: 'error', message: 'Poradie elementov je spravne', passed: true })
   }
 
   const errors = results.filter((r) => !r.passed)
@@ -334,6 +342,31 @@ function jsFallback(xml: string, inv: PeppolInvoice): ValidationPhase[] {
   const enPhase: ValidationPhase = { ...validateEN16931(inv), simulated: true }
   const peppolPhase: ValidationPhase = { ...validatePeppolSchematron(inv), simulated: true }
   return [xsdPhase, enPhase, peppolPhase]
+}
+
+// ─── Merge API + JS results ──────────────────────────────────────────────────
+
+/**
+ * Merges API phase results with JS-checked rules so users see the full
+ * list of validated rules. API errors/warnings take precedence;
+ * JS rules that the API didn't report are added as passed.
+ */
+function mergePhaseResults(apiPhase: ValidationPhase, jsPhase: ValidationPhase): ValidationPhase {
+  const apiRuleIds = new Set(apiPhase.results.map((r) => r.rule))
+  const merged: ValidationResult[] = [...apiPhase.results]
+
+  // Add JS-checked rules that the API didn't report (they passed on both sides)
+  for (const jsRule of jsPhase.results) {
+    if (!apiRuleIds.has(jsRule.rule)) {
+      merged.push(jsRule)
+    }
+  }
+
+  return {
+    ...apiPhase,
+    results: merged,
+    passed: merged.filter((r) => !r.passed && r.severity === 'error').length === 0,
+  }
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -370,7 +403,18 @@ export async function validateInvoiceXml(
     if (!enPhase.passed) {
       return [structPhase, xsdPhase, enPhase]
     }
-    return [structPhase, xsdPhase, enPhase, peppolPhase]
+
+    // API succeeded -- enrich passing phases with JS rule details
+    // so users can see exactly what was checked, not just an empty list.
+    const jsXsd = validateXsdElementOrder(xml)
+    const jsEn = validateEN16931(inv)
+    const jsPeppol = validatePeppolSchematron(inv)
+
+    const mergedXsd = mergePhaseResults(xsdPhase, jsXsd)
+    const mergedEn = mergePhaseResults(enPhase, jsEn)
+    const mergedPeppol = mergePhaseResults(peppolPhase, jsPeppol)
+
+    return [structPhase, mergedXsd, mergedEn, mergedPeppol]
   } catch (err) {
     console.error('[validation] peppolvalidator.com API failed, using JS fallback:', (err as Error).message)
   }

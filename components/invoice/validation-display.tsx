@@ -193,40 +193,53 @@ export function ValidationDisplay({ phases }: Props) {
 
                 {isOpen && (
                   <div className="mt-2.5 space-y-1">
-                    {phase.results.map((rule, ruleIdx) => (
-                      <div
-                        key={ruleIdx}
-                        className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-sm ${
-                          rule.passed
-                            ? 'bg-success/5'
-                            : rule.severity === 'error'
-                            ? 'bg-destructive/10'
-                            : 'bg-warning/10'
-                        }`}
-                      >
-                        {rule.passed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
-                        ) : rule.severity === 'error' ? (
-                          <XCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                        ) : (
-                          <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <span className="font-mono text-xs text-muted-foreground mr-1.5">
-                            [{rule.rule}]
-                          </span>
-                          <span
-                            className={`text-xs ${
-                              rule.passed
-                                ? 'text-muted-foreground'
-                                : 'text-foreground'
-                            }`}
-                          >
-                            {rule.message}
+                    {phase.results.length === 0 ? (
+                      <p className="text-xs text-muted-foreground px-2.5 py-1.5">
+                        Ziadne individualne pravidla neboli zaznamenane.
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between px-2.5 pb-1">
+                          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                            {phase.results.filter(r => r.passed).length} splnenych / {phase.results.length} celkovo
                           </span>
                         </div>
-                      </div>
-                    ))}
+                        {phase.results.map((rule, ruleIdx) => (
+                          <div
+                            key={ruleIdx}
+                            className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-sm ${
+                              rule.passed
+                                ? 'bg-success/5'
+                                : rule.severity === 'error'
+                                ? 'bg-destructive/10'
+                                : 'bg-warning/10'
+                            }`}
+                          >
+                            {rule.passed ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
+                            ) : rule.severity === 'error' ? (
+                              <XCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <span className="font-mono text-xs text-muted-foreground mr-1.5">
+                                [{rule.rule}]
+                              </span>
+                              <span
+                                className={`text-xs ${
+                                  rule.passed
+                                    ? 'text-muted-foreground'
+                                    : 'text-foreground'
+                                }`}
+                              >
+                                {rule.message}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
