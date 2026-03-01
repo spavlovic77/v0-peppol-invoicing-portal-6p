@@ -617,7 +617,7 @@ export default function NewInvoicePage() {
           disabled={step === 0}
           className="px-6 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-30"
         >
-          Spat
+          Späť
         </button>
 
         {step < steps.length - 1 ? (
@@ -625,7 +625,7 @@ export default function NewInvoicePage() {
             onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
             className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
-            Dalej
+            Ďalej
           </button>
         ) : (
           <button
