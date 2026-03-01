@@ -317,9 +317,7 @@ export default function DashboardPage() {
                           onClick={() => router.push(`/invoices/${cn.id}`)}
                           className="flex items-center gap-3 pl-7 pr-3 py-2.5 cursor-pointer hover:bg-secondary/40 active:bg-secondary/60 transition-colors border-t border-border/50"
                         >
-                          {/* Connecting line */}
                           <div className="w-4 flex items-center justify-center shrink-0">
-                            <div className="w-px h-full bg-amber-500/30 absolute" />
                             <RotateCcw className="w-3 h-3 text-amber-500/60" />
                           </div>
 
