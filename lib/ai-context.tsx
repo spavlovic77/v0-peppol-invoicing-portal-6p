@@ -31,8 +31,16 @@ export function AiPanelProvider({ children }: { children: ReactNode }) {
   )
 }
 
+const defaultState: AiPanelState = {
+  isOpen: false,
+  togglePanel: () => {},
+  closePanel: () => {},
+  openPanel: () => {},
+  pageContext: {},
+  setPageContext: () => {},
+}
+
 export function useAiPanel() {
   const ctx = useContext(AiPanelContext)
-  if (!ctx) throw new Error('useAiPanel must be used within AiPanelProvider')
-  return ctx
+  return ctx ?? defaultState
 }
