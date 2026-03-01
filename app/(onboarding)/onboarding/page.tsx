@@ -66,7 +66,7 @@ export default function OnboardingPage() {
     }
   }
 
-  async function saveCompany(data: CompanyData) {
+  async function saveCompany(data: CompanyData, iban?: string) {
     setPhase('saving')
 
     try {
@@ -101,6 +101,7 @@ export default function OnboardingPage() {
         postal_code: data.postal_code,
         country_code: data.country_code,
         is_vat_payer: !!data.ic_dph,
+        ...(iban ? { iban } : {}),
       })
 
       setPhase('done')
@@ -108,6 +109,34 @@ export default function OnboardingPage() {
     } catch {
       setPhase('error')
       setErrorMsg('Nepodarilo sa ulozit udaje. Skuste to znova.')
+    }
+  }
+
+  const DEMO_ICO = '36353582'
+  const DEMO_IBAN = 'SK7611000000002615898434'
+
+  async function handleUseDemo() {
+    setIco(DEMO_ICO)
+    setPhase('searching')
+    setErrorMsg('')
+    setCompany(null)
+
+    try {
+      const res = await fetch(`/api/rpo?ico=${DEMO_ICO}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        setPhase('error')
+        setErrorMsg(data.error || 'Demo ICO nenajdene v registri')
+        return
+      }
+
+      setCompany(data)
+      setPhase('found')
+      setTimeout(() => saveCompany(data, DEMO_IBAN), 800)
+    } catch {
+      setPhase('error')
+      setErrorMsg('Chyba pripojenia. Skuste to znova.')
     }
   }
 
@@ -207,16 +236,16 @@ export default function OnboardingPage() {
           )}
         </GlassCard>
 
-        {/* Skip link */}
+        {/* Demo account option */}
         {phase !== 'done' && (
           <div className="text-center">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => handleUseDemo()}
               disabled={isProcessing}
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
             >
-              Preskocit a vyplnit neskor
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Building2 className="w-3.5 h-3.5" />
+              Pouzit demo ucet
             </button>
           </div>
         )}
