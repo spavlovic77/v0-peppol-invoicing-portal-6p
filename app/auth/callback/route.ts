@@ -32,7 +32,7 @@ export async function GET(request: Request) {
           .limit(1)
 
         if (!suppliers || suppliers.length === 0) {
-          return NextResponse.redirect(`${origin}/suppliers/new`)
+          return NextResponse.redirect(`${origin}/onboarding`)
         }
       }
       return NextResponse.redirect(`${origin}${next}`)

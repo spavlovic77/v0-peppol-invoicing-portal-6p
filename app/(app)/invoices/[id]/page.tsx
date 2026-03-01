@@ -5,19 +5,13 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Loader2,
-  Zap,
-  ArrowLeft,
-  CheckCircle2,
-  XCircle,
-  Copy,
-  Pencil,
-  Trash2,
-  Globe,
+  Loader2, Zap, ArrowLeft, CheckCircle2, XCircle, Copy,
+  Pencil, Trash2, Globe, RotateCcw,
 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationPipeline } from '@/components/invoice/validation-pipeline'
 import { DownloadActions } from '@/components/invoice/download-actions'
+import { InvoiceDetailSkeleton } from '@/components/skeleton'
 import Link from 'next/link'
 
 interface InvoiceData {
@@ -52,25 +46,11 @@ interface InvoiceData {
   peppol_sent_at: string | null
 }
 
-interface InvoiceItem {
-  id: string
-  line_number: number
-  description: string
-  quantity: number
-  unit: string
-  unit_price: number
-  vat_rate: number
-  discount_percent: number
-  discount_amount: number
-  line_total: number
-}
-
 export default function InvoiceDetailPage() {
   const params = useParams()
   const router = useRouter()
   const supabase = createClient()
   const [invoice, setInvoice] = useState<InvoiceData | null>(null)
-  const [items, setItems] = useState<InvoiceItem[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [validation, setValidation] = useState<unknown>(null)
@@ -91,17 +71,8 @@ export default function InvoiceDetailPage() {
       return
     }
 
-    const { data: itms } = await supabase
-      .from('invoice_items')
-      .select('*')
-      .eq('invoice_id', params.id as string)
-      .order('line_number')
-
     setInvoice(inv)
-    setItems(itms || [])
-    if (inv.validation_errors) {
-      setValidation(inv.validation_errors)
-    }
+    if (inv.validation_errors) setValidation(inv.validation_errors)
 
     if (inv.supplier_id) {
       const { data: supplier } = await supabase
@@ -115,14 +86,12 @@ export default function InvoiceDetailPage() {
     setLoading(false)
   }, [supabase, params.id, router])
 
-  useEffect(() => {
-    loadInvoice()
-  }, [loadInvoice])
+  useEffect(() => { loadInvoice() }, [loadInvoice])
 
   async function handleGenerate() {
     if (!invoice) return
     setGenerating(true)
-    setValidation(null) // Reset to trigger fresh animation
+    setValidation(null)
 
     try {
       const res = await fetch('/api/invoice/generate', {
@@ -130,17 +99,11 @@ export default function InvoiceDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invoiceId: invoice.id }),
       })
-
       const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Chyba pri generovani')
-      }
+      if (!res.ok) throw new Error(data.error || 'Chyba pri generovani')
 
       setValidation(data.validation)
-      toast.success(
-        data.allPassed ? 'Faktura uspesne vygenerovana a validna' : 'Faktura vygenerovana s chybami'
-      )
+      toast.success(data.allPassed ? 'Faktura validna' : 'Najdene problemy')
       loadInvoice()
     } catch (err) {
       toast.error((err as Error).message)
@@ -174,13 +137,9 @@ export default function InvoiceDetailPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Chyba pri odosielani')
-
-      toast.success('Faktura bola odoslana na Peppol siet')
+      toast.success('Faktura odoslana na Peppol siet')
       await loadInvoice()
-
-      if (data.transactionId) {
-        pollDeliveryStatus(data.transactionId, invoice.id)
-      }
+      if (data.transactionId) pollDeliveryStatus(data.transactionId, invoice.id)
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -202,32 +161,22 @@ export default function InvoiceDetailPage() {
       try {
         const res = await fetch(`/api/peppol/status?invoiceId=${invId}&transactionId=${txId}`)
         const data = await res.json()
-
         if (data.status === 'delivered' || data.status === 'failed') {
           pollingRef.current = false
           setPolling(false)
           await loadInvoice()
-          if (data.status === 'delivered') {
-            toast.success('Faktura bola uspesne dorucena cez Peppol')
-          } else {
-            toast.error('Dorucenie faktury zlyhalo')
-          }
+          toast[data.status === 'delivered' ? 'success' : 'error'](
+            data.status === 'delivered' ? 'Faktura dorucena cez Peppol' : 'Dorucenie zlyhalo'
+          )
           return
         }
-
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 5000)
-        } else {
-          pollingRef.current = false
-          setPolling(false)
-          toast.info('Overenie dorucenia trva dlhsie. Skontrolujte neskor.')
-        }
+        if (attempts < maxAttempts) setTimeout(poll, 5000)
+        else { pollingRef.current = false; setPolling(false); toast.info('Skontrolujte neskor.') }
       } catch {
         pollingRef.current = false
         setPolling(false)
       }
     }
-
     poll()
   }
 
@@ -244,102 +193,111 @@ export default function InvoiceDetailPage() {
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    )
-  }
-
+  if (loading) return <InvoiceDetailSkeleton />
   if (!invoice) return null
 
   const statusColor =
-    invoice.status === 'valid'
-      ? 'text-success bg-success/20'
+    invoice.status === 'valid' || invoice.status === 'sent'
+      ? 'text-success bg-success/15'
       : invoice.status === 'invalid'
-      ? 'text-destructive bg-destructive/20'
-      : 'text-warning bg-warning/20'
+      ? 'text-destructive bg-destructive/15'
+      : 'text-warning bg-warning/15'
 
   const statusLabel =
-    invoice.status === 'valid' ? 'Validna' : invoice.status === 'invalid' ? 'Nevalidna' : 'Koncept'
+    invoice.status === 'valid' ? 'Validna'
+      : invoice.status === 'sent' ? 'Odoslana'
+      : invoice.status === 'invalid' ? 'Nevalidna'
+      : 'Koncept'
+
+  const isValid = invoice.status === 'valid' || invoice.status === 'sent'
+  const isCreditNote = invoice.invoice_number.startsWith('CN-')
+  const allPassed = Array.isArray(validation) && (validation as Array<{ passed: boolean }>).every((p) => p.passed)
+  const hasFailures = Array.isArray(validation) && !allPassed
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-sm mb-3"
-          >
-            <ArrowLeft className="w-4 h-4" /> Spat na prehlad
-          </button>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              Faktura {invoice.invoice_number}
-            </h1>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
-              {statusLabel}
-            </span>
-            {invoice.status === 'valid' && <CheckCircle2 className="w-4 h-4 text-success" />}
-            {invoice.status === 'invalid' && <XCircle className="w-4 h-4 text-destructive" />}
-          </div>
-        </div>
-
-        {/* Compact action bar */}
-        <div className="flex flex-wrap gap-2">
-          {invoice.status === 'draft' && (
-            <Link
-              href={`/invoices/new?edit=${invoice.id}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors"
-            >
-              <Pencil className="w-4 h-4" />
-              <span className="hidden md:inline">Upravit</span>
-            </Link>
-          )}
-          <Link
-            href={`/invoices/new?duplicate=${invoice.id}`}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors"
-          >
-            <Copy className="w-4 h-4" />
-            <span className="hidden md:inline">Duplikovat</span>
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-muted-foreground font-medium hover:text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden md:inline">Zmazat</span>
-          </button>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 ml-auto"
-          >
-            {generating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Zap className="w-4 h-4" />
-            )}
-            {generating
-              ? 'Generujem...'
-              : invoice.xml_content
-              ? 'Regenerovat'
-              : 'Generovat Peppol XML'}
-          </button>
+    <div className="max-w-lg mx-auto space-y-4">
+      {/* Back + Header */}
+      <div>
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm mb-3"
+        >
+          <ArrowLeft className="w-4 h-4" /> Faktury
+        </button>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusLabel}
+          </span>
         </div>
       </div>
 
-      {/* Validation Pipeline -- the star of the show */}
-      {(generating || (validation && Array.isArray(validation))) && (
+      {/* Compact summary card */}
+      <GlassCard>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{invoice.buyer_name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {invoice.issue_date} {'>'} {invoice.due_date}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xl font-bold text-primary">{fmt(invoice.total_with_vat)}</p>
+            <p className="text-xs text-muted-foreground">{invoice.currency}</p>
+          </div>
+        </div>
+        {invoice.total_vat > 0 && (
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+            <span>Zaklad: {fmt(invoice.total_without_vat)}</span>
+            <span>DPH: {fmt(invoice.total_vat)}</span>
+          </div>
+        )}
+      </GlassCard>
+
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-2">
+        {invoice.status === 'draft' && (
+          <Link
+            href={`/invoices/new?edit=${invoice.id}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Upravit
+          </Link>
+        )}
+        <Link
+          href={`/invoices/new?duplicate=${invoice.id}`}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
+        >
+          <Copy className="w-3.5 h-3.5" /> Duplikovat
+        </Link>
+        <button
+          onClick={handleDelete}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Zmazat
+        </button>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 ml-auto"
+        >
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+          {generating ? 'Generujem...' : invoice.xml_content ? 'Regenerovat' : 'Generovat XML'}
+        </button>
+      </div>
+
+      {/* Validation: only when generating or FAILED */}
+      {generating && !validation && (
+        <ValidationPipeline phases={[]} isGenerating />
+      )}
+      {hasFailures && (
         <ValidationPipeline
           phases={Array.isArray(validation) ? validation : []}
-          isGenerating={generating && !validation}
+          isGenerating={false}
         />
       )}
 
-      {/* Download Actions -- large cards */}
+      {/* Download actions */}
       {invoice.xml_content && (
         <DownloadActions
           invoice={invoice}
@@ -350,51 +308,51 @@ export default function InvoiceDetailPage() {
         />
       )}
 
-      {/* Peppol Delivery Status */}
-      {invoice.peppol_send_status && (
-        <GlassCard
-          className={
-            invoice.peppol_send_status === 'delivered'
-              ? 'border-success/30'
-              : invoice.peppol_send_status === 'failed'
-              ? 'border-destructive/30'
-              : 'border-primary/30'
-          }
+      {/* Dobropis button -- only for valid non-credit-note invoices */}
+      {isValid && !isCreditNote && (
+        <Link
+          href={`/invoices/new?correct=${invoice.id}`}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
         >
+          <RotateCcw className="w-4 h-4" />
+          Vytvorit opravny doklad (dobropis)
+        </Link>
+      )}
+
+      {/* Peppol delivery status */}
+      {invoice.peppol_send_status && (
+        <GlassCard className={
+          invoice.peppol_send_status === 'delivered' ? 'border-success/30'
+          : invoice.peppol_send_status === 'failed' ? 'border-destructive/30'
+          : 'border-primary/30'
+        }>
           <div className="flex items-center gap-3">
             <Globe className="w-5 h-5 text-primary shrink-0" />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-foreground text-sm">Peppol dorucenie</h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-foreground">Peppol</span>
                 {invoice.peppol_send_status === 'sent' && (
-                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">
                     {polling && <Loader2 className="w-3 h-3 animate-spin" />}
                     Odoslane
                   </span>
                 )}
                 {invoice.peppol_send_status === 'delivered' && (
-                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-success/15 text-success">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Dorucene
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/15 text-success">
+                    <CheckCircle2 className="w-3 h-3" /> Dorucene
                   </span>
                 )}
                 {invoice.peppol_send_status === 'failed' && (
-                  <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">
-                    <XCircle className="w-3 h-3" />
-                    Zlyhalo
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">
+                    <XCircle className="w-3 h-3" /> Zlyhalo
                   </span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {invoice.peppol_sent_at &&
-                  `Odoslane: ${new Date(invoice.peppol_sent_at).toLocaleString('sk-SK')}`}
-                {invoice.peppol_transaction_id && (
-                  <span className="ml-2 font-mono">
-                    TX: {invoice.peppol_transaction_id.slice(0, 12)}...
-                  </span>
-                )}
-              </div>
-              {polling && <div className="text-xs text-primary mt-1">Overujem dorucenie...</div>}
+              {invoice.peppol_sent_at && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(invoice.peppol_sent_at).toLocaleString('sk-SK')}
+                </p>
+              )}
             </div>
             {invoice.peppol_send_status === 'failed' && hasApKey && (
               <button
@@ -402,121 +360,12 @@ export default function InvoiceDetailPage() {
                 disabled={sending}
                 className="px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
               >
-                Skusit znova
+                Znova
               </button>
             )}
           </div>
         </GlassCard>
       )}
-
-      {/* Invoice Info Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <GlassCard>
-          <div className="text-xs text-muted-foreground mb-1">Datum vystavenia</div>
-          <div className="text-foreground font-medium">{invoice.issue_date}</div>
-        </GlassCard>
-        <GlassCard>
-          <div className="text-xs text-muted-foreground mb-1">Datum splatnosti</div>
-          <div className="text-foreground font-medium">{invoice.due_date}</div>
-        </GlassCard>
-        <GlassCard>
-          <div className="text-xs text-muted-foreground mb-1">Zaklad dane</div>
-          <div className="text-foreground font-medium">
-            {fmt(invoice.total_without_vat)} {invoice.currency}
-          </div>
-        </GlassCard>
-        <GlassCard>
-          <div className="text-xs text-muted-foreground mb-1">Na uhradu</div>
-          <div className="text-xl font-bold text-primary">
-            {fmt(invoice.total_with_vat)} {invoice.currency}
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Buyer */}
-      <GlassCard>
-        <h2 className="font-semibold text-foreground mb-3">Odberatel</h2>
-        <div className="grid md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-foreground font-medium">{invoice.buyer_name}</div>
-            {invoice.buyer_street && (
-              <div className="text-muted-foreground">{invoice.buyer_street}</div>
-            )}
-            <div className="text-muted-foreground">
-              {invoice.buyer_postal_code} {invoice.buyer_city}
-            </div>
-          </div>
-          <div className="space-y-1">
-            {invoice.buyer_ico && (
-              <div className="text-muted-foreground">ICO: {invoice.buyer_ico}</div>
-            )}
-            {invoice.buyer_dic && (
-              <div className="text-muted-foreground">DIC: {invoice.buyer_dic}</div>
-            )}
-            {invoice.buyer_ic_dph && (
-              <div className="text-muted-foreground">IC DPH: {invoice.buyer_ic_dph}</div>
-            )}
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Items */}
-      <GlassCard>
-        <h2 className="font-semibold text-foreground mb-3">Polozky</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-muted-foreground text-left">
-                <th className="pb-2 font-medium">#</th>
-                <th className="pb-2 font-medium">Popis</th>
-                <th className="pb-2 font-medium text-right">Mn.</th>
-                <th className="pb-2 font-medium text-right">Cena</th>
-                <th className="pb-2 font-medium text-right">Zlava</th>
-                <th className="pb-2 font-medium text-right">DPH</th>
-                <th className="pb-2 font-medium text-right">Spolu</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={item.id} className="border-t border-border">
-                  <td className="py-2 text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 text-foreground">{item.description}</td>
-                  <td className="py-2 text-right text-foreground">{item.quantity}</td>
-                  <td className="py-2 text-right text-foreground">{fmt(item.unit_price)}</td>
-                  <td className="py-2 text-right text-muted-foreground">
-                    {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
-                  </td>
-                  <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
-                  <td className="py-2 text-right text-foreground font-medium">
-                    {fmt(item.line_total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-border space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Zaklad dane:</span>
-            <span className="text-foreground">
-              {fmt(invoice.total_without_vat)} {invoice.currency}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">DPH:</span>
-            <span className="text-foreground">
-              {fmt(invoice.total_vat)} {invoice.currency}
-            </span>
-          </div>
-          <div className="flex justify-between font-bold">
-            <span className="text-foreground">Na uhradu:</span>
-            <span className="text-primary">
-              {fmt(invoice.total_with_vat)} {invoice.currency}
-            </span>
-          </div>
-        </div>
-      </GlassCard>
     </div>
   )
 }

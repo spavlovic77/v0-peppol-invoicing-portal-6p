@@ -432,7 +432,27 @@ export default function NewInvoicePage() {
       const { error: itemsError } = await supabase.from('invoice_items').insert(items)
       if (itemsError) throw itemsError
 
-      toast.success(isEditMode ? 'Faktura bola aktualizovana' : 'Faktura bola vytvorena')
+      // Auto-generate XML and validate
+      try {
+        const genRes = await fetch('/api/invoice/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceId }),
+        })
+        const genData = await genRes.json()
+
+        if (genRes.ok && genData.allPassed) {
+          // All validation passed -> go to dashboard with success toast
+          toast.success(`Faktura ${formData.invoice_number} bola vytvorena a je validna`)
+          router.push('/dashboard')
+          return
+        }
+      } catch {
+        // Generation failed silently, redirect to detail to let user manually retry
+      }
+
+      // Validation failed or generation error -> redirect to detail page to show errors
+      toast.warning(isEditMode ? 'Faktura ulozena, ale validacia nepresla' : 'Faktura vytvorena, ale najdene chyby')
       router.push(`/invoices/${invoiceId}`)
     } catch (err) {
       toast.error('Chyba: ' + (err as Error).message)
@@ -515,11 +535,11 @@ export default function NewInvoicePage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : isCorrectionMode ? 'Opravny doklad' : 'Nova faktura'}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
+        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upravit fakturu' : isCorrectionMode ? 'Opravny doklad' : 'Nova faktura'}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {activeSupplier.company_name}
         </p>
       </div>
 
@@ -550,7 +570,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : 'Vytvorit fakturu'}
+            {creating ? 'Vytvaram a validujem...' : isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : 'Vytvorit a validovat'}
           </button>
         )}
       </div>
