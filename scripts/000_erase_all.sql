@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS invoice_sequences CASCADE;
 DROP TABLE IF EXISTS buyer_contacts CASCADE;
 DROP TABLE IF EXISTS suppliers CASCADE;
 DROP TABLE IF EXISTS company_profiles CASCADE;
+DROP TABLE IF EXISTS vat_rates CASCADE;
 
 -- 3. Drop functions
 DROP FUNCTION IF EXISTS update_updated_at() CASCADE;
