@@ -214,7 +214,7 @@ export default function BuyersPage() {
           {/* ICO Lookup */}
           <div className="flex gap-3 mb-4">
             <input
-              type="text" value={form.ico || ''} onChange={(e) => setForm({ ...form, ico: e.target.value })}
+              type="text" value={form.ico || ''} onChange={(e) => setForm({ ...form, ico: e.target.value.replace(/\s/g, '') })}
               placeholder="ICO odberatela" className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground" maxLength={10}
             />
             <button onClick={lookupICO} disabled={lookingUp}

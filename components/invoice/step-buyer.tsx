@@ -166,7 +166,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
           <input
             type="text"
             value={buyerIco}
-            onChange={(e) => setBuyerIco(e.target.value)}
+            onChange={(e) => setBuyerIco(e.target.value.replace(/\s/g, ''))}
             placeholder="ICO odberatela"
             className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
             maxLength={10}
@@ -198,7 +198,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">ICO</label>
             <input type="text" value={formData.buyer_ico || ''}
-              onChange={(e) => updateForm({ buyer_ico: e.target.value })}
+              onChange={(e) => updateForm({ buyer_ico: e.target.value.replace(/\s/g, '') })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground" />
           </div>
           <div>
