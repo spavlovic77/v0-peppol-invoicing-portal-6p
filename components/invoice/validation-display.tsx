@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info, Zap, Globe } from 'lucide-react'
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 
@@ -9,6 +9,8 @@ interface ValidationResult {
   severity: 'error' | 'warning'
   message: string
   passed: boolean
+  /** 'api' = confirmed by peppolvalidator.com, 'js' = checked by JS logic */
+  source?: 'api' | 'js'
 }
 
 interface ValidationPhase {
@@ -17,6 +19,8 @@ interface ValidationPhase {
   results: ValidationResult[]
   passed: boolean
   simulated?: boolean
+  /** true when peppolvalidator.com confirmed this phase */
+  apiConfirmed?: boolean
 }
 
 interface Props {
@@ -24,11 +28,11 @@ interface Props {
 }
 
 export function ValidationDisplay({ phases }: Props) {
-  const [topOpen, setTopOpen] = useState(false)
+  const [topOpen, setTopOpen] = useState(true)
   const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {}
-    phases.forEach((phase, i) => {
-      initial[i] = !phase.passed
+    phases.forEach((_phase, i) => {
+      initial[i] = true // always expanded so user sees every rule
     })
     return initial
   })
@@ -159,10 +163,16 @@ export function ValidationDisplay({ phases }: Props) {
                         <span className="font-medium text-foreground text-sm">
                           {phase.name}
                         </span>
-                        {phase.simulated && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-xs font-medium">
+                        {phase.apiConfirmed && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-medium">
+                            <Globe className="w-3 h-3" />
+                            Schematron API
+                          </span>
+                        )}
+                        {phase.simulated && !phase.apiConfirmed && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-[10px] font-medium">
                             <FlaskConical className="w-3 h-3" />
-                            SIMULÁCIA
+                            JS simulacia
                           </span>
                         )}
                       </div>
@@ -235,6 +245,11 @@ export function ValidationDisplay({ phases }: Props) {
                               >
                                 {rule.message}
                               </span>
+                              {rule.source === 'api' && (
+                                <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] text-primary/60 font-medium">
+                                  <Zap className="w-2.5 h-2.5" />API
+                                </span>
+                              )}
                             </div>
                           </div>
                         ))}

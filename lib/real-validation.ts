@@ -58,6 +58,7 @@ function apiItemToResult(item: ApiItem, passed: boolean, severity: 'error' | 'wa
     severity,
     message: item.message ?? `Rule ${item.id ?? item.rule} violated`,
     passed,
+    source: 'api' as const,
   }
 }
 
@@ -104,21 +105,30 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
     bucket.push(apiItemToResult(item, true, 'warning'))
   }
 
-  const phase1 = buildPhaseFromResults(
-    'UBL 2.1 XSD validacia',
-    'OASIS UBL 2.1 schema — element poradie, typy, atributy, menove priestory',
-    xsdResults
-  )
-  const phase2 = buildPhaseFromResults(
-    'EN16931 pravidla',
-    'Europske obchodne pravidla pre e-fakturaciu (CEN schematron)',
-    enResults
-  )
-  const phase3 = buildPhaseFromResults(
-    'Peppol BIS 3.0 pravidla',
-    'OpenPEPPOL BIS Billing 3.0 schematron pravidla',
-    peppolResults
-  )
+  const phase1 = {
+    ...buildPhaseFromResults(
+      'UBL 2.1 XSD validacia',
+      'OASIS UBL 2.1 schema — element poradie, typy, atributy, menove priestory',
+      xsdResults
+    ),
+    apiConfirmed: true,
+  }
+  const phase2 = {
+    ...buildPhaseFromResults(
+      'EN16931 pravidla',
+      'Europske obchodne pravidla pre e-fakturaciu (CEN schematron)',
+      enResults
+    ),
+    apiConfirmed: true,
+  }
+  const phase3 = {
+    ...buildPhaseFromResults(
+      'Peppol BIS 3.0 pravidla',
+      'OpenPEPPOL BIS Billing 3.0 schematron pravidla',
+      peppolResults
+    ),
+    apiConfirmed: true,
+  }
 
   return [phase1, phase2, phase3]
 }
@@ -355,10 +365,10 @@ function mergePhaseResults(apiPhase: ValidationPhase, jsPhase: ValidationPhase):
   const apiRuleIds = new Set(apiPhase.results.map((r) => r.rule))
   const merged: ValidationResult[] = [...apiPhase.results]
 
-  // Add JS-checked rules that the API didn't report (they passed on both sides)
+  // Add JS-checked rules that the API didn't report -- mark them as JS source
   for (const jsRule of jsPhase.results) {
     if (!apiRuleIds.has(jsRule.rule)) {
-      merged.push(jsRule)
+      merged.push({ ...jsRule, source: 'js' as const })
     }
   }
 
@@ -366,6 +376,7 @@ function mergePhaseResults(apiPhase: ValidationPhase, jsPhase: ValidationPhase):
     ...apiPhase,
     results: merged,
     passed: merged.filter((r) => !r.passed && r.severity === 'error').length === 0,
+    apiConfirmed: apiPhase.apiConfirmed, // preserve the API confirmation flag
   }
 }
 

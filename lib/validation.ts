@@ -9,6 +9,8 @@ export interface ValidationResult {
   severity: 'error' | 'warning'
   message: string
   passed: boolean
+  /** 'api' = confirmed by peppolvalidator.com schematron, 'js' = checked by JS logic */
+  source?: 'api' | 'js'
 }
 
 export interface ValidationPhase {
@@ -18,6 +20,8 @@ export interface ValidationPhase {
   passed: boolean
   /** true when results come from JS simulation, not real schematron */
   simulated?: boolean
+  /** true when peppolvalidator.com API confirmed this phase */
+  apiConfirmed?: boolean
 }
 
 // ============================================================
