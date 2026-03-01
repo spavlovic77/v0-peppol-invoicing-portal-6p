@@ -165,7 +165,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <Search className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Vyh\u013Eadanie pod\u013Ea I\u010CO</h2>
+          <h2 className="font-semibold text-foreground">Vyhľadanie podľa IČO</h2>
         </div>
         <div className="flex gap-3">
           <input
@@ -201,10 +201,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <Building2 className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">\u00DAdaje o firme</h2>
+          <h2 className="font-semibold text-foreground">Údaje o firme</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="N\u00E1zov firmy *" value={form.company_name} onChange={(v) => updateField('company_name', v)} />
+          <Field label="Názov firmy *" value={form.company_name} onChange={(v) => updateField('company_name', v)} />
           <Field label="ICO" value={form.ico} onChange={(v) => updateField('ico', v)} />
           <Field label="DIC" value={form.dic} onChange={(v) => updateField('dic', v)} />
           {form.is_vat_payer && (
@@ -214,8 +214,8 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Mesto" value={form.city} onChange={(v) => updateField('city', v)} />
           <Field label="PSC" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
           <Field label="Krajina" value={form.country_code} onChange={(v) => updateField('country_code', v)} />
-          <Field label="Registra\u010Dn\u00FD s\u00FAd" value={form.registration_court} onChange={(v) => updateField('registration_court', v)} className="md:col-span-2" />
-          <Field label="\u010C\u00EDslo z\u00E1pisu" value={form.registration_number} onChange={(v) => updateField('registration_number', v)} className="md:col-span-2" />
+          <Field label="Registračný súd" value={form.registration_court} onChange={(v) => updateField('registration_court', v)} className="md:col-span-2" />
+          <Field label="Číslo zápisu" value={form.registration_number} onChange={(v) => updateField('registration_number', v)} className="md:col-span-2" />
         </div>
         <div className="mt-5 pt-5 border-t border-border">
           <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -229,8 +229,8 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
               <span className="text-sm font-medium text-foreground">Platca DPH</span>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {form.is_vat_payer
-                  ? 'Fakt\u00FAry bud\u00FA vystaven\u00E9 s DPH a rekapitul\u00E1ciou dane'
-                  : 'Fakt\u00FAry bud\u00FA vystaven\u00E9 bez DPH (dod\u00E1vate\u013E nie je platcom DPH)'
+                  ? 'Faktúry budú vystavené s DPH a rekapituláciou dane'
+                  : 'Faktúry budú vystavené bez DPH (dodávateľ nie je platcom DPH)'
                 }
               </p>
             </div>
@@ -242,10 +242,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <CreditCard className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Platobn\u00E9 \u00FAdaje</h2>
+          <h2 className="font-semibold text-foreground">Platobné údaje</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
-          <Field label="N\u00E1zov banky" value={form.bank_name} onChange={(v) => updateField('bank_name', v)} />
+          <Field label="Názov banky" value={form.bank_name} onChange={(v) => updateField('bank_name', v)} />
           <IbanField value={form.iban} onChange={(v) => updateField('iban', v)} />
           <Field label="SWIFT/BIC" value={form.swift} onChange={(v) => updateField('swift', v)} />
         </div>
@@ -255,12 +255,12 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <Globe className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Kontaktn\u00E9 \u00FAdaje</h2>
+          <h2 className="font-semibold text-foreground">Kontaktné údaje</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <Field label="E-mail" value={form.email} onChange={(v) => updateField('email', v)} type="email" />
           <Field label="Telefon" value={form.phone} onChange={(v) => updateField('phone', v)} type="tel" />
-          <Field label="Web str\u00E1nka" value={form.web} onChange={(v) => updateField('web', v)} className="md:col-span-2" />
+          <Field label="Web stránka" value={form.web} onChange={(v) => updateField('web', v)} className="md:col-span-2" />
         </div>
       </GlassCard>
 
@@ -324,7 +324,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
               className="px-5 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 text-sm"
             >
               <Trash2 className="w-4 h-4" />
-              Zmaza\u0165 dod\u00E1vate\u013Ea
+              Zmazať dodávateľa
             </button>
           )}
         </div>
@@ -334,7 +334,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           className="px-8 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {isEdit ? 'Ulo\u017Ei\u0165 zmeny' : 'Vytvori\u0165 dod\u00E1vate\u013Ea'}
+          {isEdit ? 'Uložiť zmeny' : 'Vytvoriť dodávateľa'}
         </button>
       </div>
     </div>

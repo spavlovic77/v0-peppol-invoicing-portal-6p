@@ -12,8 +12,8 @@ import { DashboardSkeleton } from '@/components/skeleton'
 const PAGE_SIZE = 20
 
 const SK_MONTHS = [
-  'Janu\u00E1r', 'Febru\u00E1r', 'Marec', 'Apr\u00EDl', 'M\u00E1j', 'J\u00FAn',
-  'J\u00FAl', 'August', 'September', 'Okt\u00F3ber', 'November', 'December',
+  'Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún',
+  'Júl', 'August', 'September', 'Október', 'November', 'December',
 ]
 
 interface Invoice {
@@ -44,7 +44,7 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/15 text-success text-xs font-medium">
         <CheckCircle2 className="w-3 h-3" />
-        {status === 'sent' ? 'Odoslan\u00E1' : 'Validn\u00E1'}
+        {status === 'sent' ? 'Odoslaná' : 'Validná'}
       </span>
     )
   }
@@ -188,16 +188,16 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <Building2 className="w-12 h-12 text-muted-foreground/40 mb-4" />
-        <h2 className="text-lg font-semibold text-foreground mb-2">Vitajte v Peppol Fakt\u00FAra</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-2">Vitajte v Peppol Faktúra</h2>
         <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-          Za\u010Dnite pridan\u00EDm firmy, za ktor\u00FA budete vystavova\u0165 fakt\u00FAry.
+          Začnite pridaním firmy, za ktorú budete vystavovať faktúry.
         </p>
         <Link
           href="/suppliers/new"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Prida\u0165 dod\u00E1vate\u013Ea
+          Pridať dodávateľa
         </Link>
       </div>
     )
@@ -230,7 +230,7 @@ export default function DashboardPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="H\u013Eada\u0165 fakt\u00FAru alebo odberate\u013Ea..."
+          placeholder="Hľadať faktúru alebo odberateľa..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm text-foreground placeholder:text-muted-foreground"
@@ -242,7 +242,7 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center py-16 text-center">
           <FileText className="w-10 h-10 text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">
-            {invoices.length === 0 ? 'Zatia\u013E \u017Eiadne fakt\u00FAry' : '\u017Diadne v\u00FDsledky'}
+            {invoices.length === 0 ? 'Zatiaľ žiadne faktúry' : 'Žiadne výsledky'}
           </p>
         </div>
       ) : (
@@ -367,7 +367,7 @@ export default function DashboardPage() {
               {loadingMore ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                'Na\u010D\u00EDta\u0165 \u010Fal\u0161ie'
+                'Načítať ďalšie'
               )}
             </button>
           )}
