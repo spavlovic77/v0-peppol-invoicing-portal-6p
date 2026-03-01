@@ -66,7 +66,7 @@ export default function OnboardingPage() {
     }
   }
 
-  async function saveCompany(data: CompanyData, iban?: string) {
+  async function saveCompany(data: CompanyData, iban?: string, isDemo?: boolean) {
     setPhase('saving')
 
     try {
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
       })
 
       // Create first supplier
-      await supabase.from('suppliers').insert({
+      const { data: supplierRows } = await supabase.from('suppliers').insert({
         user_id: user.id,
         ico: data.ico,
         dic: data.dic,
@@ -102,7 +102,12 @@ export default function OnboardingPage() {
         country_code: data.country_code,
         is_vat_payer: !!data.ic_dph,
         ...(iban ? { iban } : {}),
-      })
+      }).select('id').single()
+
+      // Seed demo buyer contacts with ION tokens
+      if (isDemo && supplierRows?.id) {
+        await seedDemoBuyers(user.id, supplierRows.id)
+      }
 
       setPhase('done')
       setTimeout(() => router.push('/dashboard'), 600)
@@ -114,6 +119,36 @@ export default function OnboardingPage() {
 
   const DEMO_ICO = '36353582'
   const DEMO_IBAN = 'SK7611000000002615898434'
+
+  const DEMO_BUYERS = [
+    { ico: '51431041', peppol_id: '39075c751f45fca723dbbe600669ec915b8ca1a5' },
+    { ico: '36353582', peppol_id: 'd5ac88320c6078db43677a00ecd2a9a3d3d2bcf5' },
+  ]
+
+  async function seedDemoBuyers(userId: string, supplierId: string) {
+    for (const buyer of DEMO_BUYERS) {
+      try {
+        const res = await fetch(`/api/rpo?ico=${buyer.ico}`)
+        if (!res.ok) continue
+        const data = await res.json()
+        await supabase.from('buyer_contacts').insert({
+          user_id: userId,
+          supplier_id: supplierId,
+          ico: data.ico,
+          dic: data.dic,
+          ic_dph: data.ic_dph,
+          company_name: data.company_name,
+          street: data.street,
+          city: data.city,
+          postal_code: data.postal_code,
+          country_code: data.country_code || 'SK',
+          peppol_id: buyer.peppol_id,
+        })
+      } catch {
+        // Non-critical – skip if a buyer contact fails
+      }
+    }
+  }
 
   async function handleUseDemo() {
     setIco(DEMO_ICO)
@@ -133,7 +168,7 @@ export default function OnboardingPage() {
 
       setCompany(data)
       setPhase('found')
-      setTimeout(() => saveCompany(data, DEMO_IBAN), 800)
+      setTimeout(() => saveCompany(data, DEMO_IBAN, true), 800)
     } catch {
       setPhase('error')
       setErrorMsg('Chyba pripojenia. Skuste to znova.')
