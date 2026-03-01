@@ -8,6 +8,7 @@ import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
 import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
+import { ConfirmModal } from '@/components/confirm-modal'
 
 export interface SupplierFormData {
   ico: string
@@ -45,6 +46,7 @@ interface SupplierFormProps {
 export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
   const [form, setForm] = useState<SupplierFormData>({ ...emptyForm, ...initial })
   const [saving, setSaving] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [icoInput, setIcoInput] = useState(initial?.ico || '')
@@ -147,8 +149,6 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
 
   async function handleDelete() {
     if (!supplierId) return
-    if (!confirm('Naozaj chcete zmazat tohto dodavatela? Vsetky jeho faktury zostanu zachovane.')) return
-
     const { error } = await supabase.from('suppliers').delete().eq('id', supplierId)
     if (error) {
       toast.error('Chyba pri mazani: ' + error.message)
@@ -318,12 +318,12 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div>
-          {isEdit && (
-            <button
-              onClick={handleDelete}
-              className="px-5 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 text-sm"
-            >
-              <Trash2 className="w-4 h-4" />
+  {isEdit && (
+  <button
+  onClick={() => setShowDeleteConfirm(true)}
+  className="px-5 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 text-sm"
+  >
+  <Trash2 className="w-4 h-4" />
               Zmazať dodávateľa
             </button>
           )}
@@ -337,6 +337,16 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           {isEdit ? 'Uložiť zmeny' : 'Vytvoriť dodávateľa'}
         </button>
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Zmazat dodavatela"
+        description="Naozaj chcete zmazat tohto dodavatela? Vsetky jeho faktury zostanu zachovane."
+        confirmLabel="Zmazat"
+        variant="danger"
+        onConfirm={() => { setShowDeleteConfirm(false); handleDelete() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   )
 }

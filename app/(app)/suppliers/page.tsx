@@ -7,10 +7,13 @@ import { Building2, Plus, Pencil, CreditCard, Trash2, Receipt } from 'lucide-rea
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { SupplierCardSkeleton } from '@/components/skeleton'
+import { ConfirmModal } from '@/components/confirm-modal'
+import { useState } from 'react'
 
 export default function SuppliersPage() {
   const { suppliers, activeSupplier, setActiveSupplier, loading, refreshSuppliers } = useActiveSupplier()
   const supabase = createClient()
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   async function handleSetBilling(id: string, name: string) {
     // First, unset billing flag on all suppliers for this user
@@ -33,8 +36,7 @@ export default function SuppliersPage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Naozaj chcete zmazat dodavatela "${name}"? Vsetky faktury tohto dodavatela stratia priradenie.`)) return
+  async function handleDelete(id: string) {
     const { error } = await supabase.from('suppliers').delete().eq('id', id)
     if (error) {
       toast.error('Chyba pri mazani: ' + error.message)
@@ -171,7 +173,7 @@ export default function SuppliersPage() {
                       <Pencil className="w-3.5 h-3.5" />
                     </Link>
                     <button
-                      onClick={() => handleDelete(s.id, s.company_name)}
+                      onClick={() => setDeleteTarget({ id: s.id, name: s.company_name })}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -183,6 +185,15 @@ export default function SuppliersPage() {
           })}
         </div>
       )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Zmazat dodavatela"
+        description={`Naozaj chcete zmazat dodavatela "${deleteTarget?.name}"? Vsetky faktury tohto dodavatela stratia priradenie.`}
+        confirmLabel="Zmazat"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget.id); setDeleteTarget(null) } }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

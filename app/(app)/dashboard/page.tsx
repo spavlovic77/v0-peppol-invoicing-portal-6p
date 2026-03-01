@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { DashboardSkeleton } from '@/components/skeleton'
 import { fmtDate } from '@/lib/utils'
+import { ConfirmModal } from '@/components/confirm-modal'
 
 const PAGE_SIZE = 20
 
@@ -76,6 +77,7 @@ export default function DashboardPage() {
   const supabase = createClient()
   const { activeSupplier, suppliers, loading: supplierLoading } = useActiveSupplier()
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -155,9 +157,7 @@ export default function DashboardPage() {
     grouped.get(key)!.push(inv)
   }
 
-  async function handleDelete(e: React.MouseEvent, inv: Invoice) {
-    e.stopPropagation()
-    if (!confirm(`Naozaj chcete zmazat fakturu ${inv.invoice_number}?`)) return
+  async function handleDelete(inv: Invoice) {
     await supabase.from('invoice_items').delete().eq('invoice_id', inv.id)
     const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
     if (error) {
@@ -318,9 +318,9 @@ export default function DashboardPage() {
                               </button>
                             )}
                             <button
-                              onClick={(e) => handleDelete(e, inv)}
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                              title="Zmazat"
+onClick={(e) => { e.stopPropagation(); setDeleteTarget(inv) }}
+  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+  title="Zmazat"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -368,9 +368,9 @@ export default function DashboardPage() {
                               <p className="text-[10px] text-muted-foreground">{cn.currency}</p>
                             </div>
                             <button
-                              onClick={(e) => handleDelete(e, cn)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                              title="Zmazat"
+onClick={(e) => { e.stopPropagation(); setDeleteTarget(cn) }}
+  className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+  title="Zmazat"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
@@ -401,6 +401,15 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Zmazat fakturu"
+        description={`Naozaj chcete zmazat fakturu ${deleteTarget?.invoice_number}?`}
+        confirmLabel="Zmazat"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget); setDeleteTarget(null) } }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

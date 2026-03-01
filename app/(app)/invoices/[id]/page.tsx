@@ -15,6 +15,7 @@ import { DownloadActions } from '@/components/invoice/download-actions'
 import { InvoiceDetailSkeleton } from '@/components/skeleton'
 import Link from 'next/link'
 import { fmtDate } from '@/lib/utils'
+import { ConfirmModal } from '@/components/confirm-modal'
 
 interface InvoiceData {
   id: string
@@ -59,6 +60,8 @@ export default function InvoiceDetailPage() {
   const [generating, setGenerating] = useState(false)
   const [validation, setValidation] = useState<unknown>(null)
   const [sending, setSending] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showPeppolConfirm, setShowPeppolConfirm] = useState(false)
   const [polling, setPolling] = useState(false)
   const [hasApKey, setHasApKey] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -119,7 +122,6 @@ export default function InvoiceDetailPage() {
 
   async function handleDelete() {
     if (!invoice) return
-    if (!confirm(`Naozaj chcete zmazat fakturu ${invoice.invoice_number}?`)) return
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     const { error } = await supabase.from('invoices').delete().eq('id', invoice.id)
     if (error) {
@@ -132,7 +134,6 @@ export default function InvoiceDetailPage() {
 
   async function handleSendPeppol() {
     if (!invoice) return
-    if (!confirm('Odoslat fakturu cez Peppol siet?')) return
     setSending(true)
     try {
       const res = await fetch('/api/peppol/send', {
@@ -290,9 +291,9 @@ export default function InvoiceDetailPage() {
         >
           <Copy className="w-3.5 h-3.5" /> Duplikovať
         </Link>
-        <button
-          onClick={handleDelete}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+  <button
+  onClick={() => setShowDeleteConfirm(true)}
+  className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" /> Zmazať
         </button>
@@ -329,7 +330,7 @@ export default function InvoiceDetailPage() {
           invoice={invoice}
           hasApKey={hasApKey}
           peppolStatus={invoice.peppol_send_status}
-          onSendPeppol={handleSendPeppol}
+          onSendPeppol={() => setShowPeppolConfirm(true)}
           sending={sending}
         />
       )}
@@ -457,9 +458,9 @@ export default function InvoiceDetailPage() {
               )}
             </div>
             {invoice.peppol_send_status === 'failed' && hasApKey && (
-              <button
-                onClick={handleSendPeppol}
-                disabled={sending}
+  <button
+  onClick={() => setShowPeppolConfirm(true)}
+  disabled={sending}
                 className="px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
               >
                 Znova
@@ -468,6 +469,25 @@ export default function InvoiceDetailPage() {
           </div>
         </GlassCard>
       )}
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Zmazat fakturu"
+        description={`Naozaj chcete zmazat fakturu ${invoice?.invoice_number}?`}
+        confirmLabel="Zmazat"
+        variant="danger"
+        onConfirm={() => { setShowDeleteConfirm(false); handleDelete() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <ConfirmModal
+        open={showPeppolConfirm}
+        title="Odoslat cez Peppol"
+        description="Odoslat tuto fakturu cez Peppol siet? Po odoslani ju nie je mozne upravit."
+        confirmLabel="Odoslat"
+        variant="warning"
+        onConfirm={() => { setShowPeppolConfirm(false); handleSendPeppol() }}
+        onCancel={() => setShowPeppolConfirm(false)}
+      />
     </div>
   )
 }

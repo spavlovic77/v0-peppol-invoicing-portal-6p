@@ -6,6 +6,7 @@ import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
 import { toast } from 'sonner'
 import { Contact, Plus, Pencil, Trash2, Search, Save, Loader2, X, Building2 } from 'lucide-react'
+import { ConfirmModal } from '@/components/confirm-modal'
 
 interface BuyerContact {
   id: string
@@ -31,6 +32,7 @@ export default function BuyersPage() {
   const supabase = createClient()
   const { activeSupplier, loading: supplierLoading } = useActiveSupplier()
   const [buyers, setBuyers] = useState<BuyerContact[]>([])
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -129,7 +131,6 @@ export default function BuyersPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Naozaj chcete zmazat tento kontakt?')) return
     const { error } = await supabase.from('buyer_contacts').delete().eq('id', id)
     if (error) { toast.error('Chyba: ' + error.message) } else {
       toast.success('Kontakt bol zmazany')
@@ -278,7 +279,7 @@ export default function BuyersPage() {
                   <button onClick={() => startEdit(b)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                     <Pencil className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(b.id)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                  <button onClick={() => setDeleteTargetId(b.id)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -287,6 +288,15 @@ export default function BuyersPage() {
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={!!deleteTargetId}
+        title="Zmazat kontakt"
+        description="Naozaj chcete zmazat tento kontakt odberatela?"
+        confirmLabel="Zmazat"
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) { handleDelete(deleteTargetId); setDeleteTargetId(null) } }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }
