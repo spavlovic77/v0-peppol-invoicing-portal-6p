@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 
 const SUGGESTIONS = [
   'Co je pravidlo BR-AE-10?',
@@ -249,6 +247,104 @@ export function AiAssistantPanel() {
   )
 }
 
+/** Lightweight inline markdown: **bold**, `code`, ```blocks```, - lists, ### headings */
+function renderSimpleMarkdown(md: string) {
+  const blocks: React.ReactNode[] = []
+  const lines = md.split('\n')
+  let i = 0
+
+  while (i < lines.length) {
+    // Code block
+    if (lines[i].startsWith('```')) {
+      const codeLines: string[] = []
+      i++
+      while (i < lines.length && !lines[i].startsWith('```')) {
+        codeLines.push(lines[i])
+        i++
+      }
+      i++ // skip closing ```
+      blocks.push(
+        <pre key={`cb-${i}`} className="bg-muted/30 rounded-lg p-2.5 overflow-x-auto my-2">
+          <code className="text-xs">{codeLines.join('\n')}</code>
+        </pre>
+      )
+      continue
+    }
+
+    const line = lines[i]
+    i++
+
+    // Empty line
+    if (!line.trim()) continue
+
+    // Heading
+    const hMatch = line.match(/^(#{1,4})\s+(.+)/)
+    if (hMatch) {
+      const level = hMatch[1].length
+      const cls = level <= 2 ? 'text-sm font-semibold mt-3 mb-1' : 'text-xs font-semibold mt-2 mb-1'
+      blocks.push(<div key={`h-${i}`} className={cls}>{inlineFormat(hMatch[2])}</div>)
+      continue
+    }
+
+    // List item
+    if (line.match(/^\s*[-*]\s+/)) {
+      const items: string[] = [line.replace(/^\s*[-*]\s+/, '')]
+      while (i < lines.length && lines[i].match(/^\s*[-*]\s+/)) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ''))
+        i++
+      }
+      blocks.push(
+        <ul key={`ul-${i}`} className="list-disc list-inside mb-2 space-y-0.5">
+          {items.map((item, j) => <li key={j}>{inlineFormat(item)}</li>)}
+        </ul>
+      )
+      continue
+    }
+
+    // Numbered list
+    if (line.match(/^\s*\d+\.\s+/)) {
+      const items: string[] = [line.replace(/^\s*\d+\.\s+/, '')]
+      while (i < lines.length && lines[i].match(/^\s*\d+\.\s+/)) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ''))
+        i++
+      }
+      blocks.push(
+        <ol key={`ol-${i}`} className="list-decimal list-inside mb-2 space-y-0.5">
+          {items.map((item, j) => <li key={j}>{inlineFormat(item)}</li>)}
+        </ol>
+      )
+      continue
+    }
+
+    // Paragraph
+    blocks.push(<p key={`p-${i}`} className="mb-2 last:mb-0">{inlineFormat(line)}</p>)
+  }
+
+  return blocks
+}
+
+/** Format inline: **bold**, `code` */
+function inlineFormat(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = []
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`)/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    if (match[2]) {
+      parts.push(<strong key={match.index} className="text-foreground font-semibold">{match[2]}</strong>)
+    } else if (match[3]) {
+      parts.push(<code key={match.index} className="bg-muted/40 px-1 py-0.5 rounded text-xs">{match[3]}</code>)
+    }
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts.length === 1 ? parts[0] : <>{parts}</>
+}
+
 function MessageBubble({ message }: { message: ChatMsg }) {
   const isUser = message.role === 'user'
   const text = message.content
@@ -267,8 +363,8 @@ function MessageBubble({ message }: { message: ChatMsg }) {
         {isUser ? (
           <p className="whitespace-pre-wrap">{text}</p>
         ) : (
-          <div className="prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2 [&_li]:mb-0.5 [&_code]:bg-muted/40 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted/30 [&_pre]:rounded-lg [&_pre]:p-2.5 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]:font-semibold [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]:text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+          <div className="max-w-none">
+            {renderSimpleMarkdown(text)}
           </div>
         )}
       </div>
