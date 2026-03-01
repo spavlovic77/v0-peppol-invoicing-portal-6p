@@ -1,6 +1,7 @@
 'use client'
 
 import { FileText, Sun, Moon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTheme } from '@/lib/theme-provider'
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
@@ -103,7 +104,7 @@ export function LandingContent() {
         return
       }
       console.error('Apple sign-in error:', error)
-      alert('Prihlasenie cez Apple zlyhalo. Skuste to znova.')
+      toast.error('Prihlasenie cez Apple zlyhalo. Skuste to znova.')
     } finally {
       setAppleLoading(false)
     }
