@@ -41,11 +41,16 @@ CREATE TABLE IF NOT EXISTS company_profiles (
 );
 
 ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "profiles_select_own" ON company_profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON company_profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON company_profiles;
+DROP POLICY IF EXISTS "profiles_delete_own" ON company_profiles;
 CREATE POLICY "profiles_select_own" ON company_profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "profiles_insert_own" ON company_profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "profiles_update_own" ON company_profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "profiles_delete_own" ON company_profiles FOR DELETE USING (auth.uid() = id);
 
+DROP TRIGGER IF EXISTS update_company_profiles_updated_at ON company_profiles;
 CREATE TRIGGER update_company_profiles_updated_at
   BEFORE UPDATE ON company_profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -79,11 +84,16 @@ CREATE TABLE IF NOT EXISTS suppliers (
 );
 
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "suppliers_select_own" ON suppliers;
+DROP POLICY IF EXISTS "suppliers_insert_own" ON suppliers;
+DROP POLICY IF EXISTS "suppliers_update_own" ON suppliers;
+DROP POLICY IF EXISTS "suppliers_delete_own" ON suppliers;
 CREATE POLICY "suppliers_select_own" ON suppliers FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "suppliers_insert_own" ON suppliers FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "suppliers_update_own" ON suppliers FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "suppliers_delete_own" ON suppliers FOR DELETE USING (auth.uid() = user_id);
 
+DROP TRIGGER IF EXISTS update_suppliers_updated_at ON suppliers;
 CREATE TRIGGER update_suppliers_updated_at
   BEFORE UPDATE ON suppliers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -110,11 +120,16 @@ CREATE TABLE IF NOT EXISTS buyer_contacts (
 );
 
 ALTER TABLE buyer_contacts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "buyers_select_own" ON buyer_contacts;
+DROP POLICY IF EXISTS "buyers_insert_own" ON buyer_contacts;
+DROP POLICY IF EXISTS "buyers_update_own" ON buyer_contacts;
+DROP POLICY IF EXISTS "buyers_delete_own" ON buyer_contacts;
 CREATE POLICY "buyers_select_own" ON buyer_contacts FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "buyers_insert_own" ON buyer_contacts FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "buyers_update_own" ON buyer_contacts FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "buyers_delete_own" ON buyer_contacts FOR DELETE USING (auth.uid() = user_id);
 
+DROP TRIGGER IF EXISTS update_buyer_contacts_updated_at ON buyer_contacts;
 CREATE TRIGGER update_buyer_contacts_updated_at
   BEFORE UPDATE ON buyer_contacts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -133,6 +148,9 @@ CREATE TABLE IF NOT EXISTS invoice_sequences (
 );
 
 ALTER TABLE invoice_sequences ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "sequences_select_own" ON invoice_sequences;
+DROP POLICY IF EXISTS "sequences_insert_own" ON invoice_sequences;
+DROP POLICY IF EXISTS "sequences_update_own" ON invoice_sequences;
 CREATE POLICY "sequences_select_own" ON invoice_sequences FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "sequences_insert_own" ON invoice_sequences FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "sequences_update_own" ON invoice_sequences FOR UPDATE USING (auth.uid() = user_id);
@@ -212,6 +230,10 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "invoices_select_own" ON invoices;
+DROP POLICY IF EXISTS "invoices_insert_own" ON invoices;
+DROP POLICY IF EXISTS "invoices_update_own" ON invoices;
+DROP POLICY IF EXISTS "invoices_delete_own" ON invoices;
 CREATE POLICY "invoices_select_own" ON invoices FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "invoices_insert_own" ON invoices FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "invoices_update_own" ON invoices FOR UPDATE USING (auth.uid() = user_id);
@@ -221,6 +243,7 @@ CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_supplier_id ON invoices(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_correction_of ON invoices(correction_of) WHERE correction_of IS NOT NULL;
 
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
 CREATE TRIGGER update_invoices_updated_at
   BEFORE UPDATE ON invoices
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -247,6 +270,10 @@ CREATE TABLE IF NOT EXISTS invoice_items (
 );
 
 ALTER TABLE invoice_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "items_select_own" ON invoice_items;
+DROP POLICY IF EXISTS "items_insert_own" ON invoice_items;
+DROP POLICY IF EXISTS "items_update_own" ON invoice_items;
+DROP POLICY IF EXISTS "items_delete_own" ON invoice_items;
 CREATE POLICY "items_select_own" ON invoice_items FOR SELECT
   USING (EXISTS (SELECT 1 FROM invoices WHERE invoices.id = invoice_items.invoice_id AND invoices.user_id = auth.uid()));
 CREATE POLICY "items_insert_own" ON invoice_items FOR INSERT
