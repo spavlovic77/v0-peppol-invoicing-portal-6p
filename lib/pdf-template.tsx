@@ -359,18 +359,18 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>FAKTURA</Text>
-            <Text style={styles.subtitle}>{isVatPayer ? 'Danovy doklad' : 'Faktura - dodavatel nie je platcom DPH'}</Text>
+            <Text style={styles.subtitle}>{isVatPayer ? 'Da\u0148ov\u00FD doklad' : 'Fakt\u00FAra - dod\u00E1vate\u013E nie je platcom DPH'}</Text>
           </View>
           <View style={styles.invoiceInfo}>
-            <Text style={styles.infoLabel}>Cislo faktury</Text>
+            <Text style={styles.infoLabel}>\u010C\u00EDslo fakt\u00FAry</Text>
             <Text style={styles.infoValue}>{String(invoice.invoice_number)}</Text>
-            <Text style={styles.infoLabel}>Datum vystavenia</Text>
+            <Text style={styles.infoLabel}>D\u00E1tum vystavenia</Text>
             <Text style={styles.infoValue}>{String(invoice.issue_date)}</Text>
-            <Text style={styles.infoLabel}>Datum splatnosti</Text>
+            <Text style={styles.infoLabel}>D\u00E1tum splatnosti</Text>
             <Text style={styles.infoValue}>{String(invoice.due_date)}</Text>
             {invoice.delivery_date && (
               <>
-                <Text style={styles.infoLabel}>Datum dodania</Text>
+                <Text style={styles.infoLabel}>D\u00E1tum dodania</Text>
                 <Text style={styles.infoValue}>{String(invoice.delivery_date)}</Text>
               </>
             )}
@@ -380,7 +380,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Parties */}
         <View style={styles.partiesRow}>
           <View style={styles.partyBox}>
-            <Text style={styles.partyTitle}>Dodavatel</Text>
+            <Text style={styles.partyTitle}>Dod\u00E1vate\u013E</Text>
             <Text style={styles.partyName}>{String(profile.company_name)}</Text>
             {profile.street && <Text style={styles.partyLine}>{String(profile.street)}</Text>}
             <Text style={styles.partyLine}>
@@ -391,12 +391,12 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             {profile.ic_dph && <Text style={styles.partyLine}>IC DPH: {String(profile.ic_dph)}</Text>}
             {profile.registration_court && (
               <Text style={styles.partyLine}>
-                {String(profile.registration_court)}, vl. c. {String(profile.registration_number || '')}
+                {String(profile.registration_court)}, vl. \u010D. {String(profile.registration_number || '')}
               </Text>
             )}
           </View>
           <View style={styles.partyBox}>
-            <Text style={styles.partyTitle}>Odberatel</Text>
+            <Text style={styles.partyTitle}>Odberate\u013E</Text>
             <Text style={styles.partyName}>{String(invoice.buyer_name)}</Text>
             {invoice.buyer_street && <Text style={styles.partyLine}>{String(invoice.buyer_street)}</Text>}
             <Text style={styles.partyLine}>
@@ -408,11 +408,40 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         </View>
 
+        {/* Payment Details */}
+        <View style={styles.paymentBox}>
+          <Text style={styles.paymentTitle}>Platobn\u00E9 \u00FAdaje</Text>
+          {invoice.bank_name && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Banka:</Text>
+              <Text style={styles.paymentValue}>{String(invoice.bank_name)}</Text>
+            </View>
+          )}
+          {invoice.iban && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>IBAN:</Text>
+              <Text style={styles.paymentValue}>{String(invoice.iban)}</Text>
+            </View>
+          )}
+          {invoice.swift && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>SWIFT:</Text>
+              <Text style={styles.paymentValue}>{String(invoice.swift)}</Text>
+            </View>
+          )}
+          {invoice.variable_symbol && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Variabiln\u00FD symbol:</Text>
+              <Text style={styles.paymentValue}>{String(invoice.variable_symbol)}</Text>
+            </View>
+          )}
+        </View>
+
         {/* Items Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, styles.col1]}>#</Text>
-            <Text style={[styles.tableHeaderText, styles.col2]}>Popis polozky</Text>
+            <Text style={[styles.tableHeaderText, styles.col2]}>Popis polo\u017Eky</Text>
             <Text style={[styles.tableHeaderText, styles.col3]}>Mn.</Text>
             <Text style={[styles.tableHeaderText, styles.col4]}>MJ</Text>
             <Text style={[styles.tableHeaderText, styles.col5]}>Cena/MJ</Text>
@@ -438,10 +467,10 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           const currency = String(invoice.currency || 'EUR')
           return (
             <View style={styles.recapSection}>
-              <Text style={styles.recapTitle}>Rekapitulacia DPH</Text>
+              <Text style={styles.recapTitle}>Rekapitul\u00E1cia DPH</Text>
               <View style={styles.recapHeader}>
                 <Text style={[styles.recapHeaderText, styles.recapCol1]}>Sadzba DPH</Text>
-                <Text style={[styles.recapHeaderText, styles.recapCol2]}>Zaklad dane</Text>
+                <Text style={[styles.recapHeaderText, styles.recapCol2]}>Z\u00E1klad dane</Text>
                 <Text style={[styles.recapHeaderText, styles.recapCol3]}>DPH</Text>
                 <Text style={[styles.recapHeaderText, styles.recapCol4]}>Spolu</Text>
               </View>
@@ -463,7 +492,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
                   </Text>
                   <Text style={[styles.recapCorrText, styles.recapCol3]}></Text>
                   <Text style={[styles.recapCorrText, styles.recapCol4]}>
-                    Zaokruhlovacia korekcia
+                    Zaokr\u00FAhlovacia korekcia
                   </Text>
                 </View>
               ))}
@@ -475,7 +504,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         <View style={styles.totalsBox}>
           <View style={styles.totalsInner}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Zaklad dane:</Text>
+              <Text style={styles.totalLabel}>Z\u00E1klad dane:</Text>
               <Text style={styles.totalValue}>
                 {fmt(invoice.total_without_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
@@ -490,7 +519,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             )}
             <View style={styles.totalDivider} />
             <View style={styles.totalRow}>
-              <Text style={styles.grandTotalLabel}>Na uhradu:</Text>
+              <Text style={styles.grandTotalLabel}>Na \u00FAhradu:</Text>
               <Text style={styles.grandTotalValue}>
                 {fmt(invoice.total_with_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
@@ -503,44 +532,15 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           <View style={styles.noteBox}>
             <Text style={styles.noteLabel}>Upozornenie</Text>
             <Text style={styles.noteText}>
-              Dodavatel nie je platcom DPH podla zakona c. 222/2004 Z.z. o dani z pridanej hodnoty.
+              Dod\u00E1vate\u013E nie je platcom DPH pod\u013Ea z\u00E1kona \u010D. 222/2004 Z.z. o dani z pridanej hodnoty.
             </Text>
           </View>
         )}
 
-        {/* Payment Details */}
-        <View style={styles.paymentBox}>
-          <Text style={styles.paymentTitle}>Platobne udaje</Text>
-          {invoice.bank_name && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Banka:</Text>
-              <Text style={styles.paymentValue}>{String(invoice.bank_name)}</Text>
-            </View>
-          )}
-          {invoice.iban && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>IBAN:</Text>
-              <Text style={styles.paymentValue}>{String(invoice.iban)}</Text>
-            </View>
-          )}
-          {invoice.swift && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>SWIFT:</Text>
-              <Text style={styles.paymentValue}>{String(invoice.swift)}</Text>
-            </View>
-          )}
-          {invoice.variable_symbol && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Variabilny symbol:</Text>
-              <Text style={styles.paymentValue}>{String(invoice.variable_symbol)}</Text>
-            </View>
-          )}
-        </View>
-
         {/* Note */}
         {invoice.note && (
           <View style={styles.noteBox}>
-            <Text style={styles.noteLabel}>Poznamka:</Text>
+            <Text style={styles.noteLabel}>Pozn\u00E1mka:</Text>
             <Text style={styles.noteText}>{String(invoice.note)}</Text>
           </View>
         )}
@@ -548,7 +548,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Vystavene v systeme Peppol Faktura | Peppol BIS 3.0
+            Vystavene v syst\u00E9me Peppol Fakt\u00FAra | Peppol BIS 3.0
           </Text>
           <Text style={styles.footerText}>
             {String(profile.company_name)} | ICO: {String(profile.ico)}

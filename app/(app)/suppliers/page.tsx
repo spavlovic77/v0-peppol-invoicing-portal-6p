@@ -67,9 +67,9 @@ export default function SuppliersPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dodavatelia</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dod\u00E1vatelia</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Spravujte firmy, za ktore vystavujete faktury
+            Spravujte firmy, za ktor\u00E9 vystavujete fakt\u00FAry
           </p>
         </div>
         <Link
@@ -77,23 +77,23 @@ export default function SuppliersPage() {
           className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          Pridat dodavatela
+          Prida\u0165 dod\u00E1vate\u013Ea
         </Link>
       </div>
 
       {suppliers.length === 0 ? (
         <GlassCard className="text-center py-16">
           <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">Zatial nemas ziadneho dodavatela</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Zatia\u013E nem\u00E1\u0161 \u017Eiadneho dod\u00E1vate\u013Ea</h2>
           <p className="text-muted-foreground mb-6">
-            Pridaj prvu firmu, za ktoru budes vystavovat faktury
+            Pridaj prv\u00FA firmu, za ktor\u00FA bude\u0161 vystavova\u0165 fakt\u00FAry
           </p>
           <Link
             href="/suppliers/new"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Pridat prveho dodavatela
+            Prida\u0165 prv\u00E9ho dod\u00E1vate\u013Ea
           </Link>
         </GlassCard>
       ) : (
@@ -125,13 +125,13 @@ export default function SuppliersPage() {
                         <h3 className="font-semibold text-foreground truncate">{s.company_name}</h3>
                         {isActive && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">
-                            Aktivny
+                            Akt\u00EDvny
                           </span>
                         )}
                         {s.is_billing_entity && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 shrink-0 flex items-center gap-1">
                             <Receipt className="w-3 h-3" />
-                            Fakturacny subjekt
+                            Faktura\u010Dn\u00FD subjekt
                           </span>
                         )}
                       </div>

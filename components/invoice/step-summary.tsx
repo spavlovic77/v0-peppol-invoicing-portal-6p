@@ -99,7 +99,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
       <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <FileText className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Faktura {formData.invoice_number}</h2>
+          <h2 className="font-semibold text-foreground">Fakt\u00FAra {formData.invoice_number}</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
@@ -126,7 +126,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
         <GlassCard>
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Dodavatel</h2>
+            <h2 className="font-semibold text-foreground">Dod\u00E1vate\u013E</h2>
           </div>
           <div className="space-y-1 text-sm">
             <div className="text-foreground font-medium">{profile.company_name}</div>
@@ -144,7 +144,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
         <GlassCard>
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-5 h-5 text-chart-2" />
-            <h2 className="font-semibold text-foreground">Odberatel</h2>
+            <h2 className="font-semibold text-foreground">Odberate\u013E</h2>
           </div>
           <div className="space-y-1 text-sm">
             <div className="text-foreground font-medium">{formData.buyer_name}</div>
@@ -164,14 +164,14 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
       <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <CreditCard className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Platobne udaje</h2>
+          <h2 className="font-semibold text-foreground">Platobn\u00E9 \u00FAdaje</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">Sposob platby</span>
             <div className="text-foreground">
               {
-                { '30': 'Bankovy prevod', '58': 'SEPA prevod', '48': 'Platba kartou', '10': 'Hotovost', '42': 'Na ucet', '1': 'Ine' }[formData.payment_means_code] || formData.payment_means_code
+                { '30': 'Bankov\u00FD prevod', '58': 'SEPA prevod', '48': 'Platba kartou', '10': 'Hotovos\u0165', '42': 'Na \u00FA\u010Det', '1': 'In\u00E9' }[formData.payment_means_code] || formData.payment_means_code
               }
             </div>
           </div>
@@ -189,7 +189,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
           )}
           {formData.variable_symbol && (
             <div>
-              <span className="text-muted-foreground">Variabilny symbol</span>
+              <span className="text-muted-foreground">Variabiln\u00FD symbol</span>
               <div className="text-foreground">{formData.variable_symbol}</div>
             </div>
           )}
@@ -200,7 +200,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
       <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <Package className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Polozky ({formData.items.length})</h2>
+          <h2 className="font-semibold text-foreground">Polo\u017Eky ({formData.items.length})</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -210,7 +210,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
                 <th className="pb-2 font-medium">Popis</th>
                 <th className="pb-2 font-medium text-right">Mn.</th>
                 <th className="pb-2 font-medium text-right">Cena</th>
-                <th className="pb-2 font-medium text-right">Zlava</th>
+                <th className="pb-2 font-medium text-right">Z\u013Eava</th>
                 {isVatPayer && <th className="pb-2 font-medium text-right">DPH</th>}
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
@@ -240,14 +240,14 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
       {isVatPayer && <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <Calculator className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Rekapitulacia DPH</h2>
+          <h2 className="font-semibold text-foreground">Rekapitul\u00E1cia DPH</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted-foreground text-left">
                 <th className="pb-2 font-medium">Sadzba</th>
-                <th className="pb-2 font-medium text-right">Zaklad dane</th>
+                <th className="pb-2 font-medium text-right">Z\u00E1klad dane</th>
                 <th className="pb-2 font-medium text-right">DPH</th>
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
@@ -271,7 +271,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
                   </td>
                   <td className="py-2"></td>
                   <td className="py-2 text-right text-amber-700 dark:text-amber-400 text-xs italic">
-                    Zaokruhlovacia korekcia
+                    Zaokr\u00FAhlovacia korekcia
                   </td>
                 </tr>
               ))}
@@ -284,13 +284,13 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
       <GlassCard heavy>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Zaklad dane:</span>
+            <span className="text-muted-foreground">Z\u00E1klad dane:</span>
             <span className="text-foreground">{fmt(totals.withoutVat)} {formData.currency}</span>
           </div>
           {(formData.global_discount_percent || 0) > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Zlava na fakturu ({formData.global_discount_percent}%):</span>
-              <span className="text-primary">zahrnuta v zaklade</span>
+              <span className="text-muted-foreground">Z\u013Eava na fakt\u00FAru ({formData.global_discount_percent}%):</span>
+              <span className="text-primary">zahrnut\u00E1 v z\u00E1klade</span>
             </div>
           )}
           {isVatPayer && (
@@ -301,11 +301,11 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
           )}
           <div className="h-px bg-border my-2" />
           <div className="flex justify-between">
-            <span className="font-semibold text-foreground">Na uhradu:</span>
+            <span className="font-semibold text-foreground">Na \u00FAhradu:</span>
             <span className="text-2xl font-bold text-primary">{fmt(totals.withVat)} {formData.currency}</span>
           </div>
           {!isVatPayer && (
-            <p className="text-xs text-muted-foreground mt-2">Dodavatel nie je platcom DPH</p>
+            <p className="text-xs text-muted-foreground mt-2">Dod\u00E1vate\u013E nie je platcom DPH</p>
           )}
         </div>
       </GlassCard>
