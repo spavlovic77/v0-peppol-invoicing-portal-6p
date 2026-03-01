@@ -8,8 +8,9 @@ import { useTheme } from '@/lib/theme-provider'
 import {
   FileText, Plus, LogOut, Building2,
   ChevronDown, Contact, Sun, Moon, ReceiptText, X, Check,
-  ArrowLeftRight, RefreshCw,
+  ArrowLeftRight, RefreshCw, Sparkles,
 } from 'lucide-react'
+import { useAiPanel } from '@/lib/ai-context'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
 import type { Supplier } from '@/lib/supplier-context'
@@ -25,6 +26,7 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const { isOpen: aiOpen, togglePanel: toggleAi } = useAiPanel()
   const { suppliers, activeSupplier, setActiveSupplier } = useActiveSupplier()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showUser, setShowUser] = useState(false)
@@ -161,6 +163,23 @@ export function Navbar() {
 
           {/* Right: theme + user */}
           <div className="flex items-center gap-1 shrink-0 ml-2">
+            <button
+              onClick={toggleAi}
+              className={cn(
+                'p-2 rounded-lg transition-colors relative',
+                aiOpen
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              )}
+              aria-label="AI Asistent"
+              title="Peppol AI Asistent"
+            >
+              <Sparkles className="w-4 h-4" />
+              {aiOpen && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
+              )}
+            </button>
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"

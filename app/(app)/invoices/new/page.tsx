@@ -15,6 +15,7 @@ import { useActiveSupplier, type Supplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
 import type { InvoiceFormData } from '@/lib/schemas'
 import Link from 'next/link'
+import { useAiPanel } from '@/lib/ai-context'
 
 // Maps validation rule IDs to { step, field } for auto-focus on failure
 function mapRuleToField(ruleId: string): { step: number; field: string } {
@@ -57,6 +58,7 @@ export default function NewInvoicePage() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const { activeSupplier, loading: supplierLoading } = useActiveSupplier()
+  const { setPageContext } = useAiPanel()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -70,6 +72,21 @@ export default function NewInvoicePage() {
   const isEditMode = !!editId
   const isCorrectionMode = !!correctId
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
+
+  // Feed AI assistant with wizard context
+  useEffect(() => {
+    const stepNames = ['zakladne-udaje', 'odberatel', 'polozky', 'sumar']
+    setPageContext({
+      page: 'invoice-wizard',
+      step: stepNames[step] || step,
+      invoice_mode: invoiceMode,
+      invoice_number: formData.invoice_number,
+      buyer_name: formData.buyer_name,
+      items_count: formData.items?.length || 0,
+      is_correction: isCorrectionMode,
+    })
+  }, [step, invoiceMode, formData.invoice_number, formData.buyer_name, formData.items?.length, isCorrectionMode, setPageContext])
+
   const [originalInvoice, setOriginalInvoice] = useState<{
     id: string; invoice_number: string; issue_date: string; buyer_name: string;
     items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]

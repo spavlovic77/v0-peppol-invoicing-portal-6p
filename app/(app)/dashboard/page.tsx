@@ -10,6 +10,7 @@ import { useActiveSupplier } from '@/lib/supplier-context'
 import { DashboardSkeleton } from '@/components/skeleton'
 import { fmtDate } from '@/lib/utils'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { useAiPanel } from '@/lib/ai-context'
 
 const PAGE_SIZE = 20
 
@@ -78,6 +79,25 @@ export default function DashboardPage() {
   const { activeSupplier, suppliers, loading: supplierLoading } = useActiveSupplier()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
+  const { setPageContext } = useAiPanel()
+
+  // Feed AI assistant with dashboard stats
+  useEffect(() => {
+    if (!invoices.length) return
+    const valid = invoices.filter((i) => i.status === 'valid' || i.status === 'sent').length
+    const invalid = invoices.filter((i) => i.status === 'invalid').length
+    const draft = invoices.filter((i) => i.status === 'draft').length
+    const totalRevenue = invoices.reduce((s, i) => s + (i.total_with_vat || 0), 0)
+    setPageContext({
+      page: 'dashboard',
+      total_invoices: invoices.length,
+      valid_count: valid,
+      invalid_count: invalid,
+      draft_count: draft,
+      total_revenue: Math.round(totalRevenue * 100) / 100,
+      supplier: activeSupplier?.company_name || null,
+    })
+  }, [invoices, activeSupplier, setPageContext])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
