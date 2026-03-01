@@ -82,7 +82,17 @@ export default function SuppliersPage() {
             return (
               <GlassCard
                 key={s.id}
-                className={isActive ? 'ring-1 ring-primary/40' : ''}
+                className={`cursor-pointer transition-all ${
+                  isActive
+                    ? 'ring-2 ring-primary/50 bg-primary/5'
+                    : 'hover:ring-1 hover:ring-border hover:bg-secondary/30'
+                }`}
+                onClick={() => {
+                  if (!isActive) {
+                    setActiveSupplier(s)
+                    toast.success(`${s.company_name} je teraz aktivny dodavatel`)
+                  }
+                }}
               >
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -116,15 +126,7 @@ export default function SuppliersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pl-12">
-                    {!isActive && (
-                      <button
-                        onClick={() => setActiveSupplier(s)}
-                        className="px-3 py-1.5 rounded-lg text-xs border border-border text-foreground hover:bg-secondary transition-colors"
-                      >
-                        Aktivovat
-                      </button>
-                    )}
+                  <div className="flex items-center gap-2 pl-12" onClick={(e) => e.stopPropagation()}>
                     <Link
                       href={`/suppliers/${s.id}/edit`}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
