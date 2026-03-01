@@ -86,9 +86,12 @@ interface Props {
   profile: CompanyProfile
   totals: { withoutVat: number; vat: number; withVat: number }
   isVatPayer?: boolean
+  invoiceMode?: string
 }
 
-export function StepSummary({ formData, profile, totals, isVatPayer = true }: Props) {
+export function StepSummary({ formData, profile, totals, isVatPayer = true, invoiceMode = 'standard' }: Props) {
+  const isSelfBilling = invoiceMode === 'selfbilling'
+  const isReverseCharge = invoiceMode === 'reversecharge'
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -127,9 +130,9 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
         <GlassCard>
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Dodávateľ</h2>
-          </div>
-          <div className="space-y-1 text-sm">
+          <h2 className="font-semibold text-foreground">{isSelfBilling ? 'Odberateľ (vy)' : 'Dodávateľ'}</h2>
+        </div>
+        <div className="space-y-1 text-sm">
             <div className="text-foreground font-medium">{profile.company_name}</div>
             <div className="text-muted-foreground">{profile.street}</div>
             <div className="text-muted-foreground">{profile.postal_code} {profile.city}</div>
@@ -145,7 +148,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
         <GlassCard>
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-5 h-5 text-chart-2" />
-            <h2 className="font-semibold text-foreground">Odberateľ</h2>
+            <h2 className="font-semibold text-foreground">{isSelfBilling ? 'Dodávateľ' : 'Odberateľ'}</h2>
           </div>
           <div className="space-y-1 text-sm">
             <div className="text-foreground font-medium">{formData.buyer_name}</div>
@@ -305,8 +308,14 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true }: Pr
             <span className="font-semibold text-foreground">Na úhradu:</span>
             <span className="text-2xl font-bold text-primary">{fmt(totals.withVat)} {formData.currency}</span>
           </div>
-          {!isVatPayer && (
+          {!isVatPayer && !isReverseCharge && (
             <p className="text-xs text-muted-foreground mt-2">Dodávateľ nie je platcom DPH</p>
+          )}
+          {isReverseCharge && (
+            <p className="text-xs text-amber-500 mt-2">Prenesenie daňovej povinnosti podľa §69 ods. 12 -- DPH = 0%</p>
+          )}
+          {isSelfBilling && (
+            <p className="text-xs text-primary mt-2">Samofakturácia (InvoiceTypeCode 389) -- faktúru vystavuje odberateľ</p>
           )}
         </div>
       </GlassCard>

@@ -1,7 +1,7 @@
 'use client'
 
 import { GlassCard } from '@/components/glass-card'
-import { Copy, Package, Plus, Trash2 } from 'lucide-react'
+import { Copy, Package, Plus, Trash2, Info } from 'lucide-react'
 import type { InvoiceFormData, InvoiceItem } from '@/lib/schemas'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   updateForm: (u: Partial<InvoiceFormData>) => void
   totals: { withoutVat: number; vat: number; withVat: number }
   isVatPayer?: boolean
+  invoiceMode?: string
 }
 
 const unitOptions = [
@@ -30,7 +31,9 @@ const vatRates = [
   { value: 0, label: '0% (oslobodené)' },
 ]
 
-export function StepItems({ formData, updateForm, totals, isVatPayer = true }: Props) {
+export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard' }: Props) {
+  const isReverseCharge = invoiceMode === 'reversecharge'
+
   function addItem() {
     const newItem: InvoiceItem = {
       line_number: formData.items.length + 1,
@@ -38,8 +41,8 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
       quantity: 1,
       unit: 'C62',
       unit_price: 0,
-      vat_category: isVatPayer ? 'S' : 'O',
-      vat_rate: isVatPayer ? 23 : 0,
+      vat_category: isReverseCharge ? 'AE' : isVatPayer ? 'S' : 'O',
+      vat_rate: isReverseCharge ? 0 : isVatPayer ? 23 : 0,
       discount_percent: 0,
       discount_amount: 0,
       line_total: 0,
@@ -74,7 +77,10 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
         updated.discount_amount = Math.round(gross * updated.discount_percent / 100 * 100) / 100
       }
       updated.line_total = Math.round((gross - (updated.discount_amount || 0)) * 100) / 100
-      if (updates.vat_rate === 0) updated.vat_category = 'Z'
+      if (isReverseCharge) {
+        updated.vat_category = 'AE'
+        updated.vat_rate = 0
+      } else if (updates.vat_rate === 0) updated.vat_category = 'Z'
       else if (updates.vat_rate !== undefined && updates.vat_rate > 0) updated.vat_category = 'S'
       return updated
     })
@@ -86,6 +92,17 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
 
   return (
     <div className="space-y-6">
+      {isReverseCharge && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground">Vsetky polozky maju prenesenu dan. povinnost (DPH = 0%)</p>
+            <p className="text-muted-foreground mt-0.5">
+              Podla EN16931 (BR-AE-05) nie je mozne kombinovat standardnu a prenesenu DPH na jednej fakture. Ak potrebujete polozky so standardnou DPH, vytvorte pre ne samostatnu fakturu.
+            </p>
+          </div>
+        </div>
+      )}
       <GlassCard>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -185,15 +202,21 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                 {isVatPayer && (
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1">DPH</label>
-                    <select
-                      value={item.vat_rate}
-                      onChange={(e) => updateItem(i, { vat_rate: parseFloat(e.target.value) })}
-                      className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                    >
-                      {vatRates.map((r) => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
-                      ))}
-                    </select>
+                    {isReverseCharge ? (
+                      <div className="glass-input w-full px-3 py-2 rounded-lg text-muted-foreground text-sm bg-muted/30 cursor-not-allowed">
+                        0% (AE)
+                      </div>
+                    ) : (
+                      <select
+                        value={item.vat_rate}
+                        onChange={(e) => updateItem(i, { vat_rate: parseFloat(e.target.value) })}
+                        className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                      >
+                        {vatRates.map((r) => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
                 <div>
@@ -282,8 +305,11 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
               {fmt(totals.withVat)} {formData.currency}
             </span>
           </div>
-          {!isVatPayer && (
+          {!isVatPayer && !isReverseCharge && (
             <p className="text-xs text-muted-foreground mt-2">Dodávateľ nie je platcom DPH</p>
+          )}
+          {isReverseCharge && (
+            <p className="text-xs text-amber-500 mt-2">Prenesenie daňovej povinnosti -- DPH = 0% na všetkých položkách</p>
           )}
         </div>
       </GlassCard>

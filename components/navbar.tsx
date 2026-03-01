@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme-provider'
 import {
   FileText, Plus, LogOut, Building2,
   ChevronDown, Contact, Sun, Moon, ReceiptText, X, Check,
+  ArrowLeftRight, RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
@@ -29,6 +30,9 @@ export function Navbar() {
   const [showUser, setShowUser] = useState(false)
   const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false)
   const [modalSupplier, setModalSupplier] = useState<Supplier | null>(null)
+  const [showNewDropdown, setShowNewDropdown] = useState(false)
+  const [pendingMode, setPendingMode] = useState<string>('standard')
+  const newDropdownRef = useRef<HTMLDivElement>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -44,6 +48,7 @@ export function Navbar() {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowDropdown(false)
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false)
+      if (newDropdownRef.current && !newDropdownRef.current.contains(e.target as Node)) setShowNewDropdown(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -54,11 +59,22 @@ export function Navbar() {
     router.push('/')
   }
 
+  const invoiceModes = [
+    { mode: 'standard', label: 'Faktúra', icon: FileText, desc: 'Štandardná faktúra (380)' },
+    { mode: 'selfbilling', label: 'Samofakturácia', icon: ArrowLeftRight, desc: 'Odberateľ vystavuje faktúru (389)' },
+    { mode: 'reversecharge', label: 'Prenesenie DPH', icon: RefreshCw, desc: 'Reverse charge — §69 ods. 12' },
+  ]
+
   function handleNewInvoiceClick(e: React.MouseEvent) {
     e.preventDefault()
-    // Skip modal when there's only one supplier -- no choice to make
+    setShowNewDropdown(!showNewDropdown)
+  }
+
+  function handleSelectMode(mode: string) {
+    setShowNewDropdown(false)
+    setPendingMode(mode)
     if (suppliers.length <= 1) {
-      router.push('/invoices/new')
+      router.push(`/invoices/new?mode=${mode}`)
       return
     }
     setModalSupplier(activeSupplier)
@@ -70,7 +86,7 @@ export function Navbar() {
       setActiveSupplier(modalSupplier)
     }
     setShowNewInvoiceModal(false)
-    router.push('/invoices/new')
+    router.push(`/invoices/new?mode=${pendingMode}`)
   }
 
   const isTabActive = (href: string) => {
@@ -211,6 +227,31 @@ export function Navbar() {
             )
           })}
         </div>
+
+        {/* Mobile mode picker popup */}
+        {showNewDropdown && (
+          <div className="absolute bottom-full left-0 right-0 mb-2 px-4">
+            <div className="bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
+              <div className="p-2">
+                {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
+                  <button
+                    key={mode}
+                    onClick={() => handleSelectMode(mode)}
+                    className="w-full text-left px-3 py-3 rounded-xl text-sm transition-colors flex items-center gap-3 text-foreground hover:bg-secondary"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <MIcon className="w-4.5 h-4.5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-medium">{mLabel}</div>
+                      <div className="text-xs text-muted-foreground">{desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ───── Desktop horizontal nav (inside top bar on md+) ───── */}
@@ -219,11 +260,52 @@ export function Navbar() {
           {tabs.map(({ href, label, icon: Icon }) => {
             const active = isTabActive(href)
             const isNova = href === '/invoices/new'
+
+            if (isNova) {
+              return (
+                <div key={href} className="relative" ref={newDropdownRef}>
+                  <button
+                    onClick={handleNewInvoiceClick}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
+                      active
+                        ? 'bg-primary/15 text-primary font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                    )}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nová
+                    <ChevronDown className={cn('w-3 h-3 transition-transform', showNewDropdown && 'rotate-180')} />
+                  </button>
+                  {showNewDropdown && (
+                    <div className="absolute top-full left-0 mt-1.5 w-64 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">
+                      <div className="p-1.5">
+                        {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
+                          <button
+                            key={mode}
+                            onClick={() => handleSelectMode(mode)}
+                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <MIcon className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium">{mLabel}</div>
+                              <div className="text-xs text-muted-foreground">{desc}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             return (
               <Link
                 key={href}
                 href={href}
-                onClick={isNova ? handleNewInvoiceClick : undefined}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
                   active
