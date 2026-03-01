@@ -151,10 +151,10 @@ export default function OnboardingPage() {
             <FileText className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
-            Vitajte v Peppol Portal
+            Vitajte
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Zadajte IČO vašej spoločnosti a automaticky vyplníme všetky údaje
+            Zadajte IČO vašej spoločnosti a automaticky dohľadáme všetky údaje
           </p>
         </div>
 
@@ -245,7 +245,7 @@ export default function OnboardingPage() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
             >
               <Building2 className="w-3.5 h-3.5" />
-              Použiť demo účet
+              Alebo použite demo účet
             </button>
           </div>
         )}
