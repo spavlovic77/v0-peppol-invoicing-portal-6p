@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2 } from 'lucide-react'
+import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { GlassCard } from '@/components/glass-card'
 import { useActiveSupplier } from '@/lib/supplier-context'
@@ -256,13 +256,24 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="py-3">
-                      <button
-                        onClick={(e) => handleDeleteInvoice(e, inv)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Zmazat fakturu"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {(inv.status === 'valid' || inv.status === 'sent') && !inv.invoice_number.startsWith('CN-') && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); router.push(`/invoices/new?correct=${inv.id}`) }}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                            title="Vytvorit dobropis"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteInvoice(e, inv)}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Zmazat fakturu"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -26,7 +26,7 @@ export type CompanyProfile = z.infer<typeof companyProfileSchema>
 export const invoiceItemSchema = z.object({
   line_number: z.number().int().positive(),
   description: z.string().min(1, 'Popis polozky je povinny'),
-  quantity: z.number().positive('Mnozstvo musi byt kladne'),
+  quantity: z.number().refine(v => v !== 0, 'Mnozstvo nesmie byt nula'),
   unit: z.string().default('C62'),
   unit_price: z.number().min(0, 'Jednotkova cena nesmie byt zaporna'),
   vat_category: z.string().default('S'),
@@ -67,6 +67,11 @@ export const invoiceSchema = z.object({
   note: z.string().nullable(),
   global_discount_percent: z.number().min(0).max(100).default(0),
   global_discount_amount: z.number().min(0).default(0),
+  invoice_type_code: z.string().default('380'),
+  correction_of: z.string().nullable().default(null),
+  correction_reason: z.string().nullable().default(null),
+  billing_reference_number: z.string().nullable().default(null),
+  billing_reference_date: z.string().nullable().default(null),
   items: z.array(invoiceItemSchema).min(1, 'Faktura musi mat aspon jednu polozku'),
 })
 
@@ -148,6 +153,9 @@ export const peppolInvoiceSchema = z.object({
   invoiceLines: z.array(peppolInvoiceLineSchema).describe('Invoice line items'),
   invoiceNote: z.string().nullable().describe('Free-text note on invoice'),
   deliveryDate: z.string().nullable().describe('Delivery date if different from issue date'),
+  // Correction fields
+  billingReferenceNumber: z.string().nullable().default(null).describe('Original invoice number for credit notes (BT-25)'),
+  billingReferenceDate: z.string().nullable().default(null).describe('Original invoice issue date (BT-26)'),
 })
 
 export type PeppolInvoice = z.infer<typeof peppolInvoiceSchema>
