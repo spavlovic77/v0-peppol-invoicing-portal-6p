@@ -1,11 +1,14 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+import path from 'path'
+
+const fontsDir = path.join(process.cwd(), 'public', 'fonts')
 
 Font.register({
   family: 'Roboto',
   fonts: [
-    { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', fontWeight: 'normal' },
-    { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf', fontWeight: 'bold' },
+    { src: path.join(fontsDir, 'Roboto-Regular.ttf'), fontWeight: 'normal' },
+    { src: path.join(fontsDir, 'Roboto-Bold.ttf'), fontWeight: 'bold' },
   ],
 })
 
@@ -266,8 +269,14 @@ function round2(n: number): number {
 }
 
 function fmt(n: number | null | undefined): string {
-  if (n == null) return '0,00'
-  return n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  if (n == null || isNaN(Number(n))) return '0,00'
+  const num = Number(n)
+  try {
+    return num.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  } catch {
+    // Fallback if sk-SK locale not available on server
+    return num.toFixed(2).replace('.', ',')
+  }
 }
 
 interface TaxRecapRow {
