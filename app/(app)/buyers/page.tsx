@@ -52,13 +52,15 @@ export default function BuyersPage() {
   useEffect(() => { loadBuyers() }, [loadBuyers])
 
   async function lookupICO() {
-    if (!form.ico || form.ico.length < 6) {
-      toast.error('Zadajte platne ICO (min. 6 znakov)')
-      return
-    }
-    setLookingUp(true)
-    try {
-      const res = await fetch(`/api/rpo?ico=${form.ico}`)
+  const sanitized = (form.ico || '').replace(/\s/g, '')
+  setForm(prev => ({ ...prev, ico: sanitized }))
+  if (!sanitized || sanitized.length < 6) {
+  toast.error('Zadajte platne ICO (min. 6 znakov)')
+  return
+  }
+  setLookingUp(true)
+  try {
+  const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
       if (res.ok) {
         setForm((prev) => ({
@@ -214,7 +216,7 @@ export default function BuyersPage() {
           {/* ICO Lookup */}
           <div className="flex gap-3 mb-4">
             <input
-              type="text" value={form.ico || ''} onChange={(e) => setForm({ ...form, ico: e.target.value.replace(/\s/g, '') })}
+              type="text" value={form.ico || ''} onChange={(e) => setForm({ ...form, ico: e.target.value })}
               placeholder="ICO odberatela" className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground" maxLength={10}
             />
             <button onClick={lookupICO} disabled={lookingUp}

@@ -202,13 +202,15 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
   }
 
   async function lookupBuyer() {
-    if (!buyerIco || buyerIco.length < 6) {
-      toast.error('Zadajte platne ICO')
-      return
-    }
-    setLookingUp(true)
-    try {
-      const res = await fetch(`/api/rpo?ico=${buyerIco}`)
+  const sanitized = buyerIco.replace(/\s/g, '')
+  setBuyerIco(sanitized)
+  if (!sanitized || sanitized.length < 6) {
+  toast.error('Zadajte platne ICO')
+  return
+  }
+  setLookingUp(true)
+  try {
+  const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
       if (res.ok) {
         const peppolId = data.dic ? `9950:${data.dic}` : null
@@ -329,7 +331,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
           <input
             type="text"
             value={buyerIco}
-            onChange={(e) => setBuyerIco(e.target.value.replace(/\s/g, ''))}
+            onChange={(e) => setBuyerIco(e.target.value)}
             placeholder="ICO odberatela"
             className="glass-input flex-1 px-3.5 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground text-sm"
             maxLength={10}
@@ -362,6 +364,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
             <label className="block text-xs text-muted-foreground mb-1">ICO</label>
             <input type="text" value={formData.buyer_ico || ''}
               onChange={(e) => updateForm({ buyer_ico: e.target.value.replace(/\s/g, '') })}
+              onBlur={(e) => { const v = e.target.value.replace(/\s/g, ''); if (v !== e.target.value) updateForm({ buyer_ico: v }) }}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
           </div>
           <div>

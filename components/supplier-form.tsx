@@ -57,13 +57,15 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
   }
 
   async function lookupICO() {
-    if (!icoInput || icoInput.length < 6) {
+    const sanitized = icoInput.replace(/\s/g, '')
+    setIcoInput(sanitized)
+    if (!sanitized || sanitized.length < 6) {
       toast.error('Zadajte platne ICO (min. 6 znakov)')
       return
     }
     setLookingUp(true)
     try {
-      const res = await fetch(`/api/rpo?ico=${icoInput}`)
+      const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
       if (res.ok) {
         setForm((prev) => ({
@@ -168,7 +170,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <input
             type="text"
             value={icoInput}
-            onChange={(e) => setIcoInput(e.target.value.replace(/\s/g, ''))}
+            onChange={(e) => setIcoInput(e.target.value)}
             placeholder="Zadajte ICO (napr. 36421928)"
             className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
             maxLength={10}

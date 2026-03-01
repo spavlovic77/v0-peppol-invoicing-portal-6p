@@ -135,6 +135,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                     type="number"
                     value={item.quantity}
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
+                    onFocus={(e) => e.target.select()}
                     className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
                     min="0"
                     step="0.001"
@@ -159,6 +160,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                     type="number"
                     value={item.unit_price}
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
+                    onFocus={(e) => e.target.select()}
                     className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
                     min="0"
                     step="0.01"
