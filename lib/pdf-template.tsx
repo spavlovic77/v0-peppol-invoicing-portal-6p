@@ -4,8 +4,8 @@ import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/rendere
 Font.register({
   family: 'Roboto',
   fonts: [
-    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf', fontWeight: 'normal' },
-    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf', fontWeight: 'bold' },
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', fontWeight: 'normal' },
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf', fontWeight: 'bold' },
   ],
 })
 
@@ -283,19 +283,19 @@ interface CorrectionRow {
   isCharge: boolean
 }
 
+function unitLabel(code: string): string {
+  const map: Record<string, string> = {
+    C62: 'ks', HUR: 'hod', DAY: 'den', MON: 'mes', KGM: 'kg',
+    MTR: 'm', LTR: 'l', MTK: 'm2', MTQ: 'm3', KMT: 'km',
+    TNE: 't', SET: 'sada', XPK: 'bal',
+  }
+  return map[code] || code
+}
+
 function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<string, unknown>): {
   rows: TaxRecapRow[]
   corrections: CorrectionRow[]
 } {
-  const unitLabel = (code: string) => {
-    const map: Record<string, string> = {
-      C62: 'ks', HUR: 'hod', DAY: 'deň', MON: 'mes', KGM: 'kg',
-      MTR: 'm', LTR: 'l', MTK: 'm²', MTQ: 'm³', KMT: 'km',
-      TNE: 't', SET: 'sada', XPK: 'bal',
-    }
-    return map[code] || code
-  }
-
   const lineExtTotal = items.reduce((s, it) => s + Number(it.line_total || 0), 0)
   const globalDiscountPct = Number(invoice.global_discount_percent || 0)
   const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
