@@ -128,13 +128,13 @@ export function LandingContent() {
 
       <div className="w-full max-w-sm text-center">
         {/* Logo + Name */}
-        <div className="flex items-center justify-center gap-3 mb-10">
+        <div className="flex items-center justify-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
             <FileText className="w-6 h-6 text-primary" />
           </div>
           <span className="text-2xl font-bold text-foreground">{'Zrobenie e-faktúry'}</span>
         </div>
-        <p className="text-lg text-muted-foreground mb-8">pre drobečkov</p>
+        <p className="text-lg text-muted-foreground mb-10">pre drobečkov</p>
 
         {/* Google Sign In - server-side route to avoid localhost redirect */}
         <a
