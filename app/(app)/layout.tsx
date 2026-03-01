@@ -1,7 +1,12 @@
 import { Navbar } from '@/components/navbar'
 import { SupplierProvider } from '@/lib/supplier-context'
 import { AiPanelProvider } from '@/lib/ai-context'
-import { AiAssistantPanel } from '@/components/ai-assistant-panel'
+import dynamic from 'next/dynamic'
+
+const AiAssistantPanel = dynamic(
+  () => import('@/components/ai-assistant-panel').then((m) => m.AiAssistantPanel),
+  { ssr: false }
+)
 
 // All app pages require auth / Supabase — never statically prerender
 export const dynamic = 'force-dynamic'
