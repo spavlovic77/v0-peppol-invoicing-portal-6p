@@ -75,7 +75,7 @@ export async function GET(req: Request) {
     })
   } catch (err) {
     const e = err as Error
-    console.error('[v0] PDF generation error:', e.message, e.stack)
+    console.error('PDF generation error:', e.message)
     return NextResponse.json(
       { error: 'Chyba pri generovani PDF: ' + e.message },
       { status: 500 }
