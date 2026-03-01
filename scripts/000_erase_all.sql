@@ -1,7 +1,7 @@
 -- ============================================================
 -- ERASE ALL DATA -- Full factory reset
 -- Drops all app tables, triggers, functions, and auth users.
--- Run this BEFORE 001_master_schema.sql for a clean install.
+-- Run this BEFORE 001_master_schema.sql for a clean install.   
 -- ============================================================
 
 -- 1. Drop triggers first (depend on tables + function)
