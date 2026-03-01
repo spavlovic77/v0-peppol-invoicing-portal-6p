@@ -1,17 +1,16 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
 
-// Noto Sans – Google's font designed for universal Unicode coverage.
-// latin-ext subset includes all Slovak diacritics (ľ, š, č, ť, ž, ý, á, í, é, ú, ä, ô, ň, ď, ŕ).
-// Served from jsdelivr CDN (Cloudflare + Fastly backed, 99.99% uptime).
-// react-pdf supports .woff format natively.
-const FONT_BASE = 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest'
+// Noto Sans from @fontsource via jsdelivr CDN – pinned version, exact file names.
+// latin-ext subset covers all Slovak diacritics (ľ, š, č, ť, ž, ý, á, í, é, ú, ä, ô, ň, ď, ŕ).
+// react-pdf supports .woff natively.
+const FONT_BASE = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.22/files'
 
 Font.register({
   family: 'NotoSans',
   fonts: [
-    { src: `${FONT_BASE}/latin-ext-400-normal.woff`, fontWeight: 'normal' },
-    { src: `${FONT_BASE}/latin-ext-700-normal.woff`, fontWeight: 'bold' },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-400-normal.woff`, fontWeight: 'normal' },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-700-normal.woff`, fontWeight: 'bold' },
   ],
 })
 
