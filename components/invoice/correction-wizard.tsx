@@ -10,7 +10,6 @@ export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rat
 const SK_VAT_RATES = [
   { value: 23, label: '23%' },
   { value: 19, label: '19%' },
-  { value: 20, label: '20%' },
   { value: 10, label: '10%' },
   { value: 5, label: '5%' },
   { value: 0, label: '0%' },

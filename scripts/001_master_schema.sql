@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
   registration_number TEXT,
   ap_api_key      TEXT,
   is_vat_payer    BOOLEAN DEFAULT TRUE,
+  is_billing_entity BOOLEAN NOT NULL DEFAULT FALSE,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -97,6 +98,11 @@ DROP TRIGGER IF EXISTS update_suppliers_updated_at ON suppliers;
 CREATE TRIGGER update_suppliers_updated_at
   BEFORE UPDATE ON suppliers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Enforce at most one billing entity per user
+CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_one_billing_per_user
+  ON suppliers (user_id)
+  WHERE is_billing_entity = true;
 
 -- --------------------------------------------------------
 -- 3. Buyer Contacts (per supplier)
@@ -260,7 +266,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   unit              VARCHAR(10) DEFAULT 'C62',
   unit_price        NUMERIC(12,4) NOT NULL,
   vat_category      VARCHAR(3) DEFAULT 'S',
-  vat_rate          NUMERIC(5,2) DEFAULT 23.00,
+  vat_rate          NUMERIC(5,2) NOT NULL DEFAULT 23.00,
   discount_percent  NUMERIC(5,2) DEFAULT 0,
   discount_amount   NUMERIC(12,2) DEFAULT 0,
   line_total        NUMERIC(12,2) NOT NULL,
@@ -284,3 +290,19 @@ CREATE POLICY "items_delete_own" ON invoice_items FOR DELETE
   USING (EXISTS (SELECT 1 FROM invoices WHERE invoices.id = invoice_items.invoice_id AND invoices.user_id = auth.uid()));
 
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_items(invoice_id);
+
+-- --------------------------------------------------------
+-- 7. VAT Rates (reference table, read-only)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vat_rates (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rate        NUMERIC(5,2) NOT NULL UNIQUE,
+  label_sk    TEXT NOT NULL,
+  label_en    TEXT NOT NULL,
+  category_id VARCHAR(3) NOT NULL DEFAULT 'S',
+  valid_from  DATE NOT NULL DEFAULT '2025-01-01',
+  valid_to    DATE,
+  is_active   BOOLEAN DEFAULT TRUE,
+  sort_order  INTEGER DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);

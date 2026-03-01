@@ -23,12 +23,11 @@ const unitOptions = [
 ]
 
 const vatRates = [
-  { value: 23, label: '23% (zakladna od 2025)' },
-  { value: 19, label: '19% (znizena od 2025)' },
-  { value: 20, label: '20% (zakladna do 2024)' },
-  { value: 10, label: '10% (znizena)' },
-  { value: 5, label: '5% (znizena)' },
-  { value: 0, label: '0% (oslobodene)' },
+  { value: 23, label: '23% (z\u00E1kladn\u00E1 od 2025)' },
+  { value: 19, label: '19% (zn\u00ED\u017Een\u00E1 od 2025)' },
+  { value: 10, label: '10% (zn\u00ED\u017Een\u00E1)' },
+  { value: 5, label: '5% (zn\u00ED\u017Een\u00E1)' },
+  { value: 0, label: '0% (osloboden\u00E9)' },
 ]
 
 export function StepItems({ formData, updateForm, totals, isVatPayer = true }: Props) {
@@ -84,14 +83,14 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Package className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Polozky faktury</h2>
+            <h2 className="font-semibold text-foreground">Polo\u017Eky fakt\u00FAry</h2>
           </div>
           <button
             onClick={addItem}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/15 text-primary text-sm font-medium hover:bg-primary/25 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Pridat polozku
+            Prida\u0165 polo\u017Eku
           </button>
         </div>
 
@@ -103,7 +102,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Polozka {i + 1}
+                  Polo\u017Eka {i + 1}
                 </span>
                 {formData.items.length > 1 && (
                   <button
@@ -123,13 +122,13 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                   value={item.description}
                   onChange={(e) => updateItem(i, { description: e.target.value })}
                   className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                  placeholder="Popis polozky"
+                  placeholder="Popis polo\u017Eky"
                 />
               </div>
 
               <div className={`grid grid-cols-2 ${isVatPayer ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Mnozstvo</label>
+                  <label className="block text-xs text-muted-foreground mb-1">Mno\u017Estvo</label>
                   <input
                     id={`item_qty_${i}`}
                     type="number"
@@ -181,7 +180,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Zlava %</label>
+                  <label className="block text-xs text-muted-foreground mb-1">Z\u013Eava %</label>
                   <input
                     type="number"
                     value={item.discount_percent || 0}
@@ -213,7 +212,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
       {/* Global Discount */}
       <GlassCard>
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground">Zlava na fakturu (%)</label>
+          <label className="text-sm font-medium text-foreground">Z\u013Eava na fakt\u00FAru (%)</label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -238,17 +237,17 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
       <GlassCard heavy>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Sucet poloziek (po zlavach):</span>
+            <span className="text-muted-foreground">S\u00FA\u010Det polo\u017Eiek (po z\u013Eav\u00E1ch):</span>
             <span className="text-foreground">{fmt(totals.withoutVat)} {formData.currency}</span>
           </div>
           {(formData.global_discount_percent || 0) > 0 && (
             <>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Zlava na fakturu ({formData.global_discount_percent}%):</span>
+                <span className="text-muted-foreground">Z\u013Eava na fakt\u00FAru ({formData.global_discount_percent}%):</span>
                 <span className="text-primary">-{fmt(totals.withoutVat * (formData.global_discount_percent || 0) / 100)} {formData.currency}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Zaklad dane po zlave:</span>
+                <span className="text-muted-foreground">Z\u00E1klad dane po z\u013Eave:</span>
                 <span className="text-foreground">{fmt(totals.withoutVat - totals.withoutVat * (formData.global_discount_percent || 0) / 100)} {formData.currency}</span>
               </div>
             </>
@@ -261,13 +260,13 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
           )}
           <div className="h-px bg-border my-2" />
           <div className="flex justify-between">
-            <span className="font-semibold text-foreground">Celkom na uhradu:</span>
+            <span className="font-semibold text-foreground">Celkom na \u00FAhradu:</span>
             <span className="text-xl font-bold text-primary">
               {fmt(totals.withVat)} {formData.currency}
             </span>
           </div>
           {!isVatPayer && (
-            <p className="text-xs text-muted-foreground mt-2">Dodavatel nie je platcom DPH</p>
+            <p className="text-xs text-muted-foreground mt-2">Dod\u00E1vate\u013E nie je platcom DPH</p>
           )}
         </div>
       </GlassCard>
