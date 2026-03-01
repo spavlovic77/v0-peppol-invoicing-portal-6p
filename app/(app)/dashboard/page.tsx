@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2, RotateCcw, ChevronRight, Loader2 } from 'lucide-react'
+import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Building2, Trash2, RotateCcw, ChevronRight, Loader2, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { DashboardSkeleton } from '@/components/skeleton'
@@ -28,6 +28,8 @@ interface Invoice {
   created_at: string
   correction_of: string | null
   invoice_type_code: string | null
+  peppol_sent_at: string | null
+  peppol_send_status: string | null
 }
 
 function monthKey(dateStr: string) {
@@ -274,6 +276,15 @@ export default function DashboardPage() {
                               {inv.invoice_number}
                             </span>
                             <StatusBadge status={inv.status} />
+                            {inv.peppol_sent_at && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-medium"
+                                title={`Zaslané cez Peppol ${new Date(inv.peppol_sent_at).toLocaleString('sk-SK')}`}
+                              >
+                                <Globe className="w-3 h-3" />
+                                Peppol
+                              </span>
+                            )}
                             {hasCorrections && (
                               <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">
                                 {corrections.length}x dobropis
