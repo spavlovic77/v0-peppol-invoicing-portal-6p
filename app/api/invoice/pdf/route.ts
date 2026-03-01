@@ -59,13 +59,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Supplier profile not found' }, { status: 404 })
     }
 
+    console.log('[v0] PDF generation starting for invoice:', invoice.invoice_number, 'items:', (items || []).length)
+
     const element = createElement(InvoicePdfDocument, {
       invoice,
       items: items || [],
       profile,
     })
 
+    console.log('[v0] PDF element created, calling renderToBuffer...')
     const buffer = await renderToBuffer(element)
+    console.log('[v0] PDF buffer generated, size:', buffer.length)
 
     return new NextResponse(buffer, {
       headers: {
