@@ -23,6 +23,7 @@ interface SupplierProfile {
   country_code: string
   iban: string | null
   swift: string | null
+  is_vat_payer?: boolean
 }
 
 interface InvoiceData {
@@ -83,6 +84,12 @@ export function buildPeppolInvoice(
   const currency = invoice.currency || 'EUR'
   const typeCode = invoice.invoice_type_code || '380'
   const isCreditNote381 = typeCode === '381'
+  const isVatPayer = profile.is_vat_payer !== false
+
+  // Non-VAT payer: force all items to category O (outside scope), 0% rate
+  if (!isVatPayer) {
+    items = items.map((it) => ({ ...it, vat_category: 'O', vat_rate: 0 }))
+  }
 
   // ================================================================
   // 1. Build invoice lines with per-item discounts
@@ -305,8 +312,10 @@ export function buildPeppolInvoice(
     supplierPostalCode: profile.postal_code || '',
     supplierCountryCode: profile.country_code || 'SK',
     supplierCompanyId: profile.ico,
-    supplierTaxId: profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico),
-    supplierVatId: profile.dic || null,
+    supplierTaxId: isVatPayer
+      ? (profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico))
+      : (profile.dic || profile.ico),
+    supplierVatId: isVatPayer ? (profile.dic || null) : null,
     customerEndpointId: buyerEndpointId,
     customerEndpointSchemeId: '9950',
     customerPartyName: invoice.buyer_name,

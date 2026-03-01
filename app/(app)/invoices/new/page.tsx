@@ -274,6 +274,8 @@ export default function NewInvoicePage() {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
 
+  const isVatPayer = activeSupplier?.is_vat_payer ?? true
+
   const totals = (() => {
     const r2 = (n: number) => Math.round(n * 100) / 100
 
@@ -286,7 +288,12 @@ export default function NewInvoicePage() {
 
     // Apply global discount
     const globalDiscount = lineSum * (formData.global_discount_percent || 0) / 100
-    const taxBase_EN = r2(lineSum - globalDiscount)
+
+    // Non-VAT payer: no tax at all
+    if (!isVatPayer) {
+      const total = r2(lineSum - globalDiscount)
+      return { withoutVat: total, vat: 0, withVat: total }
+    }
 
     // Slovak reverse method: calculate VAT per tax rate group
     // Group items by tax rate
@@ -475,6 +482,7 @@ export default function NewInvoicePage() {
     web: activeSupplier.web,
     registration_court: activeSupplier.registration_court,
     registration_number: activeSupplier.registration_number,
+    is_vat_payer: activeSupplier.is_vat_payer,
   }
 
   // Correction wizard callback
@@ -502,8 +510,8 @@ export default function NewInvoicePage() {
   const steps = [
     { label: 'Zakladne udaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
     { label: 'Odberatel', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} /> },
-    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} /> },
-    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} /> },
+    { label: 'Polozky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} /> },
+    { label: 'Suhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} /> },
   ]
 
   return (

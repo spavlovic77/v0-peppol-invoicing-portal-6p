@@ -18,6 +18,7 @@ export const companyProfileSchema = z.object({
   web: z.string().nullable(),
   registration_court: z.string().nullable(),
   registration_number: z.string().nullable(),
+  is_vat_payer: z.boolean().optional().default(true),
 })
 
 export type CompanyProfile = z.infer<typeof companyProfileSchema>

@@ -84,9 +84,10 @@ interface Props {
   formData: InvoiceFormData
   profile: CompanyProfile
   totals: { withoutVat: number; vat: number; withVat: number }
+  isVatPayer?: boolean
 }
 
-export function StepSummary({ formData, profile, totals }: Props) {
+export function StepSummary({ formData, profile, totals, isVatPayer = true }: Props) {
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -210,7 +211,7 @@ export function StepSummary({ formData, profile, totals }: Props) {
                 <th className="pb-2 font-medium text-right">Mn.</th>
                 <th className="pb-2 font-medium text-right">Cena</th>
                 <th className="pb-2 font-medium text-right">Zlava</th>
-                <th className="pb-2 font-medium text-right">DPH</th>
+                {isVatPayer && <th className="pb-2 font-medium text-right">DPH</th>}
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
             </thead>
@@ -224,7 +225,7 @@ export function StepSummary({ formData, profile, totals }: Props) {
                   <td className="py-2 text-right text-muted-foreground">
                     {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
                   </td>
-                  <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>
+                  {isVatPayer && <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>}
                   <td className="py-2 text-right text-foreground font-medium">
                     {fmt(item.line_total || item.quantity * item.unit_price)}
                   </td>
@@ -236,7 +237,7 @@ export function StepSummary({ formData, profile, totals }: Props) {
       </GlassCard>
 
       {/* VAT Recapitulation */}
-      <GlassCard>
+      {isVatPayer && <GlassCard>
         <div className="flex items-center gap-3 mb-4">
           <Calculator className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">Rekapitulacia DPH</h2>
@@ -277,7 +278,7 @@ export function StepSummary({ formData, profile, totals }: Props) {
             </tbody>
           </table>
         </div>
-      </GlassCard>
+      </GlassCard>}
 
       {/* Totals */}
       <GlassCard heavy>
@@ -292,15 +293,20 @@ export function StepSummary({ formData, profile, totals }: Props) {
               <span className="text-primary">zahrnuta v zaklade</span>
             </div>
           )}
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">DPH:</span>
-            <span className="text-foreground">{fmt(totals.vat)} {formData.currency}</span>
-          </div>
+          {isVatPayer && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">DPH:</span>
+              <span className="text-foreground">{fmt(totals.vat)} {formData.currency}</span>
+            </div>
+          )}
           <div className="h-px bg-border my-2" />
           <div className="flex justify-between">
             <span className="font-semibold text-foreground">Na uhradu:</span>
             <span className="text-2xl font-bold text-primary">{fmt(totals.withVat)} {formData.currency}</span>
           </div>
+          {!isVatPayer && (
+            <p className="text-xs text-muted-foreground mt-2">Dodavatel nie je platcom DPH</p>
+          )}
         </div>
       </GlassCard>
     </div>

@@ -93,8 +93,9 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
   // BR-10: Seller must have a legal entity
   check('BR-10', !!inv.supplierCompanyId, 'Predavajuci musi mat pravnu identifikaciu (ICO)')
 
-  // BR-11: Seller VAT identifier
-  check('BR-11', !!inv.supplierTaxId, 'Predavajuci musi mat danove cislo (IC DPH)')
+  // BR-11: Seller VAT identifier (not required for non-VAT payers -- TaxCategory O)
+  const allCategoryO = inv.taxSubtotals.every((ts) => ts.taxCategoryId === 'O')
+  check('BR-11', allCategoryO || !!inv.supplierTaxId, 'Predavajuci musi mat danove cislo (IC DPH)')
 
   // BR-12: Line extension amount calculation
   const lineSum = inv.invoiceLines.reduce((s, l) => s + l.lineExtensionAmount, 0)
@@ -126,7 +127,12 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
 
   // Tax subtotal checks -- SK reverse method may produce values that differ
   // from forward method by up to 1 cent per line item, so we use wider tolerance
+  // Skip for category O (non-VAT payer) -- tax is always 0
   inv.taxSubtotals.forEach((ts, i) => {
+    if (ts.taxCategoryId === 'O') {
+      check(`BR-O-08-T${i + 1}`, ts.taxAmount === 0, `Danovy suctot ${i + 1}: Pre kategoriu O (nie platca DPH) musi byt DPH 0`)
+      return
+    }
     // SK method: tax = gross * rate / (100+rate), taxBase = gross - tax
     // Forward check: tax should approximately equal taxBase * rate / 100
     const expectedTax = round2(ts.taxableAmount * (ts.taxPercent / 100))

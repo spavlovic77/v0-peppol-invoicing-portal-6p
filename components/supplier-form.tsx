@@ -26,13 +26,14 @@ export interface SupplierFormData {
   registration_court: string
   registration_number: string
   ap_api_key: string
+  is_vat_payer: boolean
 }
 
 const emptyForm: SupplierFormData = {
   ico: '', dic: '', ic_dph: '', company_name: '', street: '', city: '',
   postal_code: '', country_code: 'SK', bank_name: '', iban: '', swift: '',
   email: '', phone: '', web: '', registration_court: '', registration_number: '',
-  ap_api_key: '',
+  ap_api_key: '', is_vat_payer: true,
 }
 
 interface SupplierFormProps {
@@ -117,6 +118,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         registration_court: form.registration_court || null,
         registration_number: form.registration_number || null,
         ap_api_key: form.ap_api_key || null,
+        is_vat_payer: form.is_vat_payer,
       }
 
       let error
@@ -202,13 +204,34 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Nazov firmy *" value={form.company_name} onChange={(v) => updateField('company_name', v)} />
           <Field label="ICO" value={form.ico} onChange={(v) => updateField('ico', v)} />
           <Field label="DIC" value={form.dic} onChange={(v) => updateField('dic', v)} />
-          <Field label="IC DPH" value={form.ic_dph} onChange={(v) => updateField('ic_dph', v)} />
+          {form.is_vat_payer && (
+            <Field label="IC DPH" value={form.ic_dph} onChange={(v) => updateField('ic_dph', v)} />
+          )}
           <Field label="Ulica" value={form.street} onChange={(v) => updateField('street', v)} />
           <Field label="Mesto" value={form.city} onChange={(v) => updateField('city', v)} />
           <Field label="PSC" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
           <Field label="Krajina" value={form.country_code} onChange={(v) => updateField('country_code', v)} />
           <Field label="Registracny sud" value={form.registration_court} onChange={(v) => updateField('registration_court', v)} className="md:col-span-2" />
           <Field label="Cislo zapisu" value={form.registration_number} onChange={(v) => updateField('registration_number', v)} className="md:col-span-2" />
+        </div>
+        <div className="mt-5 pt-5 border-t border-border">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_vat_payer}
+              onChange={(e) => setForm((prev) => ({ ...prev, is_vat_payer: e.target.checked, ic_dph: e.target.checked ? prev.ic_dph : '' }))}
+              className="w-5 h-5 rounded border-border bg-background text-primary accent-primary cursor-pointer"
+            />
+            <div>
+              <span className="text-sm font-medium text-foreground">Platca DPH</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {form.is_vat_payer
+                  ? 'Faktury budu vystavene s DPH a rekapitulaciou dane'
+                  : 'Faktury budu vystavene bez DPH (dodavatel nie je platcom DPH)'
+                }
+              </p>
+            </div>
+          </label>
         </div>
       </GlassCard>
 

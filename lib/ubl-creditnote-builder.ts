@@ -69,7 +69,9 @@ export function buildCreditNoteXml(inv: PeppolInvoice): string {
       <cbc:TaxAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(ts.taxAmount)}</cbc:TaxAmount>
       <cac:TaxCategory>
         <cbc:ID>${escapeXml(ts.taxCategoryId)}</cbc:ID>
-        <cbc:Percent>${ts.taxPercent}</cbc:Percent>
+        <cbc:Percent>${ts.taxPercent}</cbc:Percent>${ts.taxCategoryId === 'O' ? `
+        <cbc:TaxExemptionReasonCode>vatex-eu-o</cbc:TaxExemptionReasonCode>
+        <cbc:TaxExemptionReason>Not subject to VAT</cbc:TaxExemptionReason>` : ''}
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
