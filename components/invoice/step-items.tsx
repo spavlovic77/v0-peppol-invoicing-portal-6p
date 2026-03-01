@@ -1,7 +1,7 @@
 'use client'
 
 import { GlassCard } from '@/components/glass-card'
-import { Package, Plus, Trash2 } from 'lucide-react'
+import { Copy, Package, Plus, Trash2 } from 'lucide-react'
 import type { InvoiceFormData, InvoiceItem } from '@/lib/schemas'
 
 interface Props {
@@ -57,6 +57,13 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
     updateForm({ items })
   }
 
+  function duplicateItem(index: number) {
+    const source = formData.items[index]
+    const copy: InvoiceItem = { ...source, line_number: formData.items.length + 1 }
+    const items = [...formData.items, copy]
+    updateForm({ items })
+  }
+
   function updateItem(index: number, updates: Partial<InvoiceItem>) {
     const items = formData.items.map((item, i) => {
       if (i !== index) return item
@@ -104,14 +111,24 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true }: P
                 <span className="text-sm font-medium text-muted-foreground">
                   Položka {i + 1}
                 </span>
-                {formData.items.length > 1 && (
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => removeItem(i)}
-                    className="p-1.5 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors"
+                    onClick={() => duplicateItem(i)}
+                    className="p-1.5 rounded-lg hover:bg-primary/15 text-muted-foreground hover:text-primary transition-colors"
+                    title="Duplikovať položku"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Copy className="w-4 h-4" />
                   </button>
-                )}
+                  {formData.items.length > 1 && (
+                    <button
+                      onClick={() => removeItem(i)}
+                      className="p-1.5 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Odstrániť položku"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
