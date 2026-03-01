@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { ValidationPipeline } from '@/components/invoice/validation-pipeline'
+import { ValidationDisplay } from '@/components/invoice/validation-display'
 import { DownloadActions } from '@/components/invoice/download-actions'
 import { InvoiceDetailSkeleton } from '@/components/skeleton'
 import Link from 'next/link'
@@ -320,6 +321,11 @@ export default function InvoiceDetailPage() {
           onSendPeppol={handleSendPeppol}
           sending={sending}
         />
+      )}
+
+      {/* Validation details accordion -- always show when validation data exists */}
+      {Array.isArray(validation) && (validation as Array<{name: string; description: string; results: Array<{rule: string; severity: string; message: string; passed: boolean}>; passed: boolean; simulated?: boolean}>).length > 0 && (
+        <ValidationDisplay phases={validation as Array<{name: string; description: string; results: Array<{rule: string; severity: 'error' | 'warning'; message: string; passed: boolean}>; passed: boolean; simulated?: boolean}>} />
       )}
 
       {/* Dobropis button -- only for valid non-credit-note invoices */}

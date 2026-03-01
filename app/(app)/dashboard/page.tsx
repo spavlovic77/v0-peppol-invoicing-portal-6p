@@ -341,6 +341,15 @@ export default function DashboardPage() {
                                 Dobropis
                               </span>
                               <StatusBadge status={cn.status} />
+                              {cn.peppol_sent_at && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-medium"
+                                  title={`Zaslané cez Peppol ${new Date(cn.peppol_sent_at).toLocaleString('sk-SK')}`}
+                                >
+                                  <Globe className="w-3 h-3" />
+                                  Peppol
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground truncate">{cn.buyer_name}</p>
                           </div>

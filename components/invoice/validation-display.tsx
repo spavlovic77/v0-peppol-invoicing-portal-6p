@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info } from 'lucide-react'
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 
@@ -105,9 +105,29 @@ export function ValidationDisplay({ phases }: Props) {
         </div>
       )}
 
+      {/* How validation works */}
+      {topOpen && (
+        <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50">
+          <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground/80">Validacia prebieha v 4 fazach (kazda musi prejst pred dalsou):</p>
+            <ol className="list-decimal list-inside space-y-0.5 pl-0.5">
+              <li><span className="font-medium text-foreground/70">Strukturalna</span> -- povinne polia, formaty, datove typy (Zod schema)</li>
+              <li><span className="font-medium text-foreground/70">UBL 2.1 XSD</span> -- poradie XML elementov podla OASIS UBL 2.1 schemy</li>
+              <li><span className="font-medium text-foreground/70">EN 16931</span> -- obchodne pravidla EU (BR-*) podla CEN schematronu</li>
+              <li><span className="font-medium text-foreground/70">Peppol BIS 3.0</span> -- pravidla OpenPEPPOL (PEPPOL-EN16931-R*) schematronu</li>
+            </ol>
+            <p className="pt-0.5">
+              Primarne: <span className="font-mono text-[10px]">peppolvalidator.com</span> API (fazy 2-4).
+              Fallback: JS simulacia s kontrolou poradia elementov.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Expanded: show validation phases */}
       {topOpen && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-3">
           {phases.map((phase, phaseIdx) => {
             const isOpen = expanded[phaseIdx]
             const errorCount = phase.results.filter(
