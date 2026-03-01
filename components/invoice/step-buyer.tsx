@@ -191,7 +191,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm text-muted-foreground mb-1.5">Nazov firmy *</label>
-            <input type="text" value={formData.buyer_name}
+            <input id="buyer_name" type="text" value={formData.buyer_name}
               onChange={(e) => updateForm({ buyer_name: e.target.value })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground" placeholder="Nazov odberatela" />
           </div>
@@ -203,7 +203,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">DIC</label>
-            <input type="text" value={formData.buyer_dic || ''}
+            <input id="buyer_dic" type="text" value={formData.buyer_dic || ''}
               onChange={(e) => updateForm({ buyer_dic: e.target.value })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground" />
           </div>
@@ -239,7 +239,7 @@ export function StepBuyer({ formData, updateForm, supplierId }: Props) {
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">Krajina</label>
-            <input type="text" value={formData.buyer_country_code}
+            <input id="buyer_country_code" type="text" value={formData.buyer_country_code}
               onChange={(e) => updateForm({ buyer_country_code: e.target.value })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground" maxLength={2} />
           </div>

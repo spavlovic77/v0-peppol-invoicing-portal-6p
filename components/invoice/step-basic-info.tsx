@@ -30,6 +30,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               Cislo faktury *
             </label>
             <input
+              id="invoice_number"
               type="text"
               value={formData.invoice_number}
               onChange={(e) => updateForm({ invoice_number: e.target.value })}
@@ -43,6 +44,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">Mena</label>
             <select
+              id="currency"
               value={formData.currency}
               onChange={(e) => updateForm({ currency: e.target.value })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
@@ -98,6 +100,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               Datum vystavenia *
             </label>
             <input
+              id="issue_date"
               type="date"
               value={formData.issue_date}
               onChange={(e) => updateForm({ issue_date: e.target.value })}
@@ -109,6 +112,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               Datum splatnosti *
             </label>
             <input
+              id="due_date"
               type="date"
               value={formData.due_date}
               onChange={(e) => updateForm({ due_date: e.target.value })}
@@ -148,6 +152,7 @@ export function StepBasicInfo({ formData, updateForm }: Props) {
               Referencia odberatela
             </label>
             <input
+              id="buyer_reference"
               type="text"
               value={formData.buyer_reference || ''}
               onChange={(e) => updateForm({ buyer_reference: e.target.value || null })}
