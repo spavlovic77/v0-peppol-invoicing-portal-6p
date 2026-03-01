@@ -9,8 +9,10 @@ const FONT_BASE = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.0.22/fil
 Font.register({
   family: 'NotoSans',
   fonts: [
-    { src: `${FONT_BASE}/noto-sans-latin-ext-400-normal.woff`, fontWeight: 'normal' },
-    { src: `${FONT_BASE}/noto-sans-latin-ext-700-normal.woff`, fontWeight: 'bold' },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-400-normal.woff`, fontWeight: 400 },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-400-italic.woff`, fontWeight: 400, fontStyle: 'italic' },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-700-normal.woff`, fontWeight: 700 },
+    { src: `${FONT_BASE}/noto-sans-latin-ext-700-italic.woff`, fontWeight: 700, fontStyle: 'italic' },
   ],
 })
 
