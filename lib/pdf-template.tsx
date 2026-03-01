@@ -14,12 +14,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: '#7c3aed',
+    borderBottomColor: '#1e3a5f',
   },
   title: {
     fontSize: 24,
     fontFamily: 'Helvetica-Bold',
-    color: '#7c3aed',
+    color: '#1e3a5f',
   },
   subtitle: {
     fontSize: 10,
@@ -46,13 +46,13 @@ const styles = StyleSheet.create({
   },
   partyBox: {
     flex: 1,
-    backgroundColor: '#f8f7ff',
+    backgroundColor: '#f0f4f8',
     padding: 12,
     borderRadius: 4,
   },
   partyTitle: {
     fontSize: 8,
-    color: '#7c3aed',
+    color: '#1e3a5f',
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#1e3a5f',
     padding: 8,
     borderRadius: 2,
   },
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   tableRowAlt: {
     flexDirection: 'row',
     padding: 8,
-    backgroundColor: '#faf9ff',
+    backgroundColor: '#f5f7fa',
     borderBottomWidth: 0.5,
     borderBottomColor: '#eee',
   },
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   totalDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#7c3aed',
+    borderBottomColor: '#1e3a5f',
     marginVertical: 4,
   },
   grandTotalLabel: {
@@ -137,17 +137,17 @@ const styles = StyleSheet.create({
   grandTotalValue: {
     fontSize: 14,
     fontFamily: 'Helvetica-Bold',
-    color: '#7c3aed',
+    color: '#1e3a5f',
   },
   paymentBox: {
-    backgroundColor: '#f8f7ff',
+    backgroundColor: '#f0f4f8',
     padding: 12,
     borderRadius: 4,
     marginBottom: 20,
   },
   paymentTitle: {
     fontSize: 8,
-    color: '#7c3aed',
+    color: '#1e3a5f',
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -186,12 +186,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#7c3aed',
-    backgroundColor: '#faf9ff',
+    borderLeftColor: '#1e3a5f',
+    backgroundColor: '#f5f7fa',
   },
   noteLabel: {
     fontSize: 8,
-    color: '#7c3aed',
+    color: '#1e3a5f',
     fontFamily: 'Helvetica-Bold',
     marginBottom: 3,
   },
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   recapTitle: {
     fontSize: 8,
-    color: '#7c3aed',
+    color: '#1e3a5f',
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -212,14 +212,14 @@ const styles = StyleSheet.create({
   },
   recapHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f0ecff',
+    backgroundColor: '#e8eef4',
     padding: 6,
     borderRadius: 2,
   },
   recapHeaderText: {
     fontSize: 8,
     fontFamily: 'Helvetica-Bold',
-    color: '#5b21b6',
+    color: '#1e3a5f',
   },
   recapRow: {
     flexDirection: 'row',
@@ -358,7 +358,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>FAKTURA</Text>
+            <Text style={styles.title}>FAKTÚRA</Text>
             <Text style={styles.subtitle}>{isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'}</Text>
           </View>
           <View style={styles.invoiceInfo}>
@@ -386,9 +386,9 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={styles.partyLine}>
               {String(profile.postal_code || '')} {String(profile.city || '')}
             </Text>
-            <Text style={styles.partyLine}>{'\n'}ICO: {String(profile.ico)}</Text>
-            {profile.dic && <Text style={styles.partyLine}>DIC: {String(profile.dic)}</Text>}
-            {profile.ic_dph && <Text style={styles.partyLine}>IC DPH: {String(profile.ic_dph)}</Text>}
+            <Text style={styles.partyLine}>{'\n'}IČO: {String(profile.ico)}</Text>
+            {profile.dic && <Text style={styles.partyLine}>DIČ: {String(profile.dic)}</Text>}
+            {profile.ic_dph && <Text style={styles.partyLine}>IČ DPH: {String(profile.ic_dph)}</Text>}
             {profile.registration_court && (
               <Text style={styles.partyLine}>
                 {String(profile.registration_court)}, vl. č. {String(profile.registration_number || '')}
@@ -402,9 +402,9 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={styles.partyLine}>
               {String(invoice.buyer_postal_code || '')} {String(invoice.buyer_city || '')}
             </Text>
-            {invoice.buyer_ico && <Text style={styles.partyLine}>{'\n'}ICO: {String(invoice.buyer_ico)}</Text>}
-            {invoice.buyer_dic && <Text style={styles.partyLine}>DIC: {String(invoice.buyer_dic)}</Text>}
-            {invoice.buyer_ic_dph && <Text style={styles.partyLine}>IC DPH: {String(invoice.buyer_ic_dph)}</Text>}
+            {invoice.buyer_ico && <Text style={styles.partyLine}>{'\n'}IČO: {String(invoice.buyer_ico)}</Text>}
+            {invoice.buyer_dic && <Text style={styles.partyLine}>DIČ: {String(invoice.buyer_dic)}</Text>}
+            {invoice.buyer_ic_dph && <Text style={styles.partyLine}>IČ DPH: {String(invoice.buyer_ic_dph)}</Text>}
           </View>
         </View>
 
@@ -551,7 +551,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             Vystavené v systéme Peppol Faktúra | Peppol BIS 3.0
           </Text>
           <Text style={styles.footerText}>
-            {String(profile.company_name)} | ICO: {String(profile.ico)}
+            {String(profile.company_name)} | IČO: {String(profile.ico)}
           </Text>
         </View>
       </Page>
