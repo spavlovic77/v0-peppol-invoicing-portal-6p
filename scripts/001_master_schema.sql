@@ -20,7 +20,7 @@ $$ LANGUAGE plpgsql;
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS company_profiles (
   id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  ico           VARCHAR(8) NOT NULL,
+  ico           VARCHAR(20) NOT NULL,
   dic           VARCHAR(12),
   ic_dph        VARCHAR(14),
   company_name  TEXT NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS buyer_contacts (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   supplier_id     UUID REFERENCES suppliers(id) ON DELETE CASCADE,
-  ico             VARCHAR(8),
+  ico             VARCHAR(20),
   dic             VARCHAR(12),
   ic_dph          VARCHAR(14),
   company_name    TEXT NOT NULL,
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   currency                VARCHAR(3) DEFAULT 'EUR',
 
   -- Buyer
-  buyer_ico               VARCHAR(8),
+  buyer_ico               VARCHAR(20),
   buyer_dic               VARCHAR(12),
   buyer_ic_dph            VARCHAR(14),
   buyer_name              TEXT NOT NULL,
