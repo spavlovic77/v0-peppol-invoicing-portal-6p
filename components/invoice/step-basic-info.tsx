@@ -287,13 +287,27 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
           <div className="md:col-span-2">
             <label className="block text-sm text-muted-foreground mb-1.5">
               Poznámka na faktúre
+              {invoiceMode === 'reversecharge' && <span className="text-amber-500 ml-1">(povinné pri prenesení DPH)</span>}
             </label>
             <textarea
               value={formData.note || ''}
-              onChange={(e) => updateForm({ note: e.target.value || null })}
+              onChange={(e) => {
+                if (invoiceMode === 'reversecharge') {
+                  // Keep mandatory text, allow appending
+                  const mandatory = 'Prenesenie daňovej povinnosti'
+                  const val = e.target.value
+                  if (!val.startsWith(mandatory)) {
+                    updateForm({ note: mandatory })
+                    return
+                  }
+                  updateForm({ note: val || mandatory })
+                } else {
+                  updateForm({ note: e.target.value || null })
+                }
+              }}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground resize-none"
               rows={2}
-              placeholder="Voliteľná poznámka..."
+              placeholder={invoiceMode === 'reversecharge' ? 'Prenesenie daňovej povinnosti' : 'Voliteľná poznámka...'}
             />
           </div>
         </div>

@@ -98,7 +98,7 @@ export default function NewInvoicePage() {
     iban: null,
     swift: null,
     variable_symbol: null,
-    note: null,
+    note: isReverseCharge ? 'Prenesenie daňovej povinnosti' : null,
     global_discount_percent: 0,
     global_discount_amount: 0,
     invoice_mode: invoiceMode,

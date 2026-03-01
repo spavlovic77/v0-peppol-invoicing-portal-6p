@@ -396,8 +396,15 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
   const isSelfBilling = invoiceMode === 'selfbilling'
   const isReverseCharge = invoiceMode === 'reversecharge'
 
+  const isCreditNote = String(invoice.invoice_type_code || '') === '381' ||
+    String(invoice.invoice_number || '').startsWith('CN-')
+
   let pdfTitle = 'FAKTÚRA'
   let pdfSubtitle = isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'
+  if (isCreditNote) {
+    pdfTitle = 'DOBROPIS'
+    pdfSubtitle = 'Opravný daňový doklad'
+  }
   if (isSelfBilling) {
     pdfTitle = 'SAMOFAKTÚRA'
     pdfSubtitle = 'Self-billing invoice (InvoiceTypeCode 389)'
