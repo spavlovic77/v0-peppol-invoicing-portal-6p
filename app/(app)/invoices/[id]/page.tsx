@@ -256,7 +256,7 @@ export default function InvoiceDetailPage() {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        {invoice.status === 'draft' && (
+        {(invoice.status === 'draft' || invoice.status === 'invalid') && (
           <Link
             href={`/invoices/new?edit=${invoice.id}`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
@@ -279,10 +279,14 @@ export default function InvoiceDetailPage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 ml-auto"
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ml-auto ${
+            invoice.status === 'invalid'
+              ? 'bg-warning text-warning-foreground hover:bg-warning/90'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90'
+          }`}
         >
           {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-          {generating ? 'Generujem...' : invoice.xml_content ? 'Regenerovat' : 'Generovat XML'}
+          {generating ? 'Generujem...' : invoice.xml_content ? 'Regenerovat XML' : 'Generovat XML'}
         </button>
       </div>
 

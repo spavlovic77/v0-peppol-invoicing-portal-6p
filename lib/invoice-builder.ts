@@ -45,6 +45,9 @@ interface InvoiceData {
   buyer_reference: string | null
   payment_means_code: string
   variable_symbol: string | null
+  iban: string | null
+  bank_name: string | null
+  swift: string | null
   note: string | null
   global_discount_percent: number
   global_discount_amount: number
@@ -327,8 +330,8 @@ export function buildPeppolInvoice(
     customerTaxId: invoice.buyer_ic_dph || null,
     paymentMeansCode: invoice.payment_means_code || '30',
     paymentId: invoice.variable_symbol || null,
-    iban: profile.iban || null,
-    bic: profile.swift || null,
+    iban: invoice.iban || profile.iban || null,
+    bic: invoice.swift || profile.swift || null,
     taxSubtotals: skTaxSubtotals,
     taxAmountTotal,
     lineExtensionAmountTotal,
