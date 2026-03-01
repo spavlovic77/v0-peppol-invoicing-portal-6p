@@ -30,12 +30,16 @@ interface Props {
   updateForm: (u: Partial<InvoiceFormData>) => void
   supplierId?: string
   supplierIco?: string
+  invoiceMode?: string
 }
 
 const DEMO_SUPPLIER_ICO = '36353582'
 const DEMO_BUYER_ICO = '51431041'
 
-export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Props) {
+export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoiceMode = 'standard' }: Props) {
+  const isSelfBilling = invoiceMode === 'selfbilling'
+  const partyLabel = isSelfBilling ? 'dodávateľa' : 'odberateľa'
+  const partyLabelCap = isSelfBilling ? 'Dodávateľ' : 'Odberateľ'
   const [lookingUp, setLookingUp] = useState(false)
   const isDemo = supplierIco === DEMO_SUPPLIER_ICO
   const [buyerIco, setBuyerIco] = useState(formData.buyer_ico || (isDemo ? DEMO_BUYER_ICO : ''))
@@ -243,7 +247,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Pro
           peppol_id: peppolId,
         })
 
-        toast.success('Udaje odberatela nacitane')
+        toast.success(`Udaje ${partyLabel} nacitane`)
       } else {
         toast.error(data.error || 'Nepodarilo sa nacitat')
       }
@@ -265,7 +269,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Pro
         <div>
           <div className="flex items-center gap-2 mb-2.5">
             <Star className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Častí odberatelia</span>
+            <span className="text-sm font-medium text-foreground">{isSelfBilling ? 'Častí dodávatelia' : 'Častí odberatelia'}</span>
           </div>
           <div className="grid gap-2">
             {frequentBuyers.map((b) => {
@@ -337,7 +341,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Pro
             type="text"
             value={buyerIco}
             onChange={(e) => setBuyerIco(e.target.value)}
-            placeholder="ICO odberatela"
+            placeholder={`ICO ${partyLabel}`}
             className="glass-input flex-1 px-3.5 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground text-sm"
             maxLength={10}
           />
@@ -437,13 +441,13 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco }: Pro
             {peppolStatus === 'found' && (
               <>
                 <CheckCircle2 className="w-4 h-4 text-success" />
-                <span className="text-success font-medium">Odberateľ je registrovaný na Peppol</span>
+                <span className="text-success font-medium">{partyLabelCap} je registrovaný na Peppol</span>
               </>
             )}
             {peppolStatus === 'not_found' && (
               <>
                 <XCircle className="w-4 h-4 text-warning" />
-                <span className="text-warning font-medium">Odberateľ nie je registrovaný na Peppol</span>
+                <span className="text-warning font-medium">{partyLabelCap} nie je registrovaný na Peppol</span>
               </>
             )}
             {peppolStatus === 'no_key' && (

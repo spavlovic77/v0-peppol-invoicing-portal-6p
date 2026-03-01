@@ -68,6 +68,7 @@ export const invoiceSchema = z.object({
   note: z.string().nullable(),
   global_discount_percent: z.number().min(0).max(100).default(0),
   global_discount_amount: z.number().min(0).default(0),
+  invoice_mode: z.enum(['standard', 'selfbilling', 'reversecharge']).default('standard'),
   invoice_type_code: z.string().default('380'),
   correction_of: z.string().nullable().default(null),
   correction_reason: z.string().nullable().default(null),
@@ -99,6 +100,8 @@ export const peppolTaxSubtotalSchema = z.object({
   taxAmount: z.number().describe('Tax amount for this category'),
   taxCategoryId: z.string().describe('Tax category code'),
   taxPercent: z.number().describe('Tax rate percentage'),
+  taxExemptionReasonCode: z.string().nullable().default(null).describe('Tax exemption reason code, e.g. vatex-eu-ae for reverse charge'),
+  taxExemptionReason: z.string().nullable().default(null).describe('Tax exemption reason text, e.g. Reverse charge'),
 })
 
 export const peppolInvoiceSchema = z.object({

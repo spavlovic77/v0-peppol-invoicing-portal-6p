@@ -35,19 +35,21 @@ function mapRuleToField(ruleId: string): { step: number; field: string } {
   return { step: 0, field: 'invoice_number' }
 }
 
-const defaultItem = {
-  line_number: 1,
-  description: '',
-  quantity: 1,
-  unit: 'C62',
-  unit_price: 0,
-  vat_category: 'S',
-  vat_rate: 23,
-  discount_percent: 0,
-  discount_amount: 0,
-  line_total: 0,
-  item_number: null,
-  buyer_item_number: null,
+function makeDefaultItem(mode: string) {
+  return {
+    line_number: 1,
+    description: '',
+    quantity: 1,
+    unit: 'C62',
+    unit_price: 0,
+    vat_category: mode === 'reversecharge' ? 'AE' : 'S',
+    vat_rate: mode === 'reversecharge' ? 0 : 23,
+    discount_percent: 0,
+    discount_amount: 0,
+    line_total: 0,
+    item_number: null,
+    buyer_item_number: null,
+  }
 }
 
 export default function NewInvoicePage() {
@@ -61,6 +63,10 @@ export default function NewInvoicePage() {
   const duplicateId = searchParams.get('duplicate')
   const editId = searchParams.get('edit')
   const correctId = searchParams.get('correct')
+  const modeParam = searchParams.get('mode') as 'standard' | 'selfbilling' | 'reversecharge' | null
+  const invoiceMode = modeParam || 'standard'
+  const isSelfBilling = invoiceMode === 'selfbilling'
+  const isReverseCharge = invoiceMode === 'reversecharge'
   const isEditMode = !!editId
   const isCorrectionMode = !!correctId
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
@@ -92,10 +98,12 @@ export default function NewInvoicePage() {
     iban: null,
     swift: null,
     variable_symbol: null,
-    note: null,
+    note: isReverseCharge ? 'Prenesenie daňovej povinnosti' : null,
     global_discount_percent: 0,
     global_discount_amount: 0,
-    items: [{ ...defaultItem }],
+    invoice_mode: invoiceMode,
+    invoice_type_code: isSelfBilling ? '389' : '380',
+    items: [makeDefaultItem(invoiceMode)],
   })
 
   const loadData = useCallback(async () => {
@@ -162,7 +170,7 @@ export default function NewInvoicePage() {
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
-          }) : [{ ...defaultItem }],
+          }) : [makeDefaultItem(invoiceMode)],
         }))
         setLoading(false)
         return // Skip invoice number generation
@@ -210,7 +218,7 @@ export default function NewInvoicePage() {
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
-          }) : [{ ...defaultItem }],
+          }) : [makeDefaultItem(invoiceMode)],
         }))
         toast.success('Udaje z povodnej faktury boli nacitane')
       }
@@ -321,7 +329,18 @@ export default function NewInvoicePage() {
   }, [searchParams])
 
   function updateForm(updates: Partial<InvoiceFormData>) {
-    setFormData((prev) => ({ ...prev, ...updates }))
+    setFormData((prev) => {
+      const next = { ...prev, ...updates }
+      // Reverse charge: force all items to AE/0%
+      if (invoiceMode === 'reversecharge' && next.items) {
+        next.items = next.items.map((item) => ({
+          ...item,
+          vat_category: 'AE',
+          vat_rate: 0,
+        }))
+      }
+      return next
+    })
   }
 
   const isVatPayer = activeSupplier?.is_vat_payer ?? true
@@ -420,6 +439,7 @@ export default function NewInvoicePage() {
         global_discount_amount: totals.withoutVat > 0 ? Math.round((formData.items.reduce((s, i) => s + i.quantity * i.unit_price - (i.discount_amount || 0), 0)) * (formData.global_discount_percent || 0) / 100 * 100) / 100 : 0,
         note: formData.note,
         status: 'draft',
+        invoice_mode: formData.invoice_mode || 'standard',
         invoice_type_code: formData.invoice_type_code || '380',
         correction_of: formData.correction_of || null,
         correction_reason: formData.correction_reason || null,
@@ -591,19 +611,22 @@ export default function NewInvoicePage() {
     )
   }
 
+  const buyerStepLabel = isSelfBilling ? 'Dodávateľ' : 'Odberateľ'
   const steps = [
-    { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} /> },
-    { label: 'Odberateľ', component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} /> },
-    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} /> },
-    { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} /> },
+    { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} invoiceMode={invoiceMode} /> },
+    { label: buyerStepLabel, component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} invoiceMode={invoiceMode} /> },
+    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
+    { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
   ]
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-foreground">{isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : 'Nová faktúra'}</h1>
+        <h1 className="text-lg font-bold text-foreground">
+          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
+        </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {activeSupplier.company_name}
+          {isSelfBilling ? `Odberateľ: ${activeSupplier.company_name}` : activeSupplier.company_name}
         </p>
       </div>
 
@@ -634,7 +657,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {creating ? 'Vytvaram a validujem...' : isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : 'Vytvorit a validovat'}
+            {creating ? 'Vytvaram a validujem...' : isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : isSelfBilling ? 'Vytvorit samofakturu' : isReverseCharge ? 'Vytvorit fakturu (prenesenie DPH)' : 'Vytvorit a validovat'}
           </button>
         )}
       </div>

@@ -31,6 +31,7 @@ interface Invoice {
   invoice_type_code: string | null
   peppol_sent_at: string | null
   peppol_send_status: string | null
+  invoice_mode: string | null
 }
 
 function monthKey(dateStr: string) {
@@ -273,10 +274,16 @@ export default function DashboardPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-sm font-medium font-mono text-foreground">
-                              {inv.invoice_number}
-                            </span>
-                            <StatusBadge status={inv.status} />
+  <span className="text-sm font-medium font-mono text-foreground">
+  {inv.invoice_number}
+  </span>
+  {inv.invoice_mode === 'selfbilling' && (
+    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Samofakt.</span>
+  )}
+  {inv.invoice_mode === 'reversecharge' && (
+    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">Rev. charge</span>
+  )}
+  <StatusBadge status={inv.status} />
                             {inv.peppol_sent_at && (
                               <span
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-medium"

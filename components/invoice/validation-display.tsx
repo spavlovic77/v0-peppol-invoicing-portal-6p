@@ -28,11 +28,11 @@ interface Props {
 }
 
 export function ValidationDisplay({ phases }: Props) {
-  const [topOpen, setTopOpen] = useState(true)
+  const [topOpen, setTopOpen] = useState(false)
   const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {}
     phases.forEach((_phase, i) => {
-      initial[i] = true // always expanded so user sees every rule
+      initial[i] = false
     })
     return initial
   })

@@ -392,14 +392,35 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
   const isVatPayer = profile.is_vat_payer !== false &&
     !(items.length > 0 && items.every((it) => Number(it.vat_rate || 0) === 0 && (it.vat_category === 'O' || !it.vat_category)))
 
+  const invoiceMode = String(invoice.invoice_mode || 'standard')
+  const isSelfBilling = invoiceMode === 'selfbilling'
+  const isReverseCharge = invoiceMode === 'reversecharge'
+
+  const isCreditNote = String(invoice.invoice_type_code || '') === '381' ||
+    String(invoice.invoice_number || '').startsWith('CN-')
+
+  let pdfTitle = 'FAKTÚRA'
+  let pdfSubtitle = isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'
+  if (isCreditNote) {
+    pdfTitle = 'DOBROPIS'
+    pdfSubtitle = 'Opravný daňový doklad'
+  }
+  if (isSelfBilling) {
+    pdfTitle = 'SAMOFAKTÚRA'
+    pdfSubtitle = 'Self-billing invoice (InvoiceTypeCode 389)'
+  }
+  if (isReverseCharge) {
+    pdfSubtitle = 'Prenesenie daňovej povinnosti - Reverse charge (§69 ods. 12)'
+  }
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>FAKTÚRA</Text>
-            <Text style={styles.subtitle}>{isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'}</Text>
+            <Text style={styles.title}>{pdfTitle}</Text>
+            <Text style={styles.subtitle}>{pdfSubtitle}</Text>
           </View>
           <View style={styles.invoiceInfo}>
             <Text style={styles.infoLabel}>Číslo faktúry</Text>
@@ -420,7 +441,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Parties */}
         <View style={styles.partiesRow}>
           <View style={styles.partyBox}>
-            <Text style={styles.partyTitle}>Dodávateľ</Text>
+            <Text style={styles.partyTitle}>{isSelfBilling ? 'Odberateľ (vystaviteľ)' : 'Dodávateľ'}</Text>
             <Text style={styles.partyName}>{String(profile.company_name)}</Text>
             {profile.street && <Text style={styles.partyLine}>{String(profile.street)}</Text>}
             <Text style={styles.partyLine}>
@@ -436,7 +457,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             )}
           </View>
           <View style={styles.partyBox}>
-            <Text style={styles.partyTitle}>Odberateľ</Text>
+            <Text style={styles.partyTitle}>{isSelfBilling ? 'Dodávateľ' : 'Odberateľ'}</Text>
             <Text style={styles.partyName}>{String(invoice.buyer_name)}</Text>
             {invoice.buyer_street && <Text style={styles.partyLine}>{String(invoice.buyer_street)}</Text>}
             <Text style={styles.partyLine}>

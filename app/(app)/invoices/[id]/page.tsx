@@ -46,6 +46,8 @@ interface InvoiceData {
   peppol_send_status: string | null
   peppol_transaction_id: string | null
   peppol_sent_at: string | null
+  invoice_mode: string | null
+  invoice_type_code: string | null
 }
 
 export default function InvoiceDetailPage() {
@@ -214,6 +216,8 @@ export default function InvoiceDetailPage() {
 
   const isValid = invoice.status === 'valid' || invoice.status === 'sent'
   const isCreditNote = invoice.invoice_number.startsWith('CN-')
+  const isSelfBilling = invoice.invoice_mode === 'selfbilling'
+  const isReverseCharge = invoice.invoice_mode === 'reversecharge'
   const allPassed = Array.isArray(validation) && (validation as Array<{ passed: boolean }>).every((p) => p.passed)
   const hasFailures = Array.isArray(validation) && !allPassed
 
@@ -228,9 +232,15 @@ export default function InvoiceDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Faktury
         </button>
         <div className="flex items-center gap-2.5">
-          <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
-          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
-            {statusLabel}
+  <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
+  {isSelfBilling && (
+    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary">Samofakturacia</span>
+  )}
+  {isReverseCharge && (
+    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-500">Rev. charge</span>
+  )}
+  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+  {statusLabel}
           </span>
         </div>
       </div>

@@ -37,8 +37,16 @@ export function validateStructure(inv: PeppolInvoice): ValidationPhase {
   check('STRUCT-01', !!inv.invoiceId, 'Cislo faktury je povinne')
   check('STRUCT-02', !!inv.issueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.issueDate), 'Datum vystavenia musi byt vo formate YYYY-MM-DD')
   check('STRUCT-03', !!inv.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.dueDate), 'Datum splatnosti musi byt vo formate YYYY-MM-DD')
-  check('STRUCT-04', inv.customizationID === 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0', 'CustomizationID musi byt spravny Peppol BIS 3.0 identifikator')
-  check('STRUCT-05', inv.profileID === 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0', 'ProfileID musi byt spravny')
+  const validCustomizationIDs = [
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0',
+  ]
+  const validProfileIDs = [
+    'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
+    'urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0',
+  ]
+  check('STRUCT-04', validCustomizationIDs.includes(inv.customizationID), 'CustomizationID musi byt spravny Peppol BIS 3.0 alebo Self-Billing identifikator')
+  check('STRUCT-05', validProfileIDs.includes(inv.profileID), 'ProfileID musi byt spravny')
   check('STRUCT-06', !!inv.supplierPartyName, 'Nazov dodavatela je povinny')
   check('STRUCT-07', !!inv.customerPartyName, 'Nazov odberatela je povinny')
   check('STRUCT-08', inv.invoiceLines.length > 0, 'Faktura musi mat aspon jednu polozku')
@@ -101,6 +109,15 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
   const allCategoryO = inv.taxSubtotals.every((ts) => ts.taxCategoryId === 'O')
   check('BR-11', allCategoryO || !!inv.supplierTaxId, 'Predavajuci musi mat danove cislo (IC DPH)')
 
+  // BR-AE-01 .. BR-AE-05: Reverse charge checks
+  const hasAE = inv.taxSubtotals.some((ts) => ts.taxCategoryId === 'AE')
+  const allAE = inv.taxSubtotals.every((ts) => ts.taxCategoryId === 'AE')
+  if (hasAE) {
+    check('BR-AE-01', inv.taxSubtotals.filter((ts) => ts.taxCategoryId === 'AE').length === 1, 'Pre reverse charge musi byt prave jeden danovy rozpis s kategoriou AE')
+    check('BR-AE-02', !!inv.supplierTaxId, 'Reverse charge: dodavatel musi mat IC DPH')
+    check('BR-AE-05', allAE, 'Reverse charge: vsetky polozky musia mat kategoriu AE (EN16931 BR-AE-05)')
+  }
+
   // BR-12: Line extension amount calculation
   const lineSum = inv.invoiceLines.reduce((s, l) => s + l.lineExtensionAmount, 0)
   check('BR-12', Math.abs(lineSum - inv.lineExtensionAmountTotal) < 0.02, `Suma riadkov (${lineSum.toFixed(2)}) sa musi rovnat celkovej sume riadkov (${inv.lineExtensionAmountTotal.toFixed(2)})`)
@@ -137,6 +154,11 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
       check(`BR-O-08-T${i + 1}`, ts.taxAmount === 0, `Danovy suctot ${i + 1}: Pre kategoriu O (nie platca DPH) musi byt DPH 0`)
       return
     }
+    if (ts.taxCategoryId === 'AE') {
+      check(`BR-AE-07-T${i + 1}`, ts.taxAmount === 0, `Danovy suctot ${i + 1}: Pre kategoriu AE (reverse charge) musi byt DPH 0`)
+      check(`BR-AE-06-T${i + 1}`, ts.taxPercent === 0, `Danovy suctot ${i + 1}: Pre kategoriu AE sadzba musi byt 0%`)
+      return
+    }
     // SK method: tax = gross * rate / (100+rate), taxBase = gross - tax
     // Forward check: tax should approximately equal taxBase * rate / 100
     const expectedTax = round2(ts.taxableAmount * (ts.taxPercent / 100))
@@ -167,7 +189,11 @@ export function validatePeppolSchematron(inv: PeppolInvoice): ValidationPhase {
   }
 
   // PEPPOL-EN16931-R001: Business process shall be specified
-  check('PEPPOL-EN16931-R001', inv.profileID === 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0', 'ProfileID musi byt "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"')
+  const validProfiles = [
+    'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
+    'urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0',
+  ]
+  check('PEPPOL-EN16931-R001', validProfiles.includes(inv.profileID), 'ProfileID musi byt platny Peppol BIS 3.0 alebo Self-Billing identifikator')
 
   // PEPPOL-EN16931-R002: No more than one tax subtotal per category
   const taxCatCounts = new Map<string, number>()
@@ -180,8 +206,11 @@ export function validatePeppolSchematron(inv: PeppolInvoice): ValidationPhase {
   // PEPPOL-EN16931-R003: BuyerReference must be provided
   check('PEPPOL-EN16931-R003', !!inv.buyerReference, 'Referencia odberatela (BuyerReference) je povinna')
 
-  // PEPPOL-EN16931-R004: Specification identifier must be Peppol BIS 3.0
-  check('PEPPOL-EN16931-R004', inv.customizationID.includes('peppol.eu:2017:poacc:billing:3.0'), 'CustomizationID musi obsahovat Peppol BIS 3.0 identifikator')
+  // PEPPOL-EN16931-R004: Specification identifier must be Peppol BIS 3.0 or Self-Billing
+  check('PEPPOL-EN16931-R004',
+    inv.customizationID.includes('peppol.eu:2017:poacc:billing:3.0') ||
+    inv.customizationID.includes('peppol.eu:2017:poacc:selfbilling:3.0'),
+    'CustomizationID musi obsahovat Peppol BIS 3.0 alebo Self-Billing identifikator')
 
   // PEPPOL-EN16931-R007: Buyer reference OR purchase order ref required
   check('PEPPOL-EN16931-R007', !!inv.buyerReference || !!inv.orderReferenceId, 'Musi byt uvedena referencia odberatela alebo cislo objednavky')

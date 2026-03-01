@@ -52,6 +52,7 @@ interface InvoiceData {
   global_discount_percent: number
   global_discount_amount: number
   invoice_type_code?: string
+  invoice_mode?: string
   billing_reference_number?: string | null
   billing_reference_date?: string | null
 }
@@ -86,12 +87,20 @@ export function buildPeppolInvoice(
 ): PeppolInvoice {
   const currency = invoice.currency || 'EUR'
   const typeCode = invoice.invoice_type_code || '380'
+  const invoiceMode = invoice.invoice_mode || 'standard'
+  const isSelfBilling = invoiceMode === 'selfbilling'
+  const isReverseCharge = invoiceMode === 'reversecharge'
   const isCreditNote381 = typeCode === '381'
   const isVatPayer = profile.is_vat_payer !== false
 
   // Non-VAT payer: force all items to category O (outside scope), 0% rate
   if (!isVatPayer) {
     items = items.map((it) => ({ ...it, vat_category: 'O', vat_rate: 0 }))
+  }
+
+  // Reverse charge: force all items to category AE, 0% rate
+  if (isReverseCharge) {
+    items = items.map((it) => ({ ...it, vat_category: 'AE', vat_rate: 0 }))
   }
 
   // ================================================================
@@ -214,7 +223,7 @@ export function buildPeppolInvoice(
 
   let totalCorrections = 0 // net corrections (positive = charge, negative = allowance)
 
-  const skTaxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number }[] = []
+  const skTaxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number; taxExemptionReasonCode: string | null; taxExemptionReason: string | null }[] = []
 
   for (const [key, enGroup] of enTaxGroups) {
     const rate = enGroup.rate
@@ -222,11 +231,26 @@ export function buildPeppolInvoice(
 
     if (rate === 0) {
       // Zero-rate: no rounding issue possible
+      // Determine exemption reason based on tax category
+      let exemptionCode: string | null = null
+      let exemptionReason: string | null = null
+      if (enGroup.catId === 'AE') {
+        exemptionCode = 'vatex-eu-ae'
+        exemptionReason = 'Reverse charge'
+      } else if (enGroup.catId === 'O') {
+        exemptionCode = 'vatex-eu-o'
+        exemptionReason = 'Not subject to VAT'
+      } else if (enGroup.catId === 'E') {
+        exemptionCode = 'vatex-eu-e'
+        exemptionReason = 'Exempt from VAT'
+      }
       skTaxSubtotals.push({
         taxableAmount: taxBase_EN,
         taxAmount: 0,
         taxCategoryId: enGroup.catId,
         taxPercent: rate,
+        taxExemptionReasonCode: exemptionCode,
+        taxExemptionReason: exemptionReason,
       })
       continue
     }
@@ -272,6 +296,8 @@ export function buildPeppolInvoice(
       taxAmount: tax_SK,
       taxCategoryId: enGroup.catId,
       taxPercent: rate,
+      taxExemptionReasonCode: null,
+      taxExemptionReason: null,
     })
   }
 
@@ -291,15 +317,75 @@ export function buildPeppolInvoice(
   const chargeTotalAmount = round2(documentAllowances.filter(a => a.isCharge).reduce((s, a) => s + a.amount, 0))
 
   // ================================================================
-  // 7. Peppol identifiers
+  // 7. Peppol identifiers + self-billing role swap
   // ================================================================
-  const supplierEndpointId = stripScheme(profile.dic) || profile.ico
-  const buyerEndpointId = stripScheme(invoice.buyer_peppol_id) || stripScheme(invoice.buyer_dic) || invoice.buyer_ico || 'N/A'
+  // For Self-Billing (389): the issuer (buyer) is AccountingCustomerParty,
+  // and the supplier of goods/services is AccountingSupplierParty.
+  // In our system: profile = the user's company (the buyer/issuer in self-billing)
+  //                invoice.buyer_* = the counterparty (the supplier in self-billing)
+
+  let customizationID: string
+  let profileID: string
+  if (isSelfBilling) {
+    customizationID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0'
+    profileID = 'urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0'
+  } else {
+    customizationID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+    profileID = 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
+  }
+
+  // Self-billing swaps: AccountingSupplierParty = the counterparty (goods supplier)
+  //                     AccountingCustomerParty = our company (the buyer/issuer)
+  const supplierEndpointId = isSelfBilling
+    ? (stripScheme(invoice.buyer_dic) || invoice.buyer_ico || 'N/A')
+    : (stripScheme(profile.dic) || profile.ico)
+  const buyerEndpointId = isSelfBilling
+    ? (stripScheme(profile.dic) || profile.ico)
+    : (stripScheme(invoice.buyer_peppol_id) || stripScheme(invoice.buyer_dic) || invoice.buyer_ico || 'N/A')
+
+  // Determine supplier/customer party details based on mode
+  const supplierParty = isSelfBilling ? {
+    name: invoice.buyer_name,
+    street: invoice.buyer_street || '',
+    city: invoice.buyer_city || '',
+    postalCode: invoice.buyer_postal_code || '',
+    countryCode: invoice.buyer_country_code || 'SK',
+    companyId: invoice.buyer_ico || '',
+    taxId: invoice.buyer_ic_dph || null,
+    vatId: invoice.buyer_dic || null,
+  } : {
+    name: profile.company_name,
+    street: profile.street || '',
+    city: profile.city || '',
+    postalCode: profile.postal_code || '',
+    countryCode: profile.country_code || 'SK',
+    companyId: profile.ico,
+    taxId: isVatPayer ? (profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico)) : (profile.dic || profile.ico),
+    vatId: isVatPayer ? (profile.dic || null) : null,
+  }
+
+  const customerParty = isSelfBilling ? {
+    name: profile.company_name,
+    street: profile.street || '',
+    city: profile.city || '',
+    postalCode: profile.postal_code || '',
+    countryCode: profile.country_code || 'SK',
+    companyId: profile.ico,
+    taxId: profile.ic_dph || null,
+  } : {
+    name: invoice.buyer_name,
+    street: invoice.buyer_street || '',
+    city: invoice.buyer_city || '',
+    postalCode: invoice.buyer_postal_code || '',
+    countryCode: invoice.buyer_country_code || 'SK',
+    companyId: invoice.buyer_ico || null,
+    taxId: invoice.buyer_ic_dph || null,
+  }
 
   return {
     ublVersionID: '2.1',
-    customizationID: 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',
-    profileID: 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
+    customizationID,
+    profileID,
     invoiceId: invoice.invoice_number,
     issueDate: invoice.issue_date,
     dueDate: invoice.due_date,
@@ -309,25 +395,23 @@ export function buildPeppolInvoice(
     orderReferenceId: invoice.order_reference || null,
     supplierEndpointId,
     supplierEndpointSchemeId: '9950',
-    supplierPartyName: profile.company_name,
-    supplierStreet: profile.street || '',
-    supplierCity: profile.city || '',
-    supplierPostalCode: profile.postal_code || '',
-    supplierCountryCode: profile.country_code || 'SK',
-    supplierCompanyId: profile.ico,
-    supplierTaxId: isVatPayer
-      ? (profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico))
-      : (profile.dic || profile.ico),
-    supplierVatId: isVatPayer ? (profile.dic || null) : null,
+    supplierPartyName: supplierParty.name,
+    supplierStreet: supplierParty.street,
+    supplierCity: supplierParty.city,
+    supplierPostalCode: supplierParty.postalCode,
+    supplierCountryCode: supplierParty.countryCode,
+    supplierCompanyId: supplierParty.companyId,
+    supplierTaxId: supplierParty.taxId || supplierParty.companyId,
+    supplierVatId: supplierParty.vatId || null,
     customerEndpointId: buyerEndpointId,
     customerEndpointSchemeId: '9950',
-    customerPartyName: invoice.buyer_name,
-    customerStreet: invoice.buyer_street || '',
-    customerCity: invoice.buyer_city || '',
-    customerPostalCode: invoice.buyer_postal_code || '',
-    customerCountryCode: invoice.buyer_country_code || 'SK',
-    customerCompanyId: invoice.buyer_ico || null,
-    customerTaxId: invoice.buyer_ic_dph || null,
+    customerPartyName: customerParty.name,
+    customerStreet: customerParty.street,
+    customerCity: customerParty.city,
+    customerPostalCode: customerParty.postalCode,
+    customerCountryCode: customerParty.countryCode,
+    customerCompanyId: customerParty.companyId,
+    customerTaxId: customerParty.taxId,
     paymentMeansCode: invoice.payment_means_code || '30',
     paymentId: invoice.variable_symbol || null,
     iban: invoice.iban || profile.iban || null,
