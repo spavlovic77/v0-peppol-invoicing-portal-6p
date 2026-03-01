@@ -8,6 +8,7 @@ import { Plus, FileText, CheckCircle2, XCircle, Clock, Search, Download, Buildin
 import { toast } from 'sonner'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { DashboardSkeleton } from '@/components/skeleton'
+import { fmtDate } from '@/lib/utils'
 
 const PAGE_SIZE = 20
 
@@ -170,7 +171,7 @@ export default function DashboardPage() {
     if (filtered.length === 0) return
     const header = 'Cislo faktury;Odberatel;Datum vystavenia;Datum splatnosti;Suma;Mena;Stav'
     const rows = filtered.map((inv) =>
-      `${inv.invoice_number};${inv.buyer_name};${inv.issue_date};${inv.due_date};${inv.total_with_vat};${inv.currency};${inv.status}`
+      `${inv.invoice_number};${inv.buyer_name};${fmtDate(inv.issue_date)};${fmtDate(inv.due_date)};${inv.total_with_vat};${inv.currency};${inv.status}`
     )
     const csv = [header, ...rows].join('\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })

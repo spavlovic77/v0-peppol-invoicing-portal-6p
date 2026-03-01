@@ -14,6 +14,7 @@ import { ValidationDisplay } from '@/components/invoice/validation-display'
 import { DownloadActions } from '@/components/invoice/download-actions'
 import { InvoiceDetailSkeleton } from '@/components/skeleton'
 import Link from 'next/link'
+import { fmtDate } from '@/lib/utils'
 
 interface InvoiceData {
   id: string
@@ -240,7 +241,7 @@ export default function InvoiceDetailPage() {
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{invoice.buyer_name}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {invoice.issue_date} {'>'} {invoice.due_date}
+              {fmtDate(invoice.issue_date)} {'>'} {fmtDate(invoice.due_date)}
             </p>
           </div>
           <div className="text-right shrink-0">

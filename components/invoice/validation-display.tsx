@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info, Zap, Globe } from 'lucide-react'
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 
@@ -9,6 +9,8 @@ interface ValidationResult {
   severity: 'error' | 'warning'
   message: string
   passed: boolean
+  /** 'api' = confirmed by peppolvalidator.com, 'js' = checked by JS logic */
+  source?: 'api' | 'js'
 }
 
 interface ValidationPhase {
@@ -17,6 +19,8 @@ interface ValidationPhase {
   results: ValidationResult[]
   passed: boolean
   simulated?: boolean
+  /** true when peppolvalidator.com confirmed this phase */
+  apiConfirmed?: boolean
 }
 
 interface Props {
@@ -24,11 +28,11 @@ interface Props {
 }
 
 export function ValidationDisplay({ phases }: Props) {
-  const [topOpen, setTopOpen] = useState(false)
+  const [topOpen, setTopOpen] = useState(true)
   const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {}
-    phases.forEach((phase, i) => {
-      initial[i] = !phase.passed
+    phases.forEach((_phase, i) => {
+      initial[i] = true // always expanded so user sees every rule
     })
     return initial
   })
@@ -159,10 +163,16 @@ export function ValidationDisplay({ phases }: Props) {
                         <span className="font-medium text-foreground text-sm">
                           {phase.name}
                         </span>
-                        {phase.simulated && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-xs font-medium">
+                        {phase.apiConfirmed && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-medium">
+                            <Globe className="w-3 h-3" />
+                            Schematron API
+                          </span>
+                        )}
+                        {phase.simulated && !phase.apiConfirmed && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-[10px] font-medium">
                             <FlaskConical className="w-3 h-3" />
-                            SIMULÁCIA
+                            JS simulacia
                           </span>
                         )}
                       </div>
@@ -193,40 +203,58 @@ export function ValidationDisplay({ phases }: Props) {
 
                 {isOpen && (
                   <div className="mt-2.5 space-y-1">
-                    {phase.results.map((rule, ruleIdx) => (
-                      <div
-                        key={ruleIdx}
-                        className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-sm ${
-                          rule.passed
-                            ? 'bg-success/5'
-                            : rule.severity === 'error'
-                            ? 'bg-destructive/10'
-                            : 'bg-warning/10'
-                        }`}
-                      >
-                        {rule.passed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
-                        ) : rule.severity === 'error' ? (
-                          <XCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                        ) : (
-                          <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <span className="font-mono text-xs text-muted-foreground mr-1.5">
-                            [{rule.rule}]
-                          </span>
-                          <span
-                            className={`text-xs ${
-                              rule.passed
-                                ? 'text-muted-foreground'
-                                : 'text-foreground'
-                            }`}
-                          >
-                            {rule.message}
+                    {phase.results.length === 0 ? (
+                      <p className="text-xs text-muted-foreground px-2.5 py-1.5">
+                        Ziadne individualne pravidla neboli zaznamenane.
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between px-2.5 pb-1">
+                          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                            {phase.results.filter(r => r.passed).length} splnenych / {phase.results.length} celkovo
                           </span>
                         </div>
-                      </div>
-                    ))}
+                        {phase.results.map((rule, ruleIdx) => (
+                          <div
+                            key={ruleIdx}
+                            className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg text-sm ${
+                              rule.passed
+                                ? 'bg-success/5'
+                                : rule.severity === 'error'
+                                ? 'bg-destructive/10'
+                                : 'bg-warning/10'
+                            }`}
+                          >
+                            {rule.passed ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />
+                            ) : rule.severity === 'error' ? (
+                              <XCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <span className="font-mono text-xs text-muted-foreground mr-1.5">
+                                [{rule.rule}]
+                              </span>
+                              <span
+                                className={`text-xs ${
+                                  rule.passed
+                                    ? 'text-muted-foreground'
+                                    : 'text-foreground'
+                                }`}
+                              >
+                                {rule.message}
+                              </span>
+                              {rule.source === 'api' && (
+                                <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] text-primary/60 font-medium">
+                                  <Zap className="w-2.5 h-2.5" />API
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
