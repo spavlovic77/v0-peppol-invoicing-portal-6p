@@ -1,10 +1,18 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+
+Font.register({
+  family: 'Roboto',
+  fonts: [
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf', fontWeight: 'normal' },
+    { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf', fontWeight: 'bold' },
+  ],
+})
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
     fontSize: 9,
     color: '#1a1a2e',
   },
@@ -18,7 +26,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     color: '#1e3a5f',
   },
   subtitle: {
@@ -36,7 +44,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 6,
   },
   partiesRow: {
@@ -53,14 +61,14 @@ const styles = StyleSheet.create({
   partyTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
   },
   partyName: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 4,
   },
   partyLine: {
@@ -80,7 +88,7 @@ const styles = StyleSheet.create({
   tableHeaderText: {
     color: '#ffffff',
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
   },
   tableRow: {
@@ -122,7 +130,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   totalDivider: {
     borderBottomWidth: 1,
@@ -131,12 +139,12 @@ const styles = StyleSheet.create({
   },
   grandTotalLabel: {
     fontSize: 12,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     color: '#1a1a2e',
   },
   grandTotalValue: {
     fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     color: '#1e3a5f',
   },
   paymentBox: {
@@ -148,7 +156,7 @@ const styles = StyleSheet.create({
   paymentTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
@@ -165,7 +173,7 @@ const styles = StyleSheet.create({
   },
   paymentValue: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   footer: {
     position: 'absolute',
@@ -192,7 +200,7 @@ const styles = StyleSheet.create({
   noteLabel: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     marginBottom: 3,
   },
   noteText: {
@@ -205,7 +213,7 @@ const styles = StyleSheet.create({
   recapTitle: {
     fontSize: 8,
     color: '#1e3a5f',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 6,
@@ -218,7 +226,7 @@ const styles = StyleSheet.create({
   },
   recapHeaderText: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
     color: '#1e3a5f',
   },
   recapRow: {
@@ -240,7 +248,7 @@ const styles = StyleSheet.create({
   recapCol4: { width: '25%', textAlign: 'right' },
   recapBold: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto', fontWeight: 'bold',
   },
   recapText: {
     fontSize: 9,
