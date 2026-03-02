@@ -5,10 +5,10 @@ import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 
 const SUGGESTIONS = [
-  'Co je pravidlo BR-AE-10?',
-  'Vysvetli reverse charge',
-  'Aky je format CustomizationID?',
-  'Ako opravit prazdne XML elementy?',
+  'Co je to elektronická faktúra?',
+  'Aké má vyhody elektronická fakturácia',
+  'Čo je to Peppol?',
+  'Musím vystavovať elektrnickú faktúru? Od kedy?',
 ]
 
 interface ChatMsg {
@@ -375,11 +375,10 @@ function MessageBubble({ message }: { message: ChatMsg }) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[90%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
-          isUser
+        className={`max-w-[90%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${isUser
             ? 'bg-primary text-primary-foreground rounded-br-md'
             : 'glass-card text-foreground rounded-bl-md'
-        }`}
+          }`}
       >
         {isUser ? (
           <p className="whitespace-pre-wrap">{text}</p>
