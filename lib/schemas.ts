@@ -29,7 +29,7 @@ export const invoiceItemSchema = z.object({
   description: z.string().min(1, 'Popis polozky je povinny'),
   quantity: z.number().refine(v => v !== 0, 'Mnozstvo nesmie byt nula'),
   unit: z.string().default('C62'),
-  unit_price: z.number().min(0, 'Jednotkova cena nesmie byt zaporna'),
+  unit_price: z.number(),
   vat_category: z.string().default('S'),
   vat_rate: z.number().min(0).max(100).default(23),
   discount_percent: z.number().min(0).max(100).default(0),

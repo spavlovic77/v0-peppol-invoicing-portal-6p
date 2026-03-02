@@ -152,12 +152,15 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
   // BR-15: Payable amount
   check('BR-15', Math.abs(inv.payableAmount - inv.taxInclusiveAmount) < 0.02, 'Suma na uhradu sa musi rovnat sume s DPH')
 
+  // Credit notes (381) and corrective invoices allow negative quantities
+  const isCorrection = inv.invoiceTypeCode === '381' || !!inv.billingReferenceNumber
+
   // BR-16: Each line must have an ID
   inv.invoiceLines.forEach((line, i) => {
     check(`BR-21-L${i + 1}`, !!line.id, `Riadok ${i + 1}: musi mat ID`)
-    check(`BR-22-L${i + 1}`, line.invoicedQuantity > 0, `Riadok ${i + 1}: mnozstvo musi byt kladne`)
+    check(`BR-22-L${i + 1}`, isCorrection ? line.invoicedQuantity !== 0 : line.invoicedQuantity > 0, `Riadok ${i + 1}: ${isCorrection ? 'mnozstvo nesmie byt nula' : 'mnozstvo musi byt kladne'}`)
     check(`BR-23-L${i + 1}`, !!line.itemName, `Riadok ${i + 1}: musi mat nazov polozky`)
-    check(`BR-24-L${i + 1}`, line.priceAmount >= 0, `Riadok ${i + 1}: cena nesmie byt zaporna`)
+    check(`BR-24-L${i + 1}`, isCorrection ? true : line.priceAmount >= 0, `Riadok ${i + 1}: cena nesmie byt zaporna`)
 
     // Check line total calculation (qty * price - discount)
     const grossTotal = line.invoicedQuantity * line.priceAmount

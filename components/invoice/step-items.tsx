@@ -10,6 +10,7 @@ interface Props {
   totals: { withoutVat: number; vat: number; withVat: number }
   isVatPayer?: boolean
   invoiceMode?: string
+  isCorrectionMode?: boolean
 }
 
 const unitOptions = [
@@ -31,7 +32,7 @@ const vatRates = [
   { value: 0, label: '0% (oslobodené)' },
 ]
 
-export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard' }: Props) {
+export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false }: Props) {
   const isReverseCharge = invoiceMode === 'reversecharge'
 
   function addItem() {
@@ -170,7 +171,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
                     className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                    min="0"
+                    {...(!isCorrectionMode && { min: '0' })}
                     step="0.001"
                   />
                 </div>
@@ -195,7 +196,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
                     className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                    min="0"
+                    {...(!isCorrectionMode && { min: '0' })}
                     step="0.01"
                   />
                 </div>

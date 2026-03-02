@@ -1,6 +1,6 @@
 # Slovak Rounding Correction for Peppol BIS 3.0 / EN 16931
 
-## Developer Implementation Guide
+## Developer Implementation Guide 6
 
 > This document explains how to correctly implement Slovak VAT rounding
 > in Peppol e-invoices so that the invoice is compliant with both
