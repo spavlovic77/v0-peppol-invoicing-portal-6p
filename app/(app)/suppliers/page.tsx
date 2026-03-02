@@ -160,10 +160,10 @@ export default function SuppliersPage() {
                       <button
                         onClick={() => handleSetBilling(s.id, s.company_name)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 border border-border transition-colors"
-                        title="Nastavit ako fakturacny subjekt"
+                        title="Nastavit ako majitela profilu"
                       >
                         <Receipt className="w-3.5 h-3.5" />
-                        Fakturovat sem
+                        Majiteľ profilu
                       </button>
                     )}
                     <Link

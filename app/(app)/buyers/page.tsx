@@ -230,6 +230,7 @@ export default function BuyersPage() {
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <BField label="Názov firmy *" value={form.company_name} onChange={(v) => setForm({ ...form, company_name: v })} />
+            <BField label="ICO" value={form.ico || ''} onChange={(v) => setForm({ ...form, ico: v })} />
             <BField label="DIC" value={form.dic || ''} onChange={(v) => setForm({ ...form, dic: v })} />
             <BField label="IC DPH" value={form.ic_dph || ''} onChange={(v) => setForm({ ...form, ic_dph: v })} />
             <BField label="E-mail" value={form.email || ''} onChange={(v) => setForm({ ...form, email: v })} />
