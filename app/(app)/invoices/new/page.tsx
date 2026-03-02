@@ -632,7 +632,7 @@ export default function NewInvoicePage() {
   const steps = [
     { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} invoiceMode={invoiceMode} /> },
     { label: buyerStepLabel, component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} invoiceMode={invoiceMode} /> },
-    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
+    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} isCorrectionMode={isCorrectionMode} /> },
     { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
   ]
 
