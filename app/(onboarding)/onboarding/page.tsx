@@ -89,7 +89,7 @@ export default function OnboardingPage() {
         country_code: data.country_code,
       })
 
-      // Create first supplier
+      // Create first supplier and mark as Majiteľ profilu
       await supabase.from('suppliers').insert({
         user_id: user.id,
         ico: data.ico,
@@ -101,6 +101,7 @@ export default function OnboardingPage() {
         postal_code: data.postal_code,
         country_code: data.country_code,
         is_vat_payer: !!data.ic_dph,
+        is_billing_entity: true,
         ...(iban ? { iban } : {}),
       })
 
