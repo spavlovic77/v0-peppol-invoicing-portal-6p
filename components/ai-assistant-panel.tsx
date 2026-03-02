@@ -88,6 +88,7 @@ export function AiAssistantPanel() {
           if (data === '[DONE]') continue
           try {
             const parsed = JSON.parse(data)
+            // Custom SSE format: { type: 'text-delta', textDelta: '...' }
             if (parsed.type === 'text-delta' && parsed.textDelta) {
               fullText += parsed.textDelta
               setMessages((prev) => prev.map((m) => m.id === asstMsg.id ? { ...m, content: fullText } : m))
