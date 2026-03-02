@@ -175,7 +175,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <span className="text-muted-foreground">Sposob platby</span>
             <div className="text-foreground">
               {
-                { '30': 'Bankový prevod', '58': 'SEPA prevod', '48': 'Platba kartou', '10': 'Hotovosť', '42': 'Na účet', '1': 'Iné' }[formData.payment_means_code] || formData.payment_means_code
+                { '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '97': 'Vzájomný zápočet', '49': 'Registračná pokladňa' }[formData.payment_means_code] || formData.payment_means_code
               }
             </div>
           </div>

@@ -6,12 +6,12 @@ import { useState, useCallback } from 'react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
 const paymentMethods = [
-  { value: '30', label: 'Bankový prevod' },
-  { value: '58', label: 'SEPA prevod' },
-  { value: '48', label: 'Platba kartou' },
   { value: '10', label: 'Hotovosť' },
-  { value: '42', label: 'Na účet' },
-  { value: '1', label: 'Nezadané / iné' },
+  { value: '30', label: 'Bankový prevod' },
+  { value: '42', label: 'Dobierka' },
+  { value: '48', label: 'Platobná karta' },
+  { value: '97', label: 'Vzájomný zápočet' },
+  { value: '49', label: 'Registračná pokladňa' },
 ]
 
 const bankTransferCodes = ['30', '58']
