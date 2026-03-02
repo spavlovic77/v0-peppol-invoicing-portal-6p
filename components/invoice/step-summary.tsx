@@ -140,7 +140,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             {profile.dic && <div className="text-muted-foreground">DIC: {profile.dic}</div>}
             {profile.ic_dph && <div className="text-muted-foreground">IC DPH: {profile.ic_dph}</div>}
             {profile.dic && (
-              <div className="text-primary font-mono text-xs mt-2">Peppol: 9950:{profile.dic}</div>
+              <div className="text-primary font-mono text-xs mt-2">Peppol: 0245:{profile.dic}</div>
             )}
           </div>
         </GlassCard>
