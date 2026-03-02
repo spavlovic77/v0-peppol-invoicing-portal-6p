@@ -214,8 +214,6 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Mesto" value={form.city} onChange={(v) => updateField('city', v)} />
           <Field label="PSC" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
           <Field label="Krajina" value={form.country_code} onChange={(v) => updateField('country_code', v)} />
-          <Field label="Registračný súd" value={form.registration_court} onChange={(v) => updateField('registration_court', v)} className="md:col-span-2" />
-          <Field label="Číslo zápisu" value={form.registration_number} onChange={(v) => updateField('registration_number', v)} className="md:col-span-2" />
         </div>
         <div className="mt-5 pt-5 border-t border-border">
           <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -307,10 +305,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         <GlassCard className="border-primary/20">
           <div className="text-sm text-muted-foreground mb-1">Peppol ID tohto dodavatela</div>
           <div className="text-lg font-mono font-semibold text-primary">
-            9950:{form.dic}
+            0245:{form.dic}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Schema 9950 (Peppol test) + DIC
+            Schema 0245 + DIC
           </div>
         </GlassCard>
       )}

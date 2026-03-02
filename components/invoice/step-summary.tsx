@@ -140,7 +140,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             {profile.dic && <div className="text-muted-foreground">DIC: {profile.dic}</div>}
             {profile.ic_dph && <div className="text-muted-foreground">IC DPH: {profile.ic_dph}</div>}
             {profile.dic && (
-              <div className="text-primary font-mono text-xs mt-2">Peppol: 9950:{profile.dic}</div>
+              <div className="text-primary font-mono text-xs mt-2">Peppol: 0245:{profile.dic}</div>
             )}
           </div>
         </GlassCard>
@@ -175,7 +175,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <span className="text-muted-foreground">Sposob platby</span>
             <div className="text-foreground">
               {
-                { '30': 'Bankový prevod', '58': 'SEPA prevod', '48': 'Platba kartou', '10': 'Hotovosť', '42': 'Na účet', '1': 'Iné' }[formData.payment_means_code] || formData.payment_means_code
+                { '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '97': 'Vzájomný zápočet', '49': 'Registračná pokladňa' }[formData.payment_means_code] || formData.payment_means_code
               }
             </div>
           </div>

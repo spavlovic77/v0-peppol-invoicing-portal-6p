@@ -73,7 +73,7 @@ export default function BuyersPage() {
           street: data.street || prev.street,
           city: data.city || prev.city,
           postal_code: data.postal_code || prev.postal_code,
-          peppol_id: data.dic ? `9950:${data.dic}` : prev.peppol_id,
+          peppol_id: data.dic ? `0245:${data.dic}` : prev.peppol_id,
         }))
         toast.success('Udaje boli nacitane z registra')
       } else {
@@ -230,13 +230,14 @@ export default function BuyersPage() {
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <BField label="Názov firmy *" value={form.company_name} onChange={(v) => setForm({ ...form, company_name: v })} />
+            <BField label="ICO" value={form.ico || ''} onChange={(v) => setForm({ ...form, ico: v })} />
             <BField label="DIC" value={form.dic || ''} onChange={(v) => setForm({ ...form, dic: v })} />
             <BField label="IC DPH" value={form.ic_dph || ''} onChange={(v) => setForm({ ...form, ic_dph: v })} />
             <BField label="E-mail" value={form.email || ''} onChange={(v) => setForm({ ...form, email: v })} />
             <BField label="Ulica" value={form.street || ''} onChange={(v) => setForm({ ...form, street: v })} />
             <BField label="Mesto" value={form.city || ''} onChange={(v) => setForm({ ...form, city: v })} />
             <BField label="PSC" value={form.postal_code || ''} onChange={(v) => setForm({ ...form, postal_code: v })} />
-            <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder="napr. 9950:2022182030" />
+            <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder="napr. 0245:2022182030" />
           </div>
 
           <div className="flex justify-end">
