@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Loader2, Zap, ArrowLeft, CheckCircle2, XCircle, Copy,
+  Loader2, Zap, ArrowLeft, CheckCircle2, XCircle,
   Pencil, Trash2, Globe, RotateCcw, AlertTriangle, X,
 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
@@ -312,12 +312,7 @@ export default function InvoiceDetailPage() {
             <Pencil className="w-3.5 h-3.5" /> Upraviť
           </button>
         )}
-        <Link
-          href={`/invoices/new?duplicate=${invoice.id}`}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
-        >
-          <Copy className="w-3.5 h-3.5" /> Duplikovať
-        </Link>
+
   <button
   onClick={() => setShowDeleteConfirm(true)}
   className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
