@@ -1,4 +1,4 @@
-# Slovak Rounding Correction for Peppol BIS 3.0 / EN 16931
+# Slovak Rounding Correction for Peppol BIS 3.0 / EN 16931 a
 
 ## Developer Implementation Guide 6
 
