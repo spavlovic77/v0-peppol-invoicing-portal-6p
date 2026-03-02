@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, Percent, FileText, FileX2, ChevronRight } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
 
@@ -38,7 +38,7 @@ interface OriginalInvoice {
 
 interface Props {
   original: OriginalInvoice
-  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') => void
+  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381') => void
 }
 
 const scenarios = [
@@ -81,8 +81,8 @@ const scenarios = [
   {
     id: 'freeform' as const,
     icon: PenLine,
-    label: 'Volna korekcia',
-    desc: 'Prazdna korekcia s referencnou',
+    label: 'Zmena údajov',
+    desc: 'Všeobecné údaje',
     color: 'text-violet-400',
     bg: 'bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/20',
     bgActive: 'bg-violet-500/20 border-violet-500/50 ring-2 ring-violet-500/30',
@@ -91,7 +91,7 @@ const scenarios = [
 
 export function CorrectionWizard({ original, onApply }: Props) {
   const [selected, setSelected] = useState<CorrectionScenario | null>(null)
-  const [docType, setDocType] = useState<'380' | '381'>('381')
+  const docType = '381' as const
 
   // For quantity scenario: track new quantities per line
   const [qtyOverrides, setQtyOverrides] = useState<Record<number, number>>(
@@ -113,8 +113,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
   function handleApply() {
     if (!selected) return
 
-    const isCreditNote = docType === '381'
-    const baseNote = `Opravna faktura k FA ${original.invoice_number}`
+    const baseNote = `Dobropis k FA ${original.invoice_number}`
 
     // Build items based on scenario
     let correctionItems: InvoiceFormData['items']
@@ -126,14 +125,14 @@ export function CorrectionWizard({ original, onApply }: Props) {
         correctionItems = original.items.map((it, idx) => ({
           line_number: idx + 1,
           description: it.description,
-          quantity: isCreditNote ? it.quantity : -it.quantity,
+          quantity: it.quantity,
           unit: it.unit,
           unit_price: it.unit_price,
           vat_category: it.vat_category || 'S',
           vat_rate: it.vat_rate,
           discount_percent: it.discount_percent || 0,
           discount_amount: it.discount_amount || 0,
-          line_total: isCreditNote ? it.line_total : -it.line_total,
+          line_total: it.line_total,
           item_number: it.item_number,
           buyer_item_number: it.buyer_item_number,
         }))
@@ -152,14 +151,14 @@ export function CorrectionWizard({ original, onApply }: Props) {
             return {
               line_number: idx + 1,
               description: it.description,
-              quantity: isCreditNote ? diff : -diff,
+              quantity: diff,
               unit: it.unit,
               unit_price: it.unit_price,
               vat_category: it.vat_category || 'S',
               vat_rate: it.vat_rate,
               discount_percent: 0,
               discount_amount: 0,
-              line_total: isCreditNote ? lineTotal : -lineTotal,
+              line_total: lineTotal,
               item_number: it.item_number,
               buyer_item_number: it.buyer_item_number,
             }
@@ -167,7 +166,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
           .filter((x): x is NonNullable<typeof x> => x !== null)
 
         if (correctionItems.length === 0) {
-          correctionItems = [{ ...original.items[0], line_number: 1, quantity: isCreditNote ? 1 : -1, line_total: isCreditNote ? original.items[0].unit_price : -original.items[0].unit_price }]
+          correctionItems = [{ ...original.items[0], line_number: 1, quantity: 1, line_total: original.items[0].unit_price }]
         }
         // Renumber
         correctionItems = correctionItems.map((it, i) => ({ ...it, line_number: i + 1 }))
@@ -186,14 +185,14 @@ export function CorrectionWizard({ original, onApply }: Props) {
             return {
               line_number: idx + 1,
               description: `${it.description} (korekcia ceny)`,
-              quantity: isCreditNote ? it.quantity : -it.quantity,
+              quantity: it.quantity,
               unit: it.unit,
               unit_price: priceDiff,
               vat_category: it.vat_category || 'S',
               vat_rate: it.vat_rate,
               discount_percent: 0,
               discount_amount: 0,
-              line_total: isCreditNote ? lineTotal : -lineTotal,
+              line_total: lineTotal,
               item_number: it.item_number,
               buyer_item_number: it.buyer_item_number,
             }
@@ -230,14 +229,14 @@ export function CorrectionWizard({ original, onApply }: Props) {
           vatLines.push({
             line_number: lineNum++,
             description: `${it.description} (storno ${oldRate}% DPH)`,
-            quantity: isCreditNote ? it.quantity : -it.quantity,
+            quantity: it.quantity,
             unit: it.unit,
             unit_price: it.unit_price,
             vat_category: it.vat_category || 'S',
             vat_rate: oldRate,
             discount_percent: it.discount_percent || 0,
             discount_amount: it.discount_amount || 0,
-            line_total: isCreditNote ? it.line_total : -it.line_total,
+            line_total: it.line_total,
             item_number: it.item_number,
             buyer_item_number: it.buyer_item_number,
           })
@@ -246,14 +245,14 @@ export function CorrectionWizard({ original, onApply }: Props) {
           vatLines.push({
             line_number: lineNum++,
             description: `${it.description} (spravne ${newRate}% DPH)`,
-            quantity: isCreditNote ? -it.quantity : it.quantity,
+            quantity: -it.quantity,
             unit: it.unit,
             unit_price: it.unit_price,
             vat_category: it.vat_category || 'S',
             vat_rate: newRate,
             discount_percent: it.discount_percent || 0,
             discount_amount: it.discount_amount || 0,
-            line_total: isCreditNote ? -it.line_total : it.line_total,
+            line_total: -it.line_total,
             item_number: it.item_number,
             buyer_item_number: it.buyer_item_number,
           })
@@ -262,7 +261,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
         if (vatLines.length === 0) {
           // Nothing changed -- add placeholder
           vatLines.push({
-            line_number: 1, description: 'Korekcia DPH', quantity: isCreditNote ? 1 : -1,
+            line_number: 1, description: 'Korekcia DPH', quantity: 1,
             unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: 23,
             discount_percent: 0, discount_amount: 0, line_total: 0,
             item_number: null, buyer_item_number: null,
@@ -272,9 +271,9 @@ export function CorrectionWizard({ original, onApply }: Props) {
         break
       }
       case 'freeform': {
-        reason = 'Volna korekcia'
+        reason = 'Zmena údajov'
         correctionItems = [{
-          line_number: 1, description: '', quantity: isCreditNote ? 1 : -1,
+          line_number: 1, description: '', quantity: 1,
           unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: original.items[0]?.vat_rate || 23,
           discount_percent: 0, discount_amount: 0, line_total: 0,
           item_number: null, buyer_item_number: null,
@@ -415,42 +414,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
         </GlassCard>
       )}
 
-      {/* Document type selector */}
-      {selected && (
-        <div>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Typ dokladu</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setDocType('381')}
-              className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
-                docType === '381'
-                  ? 'bg-primary/10 border-primary/50 ring-2 ring-primary/30'
-                  : 'bg-secondary/30 border-border hover:bg-secondary/50'
-              }`}
-            >
-              <FileText className={`w-6 h-6 shrink-0 ${docType === '381' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <div className="text-left">
-                <span className="text-sm font-medium text-foreground block">Dobropis (381)</span>
-                <span className="text-xs text-muted-foreground">Kladne sumy, CreditNote</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setDocType('380')}
-              className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${
-                docType === '380'
-                  ? 'bg-primary/10 border-primary/50 ring-2 ring-primary/30'
-                  : 'bg-secondary/30 border-border hover:bg-secondary/50'
-              }`}
-            >
-              <FileX2 className={`w-6 h-6 shrink-0 ${docType === '380' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <div className="text-left">
-                <span className="text-sm font-medium text-foreground block">Zaporna FA (380)</span>
-                <span className="text-xs text-muted-foreground">Zaporne sumy, Invoice</span>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {/* Apply button */}
       {selected && (
