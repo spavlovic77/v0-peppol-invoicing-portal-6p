@@ -286,9 +286,9 @@ export function validatePeppolSchematron(inv: PeppolInvoice): ValidationPhase {
     check(`PEPPOL-EN16931-R061-${cat}`, subtotalCats.has(cat), `Kategoria DPH "${cat}" z riadkov musi byt v danovom rozpise`)
   })
 
-  // Endpoint scheme validation (0245 for Slovak Peppol network)
+  // Endpoint scheme validation (9950 for Peppol test/ACC network)
   if (inv.supplierCountryCode === 'SK') {
-    check('PEPPOL-SK-R001', inv.supplierEndpointSchemeId === '0245', 'Pre slovensky Peppol musi byt schema endpointu 0245', 'warning')
+    check('PEPPOL-SK-R001', inv.supplierEndpointSchemeId === '9950', 'Pre Peppol test rezim musi byt schema endpointu 9950', 'warning')
   }
 
   // Invoice type code validation
