@@ -42,7 +42,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased min-h-screen bg-background text-foreground">
+      <body className="font-sans antialiased h-dvh flex flex-col overflow-hidden bg-background text-foreground">
         <ThemeProvider>
           {children}
         </ThemeProvider>

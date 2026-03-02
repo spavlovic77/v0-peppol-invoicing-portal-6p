@@ -149,8 +149,8 @@ export function AiAssistantPanel() {
       {/* Panel */}
       <aside
         className={`
-          fixed top-0 right-0 h-full z-50
-          lg:relative lg:z-auto
+          fixed top-0 right-0 h-dvh z-50
+          lg:relative lg:z-auto lg:h-full
           flex flex-col
           glass-card-heavy
           border-l border-[var(--glass-border)]
