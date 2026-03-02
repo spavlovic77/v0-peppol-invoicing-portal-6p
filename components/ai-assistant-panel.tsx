@@ -160,7 +160,7 @@ export function AiAssistantPanel() {
         style={{ overflow: isOpen ? undefined : 'hidden' }}
       >
         {isOpen && (
-          <div className="flex flex-col h-full min-w-[340px] sm:min-w-[380px]">
+          <div className="flex flex-col h-full min-h-0 min-w-[340px] sm:min-w-[380px]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export function AiAssistantPanel() {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
