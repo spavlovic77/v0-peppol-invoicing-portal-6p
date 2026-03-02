@@ -176,7 +176,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### Endpoint a identifikatory v Peppol
 - **EndpointID** je povinny pre dodavatela (BT-34) aj odberatela (BT-49)
 - **schemeID** pouziva ICD kody (ISO 6523):
-  - \`0245\` = SK identifikator (pre slovenske subjekty), hodnota = ICO alebo DIC
+  - \`0245\` = SK identifikator (pre slovenske subjekty), hodnota = DIC
   - \`9906\` = IT:VAT, \`0007\` = SE:ORGNR, \`0088\` = EAN/GLN, \`0060\` = DUNS
   - \`9930\` = DE:VAT, \`0190\` = NL:OINO
 
@@ -250,7 +250,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### E-fakturacia na Slovensku (od 2027)
 - Od roku 2027 bude e-fakturacia povinna pre vsetky B2B subjekty
 - Ocakava sa pouzitie UBL formatu splnajuceho EN 16931
-- Dorucovanie cez Peppol siet alebo narodny system IS EFA
+- Dorucovanie cez Peppol siet
 - Kazdy subjekt bude musiet mat Peppol registraciu
 
 ## Pravidla konverzacie
