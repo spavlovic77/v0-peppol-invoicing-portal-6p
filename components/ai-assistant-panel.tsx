@@ -105,12 +105,15 @@ export function AiAssistantPanel() {
     }
   }, [messages])
 
-  // Auto-scroll on new messages
+  // Auto-scroll to bottom on every message update (including streaming chunks)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    const el = scrollRef.current
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight
+      })
     }
-  }, [messages, status])
+  }, [messages])
 
   // Focus input when panel opens
   useEffect(() => {
