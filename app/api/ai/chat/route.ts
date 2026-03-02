@@ -176,7 +176,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### Endpoint a identifikatory v Peppol
 - **EndpointID** je povinny pre dodavatela (BT-34) aj odberatela (BT-49)
 - **schemeID** pouziva ICD kody (ISO 6523):
-  - \`0245\` = SK identifikator (pre slovenske subjekty), hodnota = DIC
+  - \`9950\` = SK identifikator (pre slovenske subjekty), hodnota = DIC
   - \`9906\` = IT:VAT, \`0007\` = SE:ORGNR, \`0088\` = EAN/GLN, \`0060\` = DUNS
   - \`9930\` = DE:VAT, \`0190\` = NL:OINO
 
@@ -192,7 +192,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 2. Access Point 1 (AP1): AP odosielatela - validuje a odosle cez Peppol siet
 3. Access Point 2 (AP2): AP prijemcu - prijme a doructi prijemcovi
 4. Corner 2 (C2): Prijemca (odberatel) - prijme a spracuje fakturu
-- Kazdy subjekt MUSI byt registrovany cez SMP s participant ID (napr. 0245:12345678)
+- Kazdy subjekt MUSI byt registrovany cez SMP s participant ID (napr. 9950:12345678)
 
 ## Slovensky kontext (Zakon 222/2004 Z.z. o DPH)
 
@@ -200,7 +200,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 - **ICO**: 8-miestne identifikacne cislo organizacie
 - **DIC**: Danove identifikacne cislo (format: cisla, zvycajne 10-miestne)
 - **IC DPH**: Identifikacne cislo pre DPH (format: SK + 10 cislic, napr. SK2022182030), povinne pre platcov DPH
-- **Peppol Participant ID**: format \`0245:{DIC}\` pre slovenske subjekty
+- **Peppol Participant ID**: format \`9950:{DIC}\` pre slovenske subjekty
 
 ### Sadzby DPH (platne od 1.1.2025)
 - **23%** = zakladna sadzba (pred 2025: 20%)
