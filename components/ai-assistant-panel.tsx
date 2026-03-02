@@ -5,10 +5,10 @@ import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 
 const SUGGESTIONS = [
-  'Co je to elektronická faktúra?',
-  'Aké má vyhody elektronická fakturácia',
+  'Nie som plátca DPH. Musím vedieť prijať e-faktúru?',
+  'Čo je to elektronická faktúra?',
   'Čo je to Peppol?',
-  'Musím vystavovať elektrnickú faktúru? Od kedy?',
+  'Kto musí vystavovať elektronickú faktúru na Slovensku? Od kedy?',
 ]
 
 interface ChatMsg {
@@ -376,8 +376,8 @@ function MessageBubble({ message }: { message: ChatMsg }) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`max-w-[90%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${isUser
-            ? 'bg-primary text-primary-foreground rounded-br-md'
-            : 'glass-card text-foreground rounded-bl-md'
+          ? 'bg-primary text-primary-foreground rounded-br-md'
+          : 'glass-card text-foreground rounded-bl-md'
           }`}
       >
         {isUser ? (
