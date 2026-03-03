@@ -74,12 +74,12 @@ export default function NewInvoicePage() {
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
 
   const [originalInvoice, setOriginalInvoice] = useState<{
-  id: string; invoice_number: string; issue_date: string; buyer_name: string;
-  buyer_ico: string; buyer_dic: string; buyer_ic_dph: string;
-  buyer_street: string; buyer_city: string; buyer_postal_code: string; buyer_country_code: string;
-  buyer_email: string; buyer_peppol_id: string; buyer_reference: string; order_reference: string;
-  delivery_date: string; note: string; payment_means_code: string;
-  items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
+    id: string; invoice_number: string; issue_date: string; buyer_name: string;
+    buyer_ico: string; buyer_dic: string; buyer_ic_dph: string;
+    buyer_street: string; buyer_city: string; buyer_postal_code: string; buyer_country_code: string;
+    buyer_email: string; buyer_peppol_id: string; buyer_reference: string; order_reference: string;
+    delivery_date: string; note: string; payment_means_code: string;
+    items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
   } | null>(null)
 
   const [formData, setFormData] = useState<InvoiceFormData>({
@@ -250,25 +250,25 @@ export default function NewInvoicePage() {
       const { data: srcInv } = await supabase.from('invoices').select('*').eq('id', correctId).eq('user_id', user.id).single()
       const { data: srcItems } = await supabase.from('invoice_items').select('*').eq('invoice_id', correctId).order('line_number')
       if (srcInv && srcItems) {
-  setOriginalInvoice({
-  id: srcInv.id,
-  invoice_number: srcInv.invoice_number,
-  issue_date: srcInv.issue_date,
-  buyer_name: srcInv.buyer_name || '',
-  buyer_ico: srcInv.buyer_ico || '',
-  buyer_dic: srcInv.buyer_dic || '',
-  buyer_ic_dph: srcInv.buyer_ic_dph || '',
-  buyer_street: srcInv.buyer_street || '',
-  buyer_city: srcInv.buyer_city || '',
-  buyer_postal_code: srcInv.buyer_postal_code || '',
-  buyer_country_code: srcInv.buyer_country_code || 'SK',
-  buyer_email: srcInv.buyer_email || '',
-  buyer_peppol_id: srcInv.buyer_peppol_id || '',
-  buyer_reference: srcInv.buyer_reference || '',
-  order_reference: srcInv.order_reference || '',
-  delivery_date: srcInv.delivery_date || '',
-  note: srcInv.note || '',
-  payment_means_code: srcInv.payment_means_code || '30',
+        setOriginalInvoice({
+          id: srcInv.id,
+          invoice_number: srcInv.invoice_number,
+          issue_date: srcInv.issue_date,
+          buyer_name: srcInv.buyer_name || '',
+          buyer_ico: srcInv.buyer_ico || '',
+          buyer_dic: srcInv.buyer_dic || '',
+          buyer_ic_dph: srcInv.buyer_ic_dph || '',
+          buyer_street: srcInv.buyer_street || '',
+          buyer_city: srcInv.buyer_city || '',
+          buyer_postal_code: srcInv.buyer_postal_code || '',
+          buyer_country_code: srcInv.buyer_country_code || 'SK',
+          buyer_email: srcInv.buyer_email || '',
+          buyer_peppol_id: srcInv.buyer_peppol_id || '',
+          buyer_reference: srcInv.buyer_reference || '',
+          order_reference: srcInv.order_reference || '',
+          delivery_date: srcInv.delivery_date || '',
+          note: srcInv.note || '',
+          payment_means_code: srcInv.payment_means_code || '30',
           items: srcItems.map((it: Record<string, unknown>) => ({
             description: it.description as string,
             quantity: it.quantity as number,
@@ -549,7 +549,7 @@ export default function NewInvoicePage() {
 
         if (genRes.ok && genData.allPassed) {
           // All validation passed -> go to dashboard with success toast
-          toast.success(`Faktura ${formData.invoice_number} bola vytvorena a je validna`)
+          toast.success(`Faktúra ${formData.invoice_number} bola vytvorená a je validná`)
           router.push('/dashboard')
           return
         }
@@ -572,7 +572,7 @@ export default function NewInvoicePage() {
       }
 
       // Fallback: generation error without validation -> go to detail
-      toast.warning(isEditMode ? 'Faktura ulozena, ale validacia nepresla' : 'Faktura vytvorena, ale najdene chyby')
+      toast.warning(isEditMode ? 'Faktúra uložená, ale validácia neprešla' : 'Faktúra vytvorená, ale boli najdené chyby')
       router.push(`/invoices/${invoiceId}`)
     } catch (err) {
       toast.error('Chyba: ' + (err as Error).message)
@@ -594,10 +594,10 @@ export default function NewInvoicePage() {
       <div className="max-w-4xl mx-auto">
         <GlassCard className="text-center py-16">
           <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">Najprv vytvorte dodavatela</h2>
-          <p className="text-muted-foreground mb-6">Pre vystavovanie faktur je potrebne mat aspon jedneho dodavatela.</p>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Najprv vytvorte dodavateľa</h2>
+          <p className="text-muted-foreground mb-6">Pre vystavovanie faktúr je potrebné mat aspoň jedného dodávateľa.</p>
           <Link href="/suppliers/new" className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
-            Pridat dodavatela
+            Pridať dodávateľa
           </Link>
         </GlassCard>
       </div>
@@ -706,7 +706,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {creating ? 'Vytvaram a validujem...' : isEditMode ? 'Ulozit zmeny' : isCorrectionMode ? 'Vytvorit opravny doklad' : isSelfBilling ? 'Vytvorit samofakturu' : isReverseCharge ? 'Vytvorit fakturu (prenesenie DPH)' : 'Vytvorit a validovat'}
+            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravný doklad' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
           </button>
         )}
       </div>

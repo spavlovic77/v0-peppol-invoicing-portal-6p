@@ -37,7 +37,7 @@ export default function OnboardingPage() {
     e.preventDefault()
     const trimmed = ico.trim()
     if (!trimmed || trimmed.length < 6) {
-      setErrorMsg('ICO musi mat aspon 6 cifier')
+      setErrorMsg('IČO musí mať aspoň 6 cifier')
       return
     }
 
@@ -51,7 +51,7 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         setPhase('error')
-        setErrorMsg(data.error || 'ICO nenajdene v registri')
+        setErrorMsg(data.error || 'IČO nenájdené v registri')
         return
       }
 
@@ -62,7 +62,7 @@ export default function OnboardingPage() {
       setTimeout(() => saveCompany(data), 800)
     } catch {
       setPhase('error')
-      setErrorMsg('Chyba pripojenia. Skuste to znova.')
+      setErrorMsg('Chyba pripojenia. Skúste to znova.')
     }
   }
 
@@ -109,7 +109,7 @@ export default function OnboardingPage() {
       setTimeout(() => router.push('/dashboard'), 600)
     } catch {
       setPhase('error')
-      setErrorMsg('Nepodarilo sa ulozit udaje. Skuste to znova.')
+      setErrorMsg('Nepodarilo sa uložiť údaje. Skúste to znova.')
     }
   }
 
@@ -128,7 +128,7 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         setPhase('error')
-        setErrorMsg(data.error || 'Demo ICO nenajdene v registri')
+        setErrorMsg(data.error || 'Demo IČO nenájdené v registri')
         return
       }
 
@@ -137,7 +137,7 @@ export default function OnboardingPage() {
       setTimeout(() => saveCompany(data, DEMO_IBAN), 800)
     } catch {
       setPhase('error')
-      setErrorMsg('Chyba pripojenia. Skuste to znova.')
+      setErrorMsg('Chyba pripojenia. Skúste to znova.')
     }
   }
 
@@ -155,7 +155,7 @@ export default function OnboardingPage() {
             Vitajte
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Zadajte IČO vašej spoločnosti a automaticky dohľadáme všetky údaje
+            Zadajte IČO spoločnosti a automaticky dohľadáme všetky údaje
           </p>
         </div>
 
@@ -204,7 +204,7 @@ export default function OnboardingPage() {
               ) : phase === 'saving' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Ukladam...
+                  Ukladám...
                 </>
               ) : phase === 'done' ? (
                 <>
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
                 <span className="font-semibold text-foreground">{company.company_name}</span>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground ml-7">
-                <span>ICO: {company.ico}</span>
+                <span>IČO: {company.ico}</span>
                 {company.dic && <span>DIC: {company.dic}</span>}
                 {company.ic_dph && <span>IC DPH: {company.ic_dph}</span>}
                 {company.city && <span>{company.street}, {company.city}</span>}
@@ -246,7 +246,7 @@ export default function OnboardingPage() {
               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
             >
               <Building2 className="w-3.5 h-3.5" />
-              Alebo použite demo účet
+              Alebo použite tento demo účet
             </button>
           </div>
         )}

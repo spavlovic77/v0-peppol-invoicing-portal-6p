@@ -29,9 +29,9 @@ export default function SuppliersPage() {
       .update({ is_billing_entity: true })
       .eq('id', id)
     if (error) {
-      toast.error('Chyba pri nastaveni fakturacneho subjektu: ' + error.message)
+      toast.error('Chyba pri nastavení dodávateľa: ' + error.message)
     } else {
-      toast.success(`${name} je teraz fakturacny subjekt`)
+      toast.success(`${name} je teraz majiteľ profilu`)
       await refreshSuppliers()
     }
   }
@@ -39,9 +39,9 @@ export default function SuppliersPage() {
   async function handleDelete(id: string) {
     const { error } = await supabase.from('suppliers').delete().eq('id', id)
     if (error) {
-      toast.error('Chyba pri mazani: ' + error.message)
+      toast.error('Chyba pri mazaní: ' + error.message)
     } else {
-      toast.success('Dodavatel bol zmazany')
+      toast.success('Dodavateť bol zmazaný')
       await refreshSuppliers()
     }
   }
@@ -105,11 +105,10 @@ export default function SuppliersPage() {
             return (
               <GlassCard
                 key={s.id}
-                className={`cursor-pointer transition-all ${
-                  isActive
+                className={`cursor-pointer transition-all ${isActive
                     ? 'ring-2 ring-primary/50 bg-primary/5'
                     : 'hover:ring-1 hover:ring-border hover:bg-secondary/30'
-                }`}
+                  }`}
                 onClick={() => {
                   if (!isActive) {
                     setActiveSupplier(s)
@@ -187,9 +186,9 @@ export default function SuppliersPage() {
       )}
       <ConfirmModal
         open={!!deleteTarget}
-        title="Zmazat dodavatela"
-        description={`Naozaj chcete zmazat dodavatela "${deleteTarget?.name}"? Vsetky faktury tohto dodavatela stratia priradenie.`}
-        confirmLabel="Zmazat"
+        title="Zmazať dodávateľa"
+        description={`Naozaj chcete zmazať dodávateľa "${deleteTarget?.name}"? Všetky faktúry tohoto dodávateľa stratia priradenie.`}
+        confirmLabel="Zmazať"
         variant="danger"
         onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget.id); setDeleteTarget(null) } }}
         onCancel={() => setDeleteTarget(null)}

@@ -73,7 +73,7 @@ export default function InvoiceDetailPage() {
     if (!invoice) return
     const failedRules = Array.isArray(validation)
       ? (validation as Array<{ results: Array<{ rule: string; passed: boolean; message: string }> }>)
-          .flatMap((p) => p.results.filter((r) => !r.passed).map((r) => ({ rule: r.rule, message: r.message })))
+        .flatMap((p) => p.results.filter((r) => !r.passed).map((r) => ({ rule: r.rule, message: r.message })))
       : []
     setPageContext({
       page: 'invoice-detail',
@@ -135,10 +135,10 @@ export default function InvoiceDetailPage() {
         body: JSON.stringify({ invoiceId: invoice.id }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Chyba pri generovani')
+      if (!res.ok) throw new Error(data.error || 'Chyba pri generovaní')
 
       setValidation(data.validation)
-      toast.success(data.allPassed ? 'Faktura validna' : 'Najdene problemy')
+      toast.success(data.allPassed ? 'Faktúra validná' : 'Nájdené problémy')
       loadInvoice()
     } catch (err) {
       toast.error((err as Error).message)
@@ -152,9 +152,9 @@ export default function InvoiceDetailPage() {
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     const { error } = await supabase.from('invoices').delete().eq('id', invoice.id)
     if (error) {
-      toast.error('Chyba pri mazani: ' + error.message)
+      toast.error('Chyba pri mazaní: ' + error.message)
     } else {
-      toast.success('Faktura bola zmazana')
+      toast.success('Faktúra bola zmazaná')
       router.push('/dashboard')
     }
   }
@@ -169,8 +169,8 @@ export default function InvoiceDetailPage() {
         body: JSON.stringify({ invoiceId: invoice.id }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Chyba pri odosielani')
-      toast.success('Faktura odoslana na Peppol siet')
+      if (!res.ok) throw new Error(data.error || 'Chyba pri odosielaní')
+      toast.success('Faktúra odoslaná na Peppol siet')
       await loadInvoice()
       if (data.transactionId) pollDeliveryStatus(data.transactionId, invoice.id)
     } catch (err) {
@@ -233,14 +233,14 @@ export default function InvoiceDetailPage() {
     invoice.status === 'valid' || invoice.status === 'sent'
       ? 'text-success bg-success/15'
       : invoice.status === 'invalid'
-      ? 'text-destructive bg-destructive/15'
-      : 'text-warning bg-warning/15'
+        ? 'text-destructive bg-destructive/15'
+        : 'text-warning bg-warning/15'
 
   const statusLabel =
     invoice.status === 'valid' ? 'Validná'
       : invoice.status === 'sent' ? 'Odoslaná'
-      : invoice.status === 'invalid' ? 'Nevalidná'
-      : 'Koncept'
+        : invoice.status === 'invalid' ? 'Nevalidná'
+          : 'Koncept'
 
   const isValid = invoice.status === 'valid' || invoice.status === 'sent'
   const isCreditNote = invoice.invoice_number.startsWith('CN-')
@@ -258,18 +258,18 @@ export default function InvoiceDetailPage() {
           onClick={() => router.push('/dashboard')}
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm mb-3"
         >
-          <ArrowLeft className="w-4 h-4" /> Faktury
+          <ArrowLeft className="w-4 h-4" /> Faktúry
         </button>
         <div className="flex items-center gap-2.5">
-  <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
-  {isSelfBilling && (
-    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary">Samofakturacia</span>
-  )}
-  {isReverseCharge && (
-    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-500">Rev. charge</span>
-  )}
-  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
-  {statusLabel}
+          <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
+          {isSelfBilling && (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary">Samofakturácia</span>
+          )}
+          {isReverseCharge && (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-500">Rev. charge</span>
+          )}
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusLabel}
           </span>
         </div>
       </div>
@@ -290,7 +290,7 @@ export default function InvoiceDetailPage() {
         </div>
         {invoice.total_vat > 0 && (
           <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
-            <span>Zaklad: {fmt(invoice.total_without_vat)}</span>
+            <span>Základ: {fmt(invoice.total_without_vat)}</span>
             <span>DPH: {fmt(invoice.total_vat)}</span>
           </div>
         )}
@@ -314,9 +314,9 @@ export default function InvoiceDetailPage() {
           </button>
         )}
 
-  <button
-  onClick={() => setShowDeleteConfirm(true)}
-  className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" /> Zmazať
         </button>
@@ -324,11 +324,10 @@ export default function InvoiceDetailPage() {
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ml-auto ${
-              invoice.status === 'invalid'
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ml-auto ${invoice.status === 'invalid'
                 ? 'bg-warning text-warning-foreground hover:bg-warning/90'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            }`}
+              }`}
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
             {generating ? 'Generujem...' : 'Generovať XML'}
@@ -359,8 +358,8 @@ export default function InvoiceDetailPage() {
       )}
 
       {/* Validation details accordion -- always show when validation data exists */}
-      {Array.isArray(validation) && (validation as Array<{name: string; description: string; results: Array<{rule: string; severity: string; message: string; passed: boolean}>; passed: boolean; simulated?: boolean}>).length > 0 && (
-        <ValidationDisplay phases={validation as Array<{name: string; description: string; results: Array<{rule: string; severity: 'error' | 'warning'; message: string; passed: boolean}>; passed: boolean; simulated?: boolean}>} />
+      {Array.isArray(validation) && (validation as Array<{ name: string; description: string; results: Array<{ rule: string; severity: string; message: string; passed: boolean }>; passed: boolean; simulated?: boolean }>).length > 0 && (
+        <ValidationDisplay phases={validation as Array<{ name: string; description: string; results: Array<{ rule: string; severity: 'error' | 'warning'; message: string; passed: boolean }>; passed: boolean; simulated?: boolean }>} />
       )}
 
       {/* Dobropis button -- only for valid non-credit-note invoices */}
@@ -401,15 +400,15 @@ export default function InvoiceDetailPage() {
             {/* Body */}
             <div className="px-5 py-5 space-y-3">
               <p className="text-sm text-foreground leading-relaxed">
-                Ak bola faktura <strong>{invoice.invoice_number}</strong> uz odoslana odberatelovi cez poskytovatela sluzieb (Peppol, email, posta), <strong>nesmiete ju upravovat</strong>.
+                Ak bola faktúra <strong>{invoice.invoice_number}</strong> už odoslaná odberateľovi cez poskytovateľa služieb (Peppol), <strong>nesmiete ju upravovať</strong>.
               </p>
               <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
                 <p className="text-sm text-warning leading-relaxed">
-                  V takom pripade musite vytvorit <strong>opravny doklad (dobropis)</strong>, ktory stornuje povodnu fakturu a nasledne vystavit novu.
+                  V takom prípade musite vytvoriť <strong>opravný doklad (dobropis)</strong>, ktorý stornuje alebo upraví pôvodnú faktúru a následne vystaviť novú.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Upravou uz odoslanej faktury porusite zakonnu povinnost a fakturu nebude mozne akceptovat v uctovnictve odberatela.
+                Úpravou už odoslanej faktúry porušíte zákonnú povinnosť.
               </p>
             </div>
 
@@ -449,8 +448,8 @@ export default function InvoiceDetailPage() {
       {invoice.peppol_send_status && (
         <GlassCard className={
           invoice.peppol_send_status === 'delivered' ? 'border-success/30'
-          : invoice.peppol_send_status === 'failed' ? 'border-destructive/30'
-          : 'border-primary/30'
+            : invoice.peppol_send_status === 'failed' ? 'border-destructive/30'
+              : 'border-primary/30'
         }>
           <div className="flex items-center gap-3">
             <Globe className="w-5 h-5 text-primary shrink-0" />
@@ -481,9 +480,9 @@ export default function InvoiceDetailPage() {
               )}
             </div>
             {invoice.peppol_send_status === 'failed' && hasApKey && (
-  <button
-  onClick={() => setShowPeppolConfirm(true)}
-  disabled={sending}
+              <button
+                onClick={() => setShowPeppolConfirm(true)}
+                disabled={sending}
                 className="px-3 py-1.5 rounded-lg text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
               >
                 Znova
@@ -494,8 +493,8 @@ export default function InvoiceDetailPage() {
       )}
       <ConfirmModal
         open={showDeleteConfirm}
-        title="Zmazat fakturu"
-        description={`Naozaj chcete zmazat fakturu ${invoice?.invoice_number}?`}
+        title="Zmazať faktúru"
+        description={`Naozaj chcete zmazať faktúru ${invoice?.invoice_number}?`}
         confirmLabel="Zmazat"
         variant="danger"
         onConfirm={() => { setShowDeleteConfirm(false); handleDelete() }}
@@ -504,9 +503,9 @@ export default function InvoiceDetailPage() {
 
       <ConfirmModal
         open={showPeppolConfirm}
-        title="Odoslat cez Peppol"
-        description="Odoslat tuto fakturu cez Peppol siet? Po odoslani ju nie je mozne upravit."
-        confirmLabel="Odoslat"
+        title="Odoslať cez Peppol"
+        description="Odoslať túto faktúru cez Peppol sieť? Po odoslaní ju nie je možné upraviť."
+        confirmLabel="Odoslať"
         variant="warning"
         onConfirm={() => { setShowPeppolConfirm(false); handleSendPeppol() }}
         onCancel={() => setShowPeppolConfirm(false)}

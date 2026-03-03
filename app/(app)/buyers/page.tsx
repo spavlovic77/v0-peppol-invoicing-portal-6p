@@ -54,15 +54,15 @@ export default function BuyersPage() {
   useEffect(() => { loadBuyers() }, [loadBuyers])
 
   async function lookupICO() {
-  const sanitized = (form.ico || '').replace(/\s/g, '')
-  setForm(prev => ({ ...prev, ico: sanitized }))
-  if (!sanitized || sanitized.length < 6) {
-  toast.error('Zadajte platne ICO (min. 6 znakov)')
-  return
-  }
-  setLookingUp(true)
-  try {
-  const res = await fetch(`/api/rpo?ico=${sanitized}`)
+    const sanitized = (form.ico || '').replace(/\s/g, '')
+    setForm(prev => ({ ...prev, ico: sanitized }))
+    if (!sanitized || sanitized.length < 6) {
+      toast.error('Zadajte platné IČO (min. 6 znakov)')
+      return
+    }
+    setLookingUp(true)
+    try {
+      const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
       if (res.ok) {
         setForm((prev) => ({
@@ -75,9 +75,9 @@ export default function BuyersPage() {
           postal_code: data.postal_code || prev.postal_code,
           peppol_id: data.dic ? `9950:${data.dic}` : prev.peppol_id,
         }))
-        toast.success('Udaje boli nacitane z registra')
+        toast.success('Údaje boli načítané')
       } else {
-        toast.error(data.error || 'Nepodarilo sa nacitat udaje')
+        toast.error(data.error || 'Nepodarilo sa načítať údaje')
       }
     } catch {
       toast.error('Chyba pri komunikacii so serverom')
@@ -87,7 +87,7 @@ export default function BuyersPage() {
   }
 
   async function handleSave() {
-    if (!form.company_name) { toast.error('Nazov firmy je povinny'); return }
+    if (!form.company_name) { toast.error('Názov firmy je povinny'); return }
     if (!activeSupplier) return
     setSaving(true)
     try {
@@ -111,15 +111,15 @@ export default function BuyersPage() {
 
       let error
       if (editingId) {
-        ;({ error } = await supabase.from('buyer_contacts').update(payload).eq('id', editingId))
+        ; ({ error } = await supabase.from('buyer_contacts').update(payload).eq('id', editingId))
       } else {
-        ;({ error } = await supabase.from('buyer_contacts').insert(payload))
+        ; ({ error } = await supabase.from('buyer_contacts').insert(payload))
       }
 
       if (error) {
         toast.error('Chyba: ' + error.message)
       } else {
-        toast.success(editingId ? 'Kontakt bol aktualizovany' : 'Kontakt bol pridany')
+        toast.success(editingId ? 'Kontakt bol aktualizovaný' : 'Kontakt bol pridaný')
         setShowForm(false)
         setEditingId(null)
         setForm(emptyBuyer)
@@ -175,8 +175,8 @@ export default function BuyersPage() {
       <div className="max-w-4xl mx-auto">
         <GlassCard className="text-center py-16">
           <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">Najprv vytvorte dodavatela</h2>
-          <p className="text-muted-foreground">Kontakty odberatelov su viazane na konkretneho dodavatela.</p>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Najprv vytvorte dodávateľa</h2>
+          <p className="text-muted-foreground">Kontakty odberateľov su viazané na konkrétneho dodávateľa.</p>
         </GlassCard>
       </div>
     )
@@ -224,19 +224,19 @@ export default function BuyersPage() {
               className="px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
             >
               {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Vyhladat
+              Vyhladať
             </button>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <BField label="Názov firmy *" value={form.company_name} onChange={(v) => setForm({ ...form, company_name: v })} />
-            <BField label="ICO" value={form.ico || ''} onChange={(v) => setForm({ ...form, ico: v })} />
-            <BField label="DIC" value={form.dic || ''} onChange={(v) => setForm({ ...form, dic: v })} />
-            <BField label="IC DPH" value={form.ic_dph || ''} onChange={(v) => setForm({ ...form, ic_dph: v })} />
+            <BField label="IČO" value={form.ico || ''} onChange={(v) => setForm({ ...form, ico: v })} />
+            <BField label="DIČ" value={form.dic || ''} onChange={(v) => setForm({ ...form, dic: v })} />
+            <BField label="IČ DPH" value={form.ic_dph || ''} onChange={(v) => setForm({ ...form, ic_dph: v })} />
             <BField label="E-mail" value={form.email || ''} onChange={(v) => setForm({ ...form, email: v })} />
             <BField label="Ulica" value={form.street || ''} onChange={(v) => setForm({ ...form, street: v })} />
             <BField label="Mesto" value={form.city || ''} onChange={(v) => setForm({ ...form, city: v })} />
-            <BField label="PSC" value={form.postal_code || ''} onChange={(v) => setForm({ ...form, postal_code: v })} />
+            <BField label="PSČ" value={form.postal_code || ''} onChange={(v) => setForm({ ...form, postal_code: v })} />
             <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder="napr. 9950:2022182030" />
           </div>
 
@@ -257,7 +257,7 @@ export default function BuyersPage() {
           <Contact className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-foreground mb-2">Žiadne uložené kontakty</h2>
           <p className="text-muted-foreground">
-            Pridajte odberatelov, aby ste ich mohli rychlo pouzit pri tvorbe faktury
+            Pridajte odberateľov, aby ste ich mohli rýchlo použit pri tvorbe faktury
           </p>
         </GlassCard>
       ) : (
@@ -291,9 +291,9 @@ export default function BuyersPage() {
       )}
       <ConfirmModal
         open={!!deleteTargetId}
-        title="Zmazat kontakt"
-        description="Naozaj chcete zmazat tento kontakt odberatela?"
-        confirmLabel="Zmazat"
+        title="Zmazať kontakt"
+        description="Naozaj chcete zmazať tento kontakt odberateľa?"
+        confirmLabel="Zmazať"
         variant="danger"
         onConfirm={() => { if (deleteTargetId) { handleDelete(deleteTargetId); setDeleteTargetId(null) } }}
         onCancel={() => setDeleteTargetId(null)}
