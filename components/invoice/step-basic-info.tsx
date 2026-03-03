@@ -244,8 +244,23 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
             <label className="block text-sm text-muted-foreground mb-1.5">
               Dátum splatnosti *
             </label>
+            <input
+              id="due_date"
+              type="date"
+              value={formData.due_date}
+              onChange={(e) => {
+                updateForm({ due_date: e.target.value })
+                // Calculate which preset matches (if any)
+                if (formData.issue_date && e.target.value) {
+                  const diff = Math.round((new Date(e.target.value).getTime() - new Date(formData.issue_date).getTime()) / 86400000)
+                  const match = DUE_DAY_OPTIONS.find(d => d === diff)
+                  setSelectedDays(match ?? 0)
+                }
+              }}
+              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+            />
             {/* Day preset slider */}
-            <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-1 mt-2">
               {DUE_DAY_OPTIONS.map((d) => (
                 <button
                   key={d}
@@ -266,21 +281,6 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
                 </button>
               ))}
             </div>
-            <input
-              id="due_date"
-              type="date"
-              value={formData.due_date}
-              onChange={(e) => {
-                updateForm({ due_date: e.target.value })
-                // Calculate which preset matches (if any)
-                if (formData.issue_date && e.target.value) {
-                  const diff = Math.round((new Date(e.target.value).getTime() - new Date(formData.issue_date).getTime()) / 86400000)
-                  const match = DUE_DAY_OPTIONS.find(d => d === diff)
-                  setSelectedDays(match ?? 0)
-                }
-              }}
-              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
-            />
           </div>
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
