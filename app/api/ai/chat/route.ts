@@ -263,7 +263,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 - Formatuj odpovede: **tucne** pre dolezite pojmy, \`kod\` pre technicke identifikatory, zoznamy pre viac bodov
 - Pre referenciu odkazuj na:
   - STN EN 16931-1+A1: https://www.normoff.gov.sk/files/docs/e-fakturacia-stn-en-16931-1-a1-614d692fbcaa2.pdf
-  - Peppol BIS 3.0: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/`
+  - Peppol BIS 3.0:https://docs.peppol.eu/poacc/billing/3.0/2025-Q4/`
 
 export async function POST(req: Request) {
   const body = await req.json()
