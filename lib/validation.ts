@@ -55,7 +55,7 @@ export function validateStructure(inv: PeppolInvoice): ValidationPhase {
   check('STRUCT-11', !!inv.supplierCountryCode && inv.supplierCountryCode.length === 2, 'Kod krajiny dodavatela musi mat 2 znaky')
   check('STRUCT-12', !!inv.customerCountryCode && inv.customerCountryCode.length === 2, 'Kod krajiny odberatela musi mat 2 znaky')
   check('STRUCT-13', !!inv.buyerReference, 'Referencia odberatela je povinna pre Peppol')
-  check('STRUCT-14', ['380', '381', '383', '386', '389', '751'].includes(inv.invoiceTypeCode), 'Kod typu dokumentu musi byt platny (380, 381, atd.)')
+  check('STRUCT-14', ['380', '381', '383', '384', '386', '389', '751'].includes(inv.invoiceTypeCode), 'Kod typu dokumentu musi byt platny (380, 381, 384, atd.)')
 
   return {
     name: 'Strukturalna validacia',
@@ -295,7 +295,7 @@ export function validatePeppolSchematron(inv: PeppolInvoice): ValidationPhase {
   }
 
   // Invoice type code validation
-  check('PEPPOL-EN16931-R080', ['380', '381', '383', '386', '389', '751'].includes(inv.invoiceTypeCode), 'Typ dokumentu musi byt platny (380=faktura, 381=dobropis)')
+  check('PEPPOL-EN16931-R080', ['380', '381', '383', '384', '386', '389', '751'].includes(inv.invoiceTypeCode), 'Typ dokumentu musi byt platny (380=faktura, 381=dobropis, 384=opravna faktura)')
 
   return {
     name: 'Peppol BIS schematron pravidla',
