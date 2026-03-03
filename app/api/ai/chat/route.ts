@@ -259,63 +259,61 @@ Aj ked nie ste platcom DPH a nie ste povinny vystavovat a zasielat faktury cez P
 ## Slovenska DPH zaokruhlovacia korekcia (SK rounding)
 
 ### Problem
-Slovensky zakon o DPH a EN 16931 pocitaju DPH opacnym smerom, co produkuje rozne vysledky kvoli zaokruhlovaniu:
-- **Slovensky sposob (top-down/reverse)**: Zacina od celkovej sumy s DPH a pocita spatne: \`dan = sumaSDPH * sadzba / (100 + sadzba)\`, \`zakladDane = sumaSDPH - dan\`
-- **EN 16931 sposob (bottom-up/forward)**: Zacina od suctu riadkov a pocita dopredu: \`zakladDane = SUM(BT-131)\`, \`dan = zakladDane * sadzba / 100\`
+Slovensky zakon o DPH a europska norma EN 16931 pocitaju DPH opacnym smerom. Kvoli zaokruhlovaniu to produkuje mierne odlisne vysledky:
+- Slovensky sposob (zhora nadol): Zacina od celkovej sumy s DPH a pocita spatne. Dan sa vypocita ako suma s DPH vynasobena sadzbou a vydelena sadzbou plus sto. Zaklad dane je potom suma s DPH minus dan.
+- Europsky sposob EN 16931 (zdola nahor): Zacina od suctu riadkov a pocita dopredu. Zaklad dane je sucet vsetkych riadkovych sum. Dan sa vypocita ako zaklad dane vynasobeny sadzbou a vydeleny sto.
 
-Kazdy riadok (BT-131) je zaokruhleny na 2 desatinne miesta. Ked sucitate vela zaokruhlench riadkov, agregovany zaklad dane sa lisi od zakladu dane ziskaneho reverznou metodou. Rozdiel je typicky 0.01-1.00 EUR.
+Kazdy riadok je zaokruhleny na 2 desatinne miesta. Ked scitate vela zaokruhlench riadkov, celkovy zaklad dane sa mierne lisi od zakladu dane ziskaneho slovenskou reverznou metodou. Typicky rozdiel je 0.01 az 1.00 EUR.
 
-### Riesenie: Korekcia cez AllowanceCharge
-System automaticky vypocita a emituje **document-level AllowanceCharge** (BG-20 alebo BG-21), ktory nesie zaokruhlovaci rozdiel:
-- Ak je korekcia **kladna** (SK zaklad > EN zaklad): emituje sa **Charge** (BG-21) s kodom \`ZZZ\` (UNCL 7161)
-- Ak je korekcia **zaporna** (SK zaklad < EN zaklad): emituje sa **Allowance** (BG-20) s kodom \`104\` (UNCL 5189 - Special agreement)
-- Dovod: \`Vzajomne definovane\`
+### Riesenie: Automaticka korekcia
+System automaticky vypocita a vlozi do faktury korekciu (AllowanceCharge), ktora vyrovnava zaokruhlovaci rozdiel:
+- Ak je slovensky zaklad vyssi nez europsky: vlozi sa prirazka (Charge) s kodom ZZZ
+- Ak je slovensky zaklad nizsi nez europsky: vlozi sa zlava (Allowance) s kodom 104 (Special agreement)
+- Dovod korekcie: "Vzajomne definovane"
 
-### Postup vypoctu
-1. Pre kazdy riadok: \`BT-131 = round2(mnozstvo * jednotkovaCena)\`
-2. Pre kazdy riadok: \`hrubaSumaRiadku = round2(BT-131 * (100 + sadzba) / 100)\` — hruba suma sa pocita PER-LINE, nie agregatne
-3. Sucet: \`zakladDane_EN = SUM(BT-131)\`, \`hrubaSumaSDPH = SUM(hrubaSumaRiadku)\`
-4. SK metoda: \`dan_SK = round2(hrubaSumaSDPH * sadzba / (100 + sadzba))\`, \`zakladDane_SK = round2(hrubaSumaSDPH - dan_SK)\`
-5. Korekcia: \`korekcia = round2(zakladDane_SK - zakladDane_EN)\`
-6. Ak korekcia != 0, emitovat AllowanceCharge
+### Ako to funguje krok za krokom
+1. Pre kazdy riadok faktury sa vypocita suma riadku (mnozstvo krat cena, zaokruhlene na 2 miesta)
+2. Pre kazdy riadok sa vypocita hruba suma aj s DPH — dolezite je, ze sa to pocita per riadok, nie z celkoveho suctu
+3. Scitaju sa vsetky riadkove sumy (europsky zaklad) a vsetky hrube sumy
+4. Zo suctu hrubych sum sa slovenskou metodou vypocita dan a zaklad dane
+5. Rozdiel medzi slovenskym a europskym zakladom je korekcia
+6. Ak je rozdiel nenulovy, system ho automaticky vlozi do faktury
 
-### Dolezite upozornenia
-- **NEPOUZIVAT \`ZZZ\` pre allowances** — UNCL 5189 neobsahuje \`ZZZ\`, pouzit \`104\`
-- **NEPOCITAT gross z agregatneho zakladu** — grossovat kazdy riadok individualneHrubaSuma, potom suctovat
-- **NEVYNECHAVAT korekciu** — aj 0.01 EUR rozdiel sposobi zlyhanie Peppol validacie
-- **NEVKLADAT BaseAmount** ani MultiplierFactorNumeric do korekcie — pravidlo R040 by zlyhalo
+### Dolezite pravidla
+- Pre zlavy (allowances) sa pouziva kod 104, nie ZZZ — kod ZZZ je len pre prirazky (charges)
+- Hruba suma sa musi pocitat pre kazdy riadok zvlast, nie z celkoveho zakladu
+- Aj rozdiel 0.01 EUR sa musi korigovat, inak Peppol validacia zlyha
+- Do korekcie sa nesmie vkladat zakladna suma (BaseAmount) ani koeficient (MultiplierFactorNumeric) — sposobilo by to zlyhanie pravidla R040
 
 ## Ako vytvorit opravne faktury (sprievodca)
 
-V nasom systeme existuju tri typy opravnych dokladov. Na strane detailu fakury kliknite na tlacidlo "Opravny doklad" (ikona FileText). System vas prevedie spruvodcom:
-
 ### 1. Dobropis (Credit Note, kod 381)
-Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH.
+Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH. Cislo faktury zacina prefixom CN.
 
-**Scenare dobropisu:**
-- **Uplne storno** — Kompletne zrusenie povodnej faktury. System prekopiruje vsetky polozky z povodnej faktury do dobropisu. Cislo faktury zacina prefixom \`CN-\`.
-- **Zmena mnozstva** — Ked bolo dodane mensie mnozstvo ako fakturovane. Zadajte novy (nizsi) pocet kusov, system vypocita rozdiel a vytvori dobropis na rozdiel.
-- **Zmena ceny** — Ked sa zmenila jednotkova cena po fakturacii. Zadajte novu (nizsu) cenu, system vypocita cenovy rozdiel a vytvori dobropis.
-- **Zmena sadzby DPH** — Ked bola pouzita nespravna sadzba DPH. System vytvori dve polozky: storno povodnej sadzby a nova polozka so spravnou sadzbou. Cisty financny dopad je nulovy, opravi sa len DPH struktura.
-- **Poskytnutie zlavy** — Dodatocna zlava z poloziek po fakturacii. Zadajte % zlavy na kazdu polozku (alebo rovnaku zlavy na vsetky). System vypocita sumu zlavy a vytvori dobropis.
+Scenare dobropisu:
+- Uplne storno — Kompletne zrusenie povodnej faktury. System prekopiruje vsetky polozky z povodnej faktury do dobropisu.
+- Zmena mnozstva — Ked bolo dodane mensie mnozstvo ako fakturovane. Zadajte novy pocet kusov, system vypocita rozdiel a vytvori dobropis.
+- Zmena ceny — Ked sa zmenila jednotkova cena po fakturacii. Zadajte novu cenu, system vypocita cenovy rozdiel a vytvori dobropis.
+- Zmena sadzby DPH — Ked bola pouzita nespravna sadzba DPH. System vytvori dve polozky: storno povodnej sadzby a nova polozka so spravnou sadzbou. Cisty financny dopad je nulovy, opravi sa len DPH struktura.
+- Poskytnutie zlavy — Dodatocna zlava z poloziek po fakturacii. Zadajte percento zlavy na kazdu polozku alebo rovnaku zlavu na vsetky. System vypocita sumu zlavy a vytvori dobropis.
 
-**Povinne udaje dobropisu:**
-- Odkaz na povodnu fakturu (BG-3): cislo povodnej faktury (BT-25) a datum (BT-26)
-- Dovod opravy (correction_reason)
+Povinne udaje dobropisu:
+- Odkaz na povodnu fakturu: cislo povodnej faktury (BT-25) a datum (BT-26)
+- Dovod opravy
 - Vsetky standardne udaje faktury (dodavatel, odberatel, polozky)
 
 ### 2. Opravna faktura (Corrective Invoice, kod 384)
-Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy.
+Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom OF.
 
-**Scenar:**
-- **Zmena udajov** — Oprava nefinancnych udajov: nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka, nazvy poloziek. Po vybere scenara system zobrazi formuliar so vsetkymi editovnatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene fialovo. Dovod opravy sa vyplni automaticky zo zoznamu zmien. Cislo faktury zacina prefixom \`OF-\`. Polozky maju nulove hodnoty (mnozstvo=0, cena=0) lebo faktura nema financny dopad.
+Scenar:
+- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky maju nulove hodnoty pretoze faktura nema financny dopad.
 
-**Poznamka:** Kod 384 je v Peppol sieti oficialnerestrikcia obmedzena na nemecke subjekty (pravidlo PEPPOL-EN16931-P0112). Nas system tuto restrikciu potlaca, pretoze 384 je legitimny UBL typ pre nefinancne korekcie. Validacia zobrazi upozornenie ale nepovazuje ho za chybu.
+Poznamka: Kod 384 je v Peppol sieti oficialne obmedzeny na nemecke subjekty (pravidlo P0112). Nas system tuto restrikciu potlaca, pretoze 384 je legitimny UBL typ pre nefinancne korekcie. Validacia zobrazi upozornenie ale nepovazuje ho za chybu.
 
 ### Spolocne pravidla pre vsetky opravne doklady
-- Kazdy opravny doklad MUSI odkazovat na povodnu fakturu cez BG-3 (BillingReference)
-- BT-25 = cislo povodnej faktury, BT-26 = datum vystavenia povodnej faktury
-- Polozky dobropisu (381) maju KLADNE hodnoty (CreditNote konvencia)
+- Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference
+- Obsahuje cislo povodnej faktury a datum vystavenia povodnej faktury
+- Polozky dobropisu (381) maju kladne hodnoty (CreditNote konvencia)
 - Po vybere scenara a vyplneni udajov vas system presmeruje na suhrn a generovanie faktury
 
 ## Pravidla konverzacie
