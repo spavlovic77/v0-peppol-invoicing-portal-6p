@@ -258,7 +258,8 @@ Aj ked nie ste platcom DPH a nie ste povinny vystavovat a zasielat faktury cez P
 
 ## Slovenska DPH zaokruhlovacia korekcia (SK rounding)
 
-### Problem
+### Ak sa používateľ spýta: Vysvetli mi ako mám zaokrúhľovať tak, aby bola faktúra platna tak odpovedaj takto:
+
 Slovensky zakon o DPH a europska norma EN 16931 pocitaju DPH opacnym smerom. Kvoli zaokruhlovaniu to produkuje mierne odlisne vysledky:
 - Slovensky sposob (zhora nadol): Zacina od celkovej sumy s DPH a pocita spatne. Dan sa vypocita ako suma s DPH vynasobena sadzbou a vydelena sadzbou plus sto. Zaklad dane je potom suma s DPH minus dan.
 - Europsky sposob EN 16931 (zdola nahor): Zacina od suctu riadkov a pocita dopredu. Zaklad dane je sucet vsetkych riadkovych sum. Dan sa vypocita ako zaklad dane vynasobeny sadzbou a vydeleny sto.
@@ -285,9 +286,9 @@ System automaticky vypocita a vlozi do faktury korekciu (AllowanceCharge), ktora
 - Aj rozdiel 0.01 EUR sa musi korigovat, inak Peppol validacia zlyha
 - Do korekcie sa nesmie vkladat zakladna suma (BaseAmount) ani koeficient (MultiplierFactorNumeric) — sposobilo by to zlyhanie pravidla R040
 
-## Ako vytvorit opravne faktury (sprievodca)
+## Ak sa používateľ spýta: Ako mám vytvárať opravné faktúry tak odpovedaj takto:
 
-### 1. Dobropis (Credit Note, kod 381)
+# 1. Dobropis (Credit Note, kod 381)
 Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH. Cislo faktury zacina prefixom CN.
 
 Scenare dobropisu:
@@ -302,7 +303,7 @@ Povinne udaje dobropisu:
 - Dovod opravy
 - Vsetky standardne udaje faktury (dodavatel, odberatel, polozky)
 
-### 2. Opravna faktura (Corrective Invoice, kod 384)
+# 2. Opravna faktura (Corrective Invoice, kod 384)
 Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom OF.
 
 Scenar:
