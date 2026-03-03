@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
 
-export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rate' | 'freeform'
+export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rate' | 'discount' | 'freeform'
 
 const SK_VAT_RATES = [
   { value: 23, label: '23%' },
@@ -128,6 +128,15 @@ const scenarios = [
     bgActive: 'bg-emerald-500/20 border-emerald-500/50 ring-2 ring-emerald-500/30',
   },
   {
+    id: 'discount' as const,
+    icon: Tag,
+    label: 'Poskytnutie zľavy',
+    desc: 'Dobropis na zľavu z položiek',
+    color: 'text-pink-400',
+    bg: 'bg-pink-500/10 hover:bg-pink-500/20 border-pink-500/20',
+    bgActive: 'bg-pink-500/20 border-pink-500/50 ring-2 ring-pink-500/30',
+  },
+  {
     id: 'freeform' as const,
     icon: PenLine,
     label: 'Zmena údajov',
@@ -158,6 +167,13 @@ export function CorrectionWizard({ original, onApply }: Props) {
   const [vatOverrides, setVatOverrides] = useState<Record<number, number>>(
     Object.fromEntries(original.items.map((it, i) => [i, it.vat_rate]))
   )
+
+  // For discount scenario: per-line discount percentage
+  const [discountPercents, setDiscountPercents] = useState<Record<number, number>>(
+    Object.fromEntries(original.items.map((_it, i) => [i, 0]))
+  )
+  // For discount scenario: apply same % to all lines
+  const [uniformDiscount, setUniformDiscount] = useState(0)
 
   // For freeform (Zmena údajov): editable item descriptions
   const [itemDescOverrides, setItemDescOverrides] = useState<Record<number, string>>(
@@ -365,6 +381,41 @@ export function CorrectionWizard({ original, onApply }: Props) {
         correctionItems = vatLines
         break
       }
+      case 'discount': {
+        reason = 'Poskytnutie zľavy'
+        correctionItems = original.items
+          .map((it, idx) => {
+            const pct = discountPercents[idx] ?? 0
+            if (pct <= 0) return null
+            const discountAmount = r2(it.line_total * pct / 100)
+            return {
+              line_number: idx + 1,
+              description: `${it.description} (zľava ${pct}%)`,
+              quantity: it.quantity,
+              unit: it.unit,
+              unit_price: r2(discountAmount / it.quantity),
+              vat_category: it.vat_category || 'S',
+              vat_rate: it.vat_rate,
+              discount_percent: 0,
+              discount_amount: 0,
+              line_total: discountAmount,
+              item_number: it.item_number,
+              buyer_item_number: it.buyer_item_number,
+            }
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null)
+
+        if (correctionItems.length === 0) {
+          correctionItems = [{
+            line_number: 1, description: 'Zľava', quantity: 1,
+            unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: original.items[0]?.vat_rate || 23,
+            discount_percent: 0, discount_amount: 0, line_total: 0,
+            item_number: null, buyer_item_number: null,
+          }]
+        }
+        correctionItems = correctionItems.map((it, i) => ({ ...it, line_number: i + 1 }))
+        break
+      }
       case 'freeform': {
         const changeDescriptions = freeformChanges.map(c =>
           `${c.label}: "${c.from || '(prázdne)'}" → "${c.to || '(prázdne)'}"`
@@ -543,6 +594,83 @@ export function CorrectionWizard({ original, onApply }: Props) {
       )}
 
 
+
+      {/* Discount UI */}
+      {selected === 'discount' && (
+        <GlassCard>
+          <h3 className="text-sm font-medium text-foreground mb-3">Nastavte zľavu</h3>
+
+          {/* Uniform discount */}
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-pink-500/10 border border-pink-500/20">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Rovnaká zľava na všetky položky</p>
+              <p className="text-xs text-muted-foreground">Aplikuje rovnaké % na každú položku</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={uniformDiscount}
+                onChange={(e) => {
+                  const val = Number(e.target.value)
+                  setUniformDiscount(val)
+                  setDiscountPercents(Object.fromEntries(original.items.map((_it, i) => [i, val])))
+                }}
+                className="w-20 px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm text-right"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          </div>
+
+          {/* Per-line discounts */}
+          <p className="text-xs text-muted-foreground mb-2">Alebo nastavte zľavu jednotlivo:</p>
+          <div className="space-y-2">
+            {original.items.map((it, idx) => {
+              const pct = discountPercents[idx] ?? 0
+              const discountAmt = r2(it.line_total * pct / 100)
+              return (
+                <div key={idx} className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${pct > 0 ? 'bg-pink-500/10 border border-pink-500/20' : 'bg-secondary/30'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{it.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {it.quantity} {it.unit} x {it.unit_price.toFixed(2)} EUR = {it.line_total.toFixed(2)} EUR
+                    </p>
+                    {pct > 0 && (
+                      <p className="text-xs text-pink-400 mt-0.5">Zľava: {discountAmt.toFixed(2)} EUR</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={pct}
+                      onChange={(e) => setDiscountPercents(prev => ({ ...prev, [idx]: Number(e.target.value) }))}
+                      className="w-20 px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm text-right"
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Total summary */}
+          {Object.values(discountPercents).some(p => p > 0) && (
+            <div className="mt-3 p-3 rounded-lg bg-pink-500/10 border border-pink-500/20">
+              <p className="text-xs font-medium text-pink-400">Celková zľava (dobropis):</p>
+              <p className="text-sm font-bold text-foreground mt-1">
+                {original.items
+                  .reduce((sum, it, idx) => sum + r2(it.line_total * (discountPercents[idx] ?? 0) / 100), 0)
+                  .toFixed(2)} EUR
+              </p>
+            </div>
+          )}
+        </GlassCard>
+      )}
 
       {/* Freeform: editable item descriptions */}
       {selected === 'freeform' && original.items.length > 0 && (

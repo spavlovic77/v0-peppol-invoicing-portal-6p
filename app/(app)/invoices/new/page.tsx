@@ -637,8 +637,8 @@ export default function NewInvoicePage() {
       return updated
     })
     setCorrectionStep('form')
-    // Freeform (Zmena údajov) already has all data edited -> go directly to Súhrn
-    if (scenario === 'freeform') {
+    // Freeform and Discount already have all data edited -> go directly to Súhrn
+    if (scenario === 'freeform' || scenario === 'discount') {
       setStep(3)
     } else {
       setStep(2) // Other scenarios -> Items step for review
