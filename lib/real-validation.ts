@@ -158,6 +158,7 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
       xsdResults
     ),
     apiConfirmed: true,
+    validatorName: 'ion-docval' as const,
   }
   const phase2 = {
     ...buildPhaseFromResults(
@@ -166,6 +167,7 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
       enResults
     ),
     apiConfirmed: true,
+    validatorName: 'ion-docval' as const,
   }
   const phase3 = {
     ...buildPhaseFromResults(
@@ -174,6 +176,7 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
       peppolResults
     ),
     apiConfirmed: true,
+    validatorName: 'ion-docval' as const,
   }
 
   return [phase1, phase2, phase3]
@@ -301,6 +304,7 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
       xsdResults
     ),
     apiConfirmed: true,
+    validatorName: 'peppolvalidator' as const,
   }
   const phase2 = {
     ...buildPhaseFromResults(
@@ -309,6 +313,7 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
       enResults
     ),
     apiConfirmed: true,
+    validatorName: 'peppolvalidator' as const,
   }
   const phase3 = {
     ...buildPhaseFromResults(
@@ -317,6 +322,7 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
       peppolResults
     ),
     apiConfirmed: true,
+    validatorName: 'peppolvalidator' as const,
   }
 
   return [phase1, phase2, phase3]

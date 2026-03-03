@@ -19,8 +19,10 @@ interface ValidationPhase {
   results: ValidationResult[]
   passed: boolean
   simulated?: boolean
-  /** true when peppolvalidator.com confirmed this phase */
+  /** true when an external API confirmed this phase */
   apiConfirmed?: boolean
+  /** Which validator produced this result */
+  validatorName?: 'ion-docval' | 'peppolvalidator' | 'js'
 }
 
 interface Props {
@@ -53,6 +55,14 @@ export function ValidationDisplay({ phases }: Props) {
     0
   )
 
+  // Determine which validator was used (from the first API-confirmed phase)
+  const usedValidator = phases.find((p) => p.validatorName && p.validatorName !== 'js')?.validatorName
+  const validatorLabel = usedValidator === 'ion-docval'
+    ? 'ion-docval'
+    : usedValidator === 'peppolvalidator'
+      ? 'peppolvalidator.com'
+      : null
+
   return (
     <GlassCard className={allPassed ? 'border-success/20' : 'border-destructive/20'}>
       {/* Top-level accordion header */}
@@ -73,6 +83,11 @@ export function ValidationDisplay({ phases }: Props) {
           <div className="text-left">
             <h3 className="font-semibold text-foreground text-sm sm:text-base">
               {allPassed ? 'Faktúra je validná' : 'Faktúra obsahuje chyby'}
+              {validatorLabel && (
+                <span className="text-xs font-normal text-muted-foreground ml-1">
+                  ({validatorLabel})
+                </span>
+              )}
             </h3>
             <p className="text-xs text-muted-foreground">
               {passedRules}/{totalRules} pravidiel splnených
@@ -122,7 +137,8 @@ export function ValidationDisplay({ phases }: Props) {
               <li><span className="font-medium text-foreground/70">Peppol BIS 3.0</span> -- pravidla OpenPEPPOL (PEPPOL-EN16931-R*) schematronu</li>
             </ol>
             <p className="pt-0.5">
-              Primarne: <span className="font-mono text-[10px]">peppolvalidator.com</span> API (fazy 2-4).
+              Primarne: <span className="font-mono text-[10px]">ion-docval</span> (Fly.io).
+              Sekundarne: <span className="font-mono text-[10px]">peppolvalidator.com</span> API.
               Fallback: JS simulacia s kontrolou poradia elementov.
             </p>
           </div>
@@ -166,7 +182,7 @@ export function ValidationDisplay({ phases }: Props) {
                         {phase.apiConfirmed && (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-medium">
                             <Globe className="w-3 h-3" />
-                            Schematron API
+                            {phase.validatorName === 'ion-docval' ? 'ion-docval' : 'peppolvalidator.com'}
                           </span>
                         )}
                         {phase.simulated && !phase.apiConfirmed && (
