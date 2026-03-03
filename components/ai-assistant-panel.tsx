@@ -5,10 +5,8 @@ import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 
 const SUGGESTIONS = [
-  'Nie som plátca DPH. Musím vedieť prijať e-faktúru?',
   'Vysvetli mi ako mám zaokrúhľovať tak, aby bola faktúra platná',
-  'Ako mám vytvárať opravné faktúry?',
-  'Kto musí vystavovať elektronickú faktúru na Slovensku? Od kedy?',
+  'Ako mám vytvárať opravné faktúry?'
 ]
 
 interface ChatMsg {

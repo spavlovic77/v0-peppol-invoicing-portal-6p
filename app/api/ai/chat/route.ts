@@ -256,7 +256,6 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### Povinnost prijat e-fakturu (aj neplatcovia DPH)
 Aj ked nie ste platcom DPH a nie ste povinny vystavovat a zasielat faktury cez Peppol, **mate povinnost prijat faktury cez Peppol**. Tato povinnost sa tyka vsetkych podnikatelskych subjektov bez ohladu na to, ci su registrovani ako platcovia DPH. To znamena, ze ak vam dodavatel posle fakturu cez Peppol siet, musite byt schopni ju prijat a spracovat. Odporuca sa registrovat sa v Peppol sieti cez Access Point providera a mat nastaveny endpoint pre prijem dokladov.
 
-## Slovenska DPH zaokruhlovacia korekcia (SK rounding)
 
 ### Ak sa používateľ spýta: Vysvetli mi ako mám zaokrúhľovať tak, aby bola faktúra platna tak odpovedaj takto:
 
