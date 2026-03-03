@@ -21,6 +21,20 @@ interface OriginalInvoice {
   invoice_number: string
   issue_date: string
   buyer_name: string
+  buyer_ico: string
+  buyer_dic: string
+  buyer_ic_dph: string
+  buyer_street: string
+  buyer_city: string
+  buyer_postal_code: string
+  buyer_country_code: string
+  buyer_email: string
+  buyer_peppol_id: string
+  buyer_reference: string
+  order_reference: string
+  delivery_date: string
+  note: string
+  payment_means_code: string
   items: {
     description: string
     quantity: number
@@ -34,6 +48,41 @@ interface OriginalInvoice {
     discount_amount: number
     line_total: number
   }[]
+}
+
+// Non-financial editable fields for "Zmena údajov" (384)
+interface EditableFields {
+  buyer_name: string
+  buyer_ico: string
+  buyer_dic: string
+  buyer_ic_dph: string
+  buyer_street: string
+  buyer_city: string
+  buyer_postal_code: string
+  buyer_country_code: string
+  buyer_email: string
+  buyer_peppol_id: string
+  buyer_reference: string
+  order_reference: string
+  delivery_date: string
+  note: string
+}
+
+const FIELD_LABELS: Record<keyof EditableFields, string> = {
+  buyer_name: 'Názov odberateľa',
+  buyer_ico: 'IČO odberateľa',
+  buyer_dic: 'DIČ odberateľa',
+  buyer_ic_dph: 'IČ DPH odberateľa',
+  buyer_street: 'Ulica odberateľa',
+  buyer_city: 'Mesto odberateľa',
+  buyer_postal_code: 'PSČ odberateľa',
+  buyer_country_code: 'Krajina odberateľa',
+  buyer_email: 'Email odberateľa',
+  buyer_peppol_id: 'Peppol ID odberateľa',
+  buyer_reference: 'Referencia odberateľa',
+  order_reference: 'Číslo objednávky',
+  delivery_date: 'Dátum dodania',
+  note: 'Poznámka',
 }
 
 interface Props {
@@ -109,6 +158,48 @@ export function CorrectionWizard({ original, onApply }: Props) {
   const [vatOverrides, setVatOverrides] = useState<Record<number, number>>(
     Object.fromEntries(original.items.map((it, i) => [i, it.vat_rate]))
   )
+
+  // For freeform (Zmena údajov): editable item descriptions
+  const [itemDescOverrides, setItemDescOverrides] = useState<Record<number, string>>(
+    Object.fromEntries(original.items.map((it, i) => [i, it.description]))
+  )
+
+  // For freeform (Zmena údajov): editable non-financial fields
+  const [freeformFields, setFreeformFields] = useState<EditableFields>({
+    buyer_name: original.buyer_name || '',
+    buyer_ico: original.buyer_ico || '',
+    buyer_dic: original.buyer_dic || '',
+    buyer_ic_dph: original.buyer_ic_dph || '',
+    buyer_street: original.buyer_street || '',
+    buyer_city: original.buyer_city || '',
+    buyer_postal_code: original.buyer_postal_code || '',
+    buyer_country_code: original.buyer_country_code || 'SK',
+    buyer_email: original.buyer_email || '',
+    buyer_peppol_id: original.buyer_peppol_id || '',
+    buyer_reference: original.buyer_reference || '',
+    order_reference: original.order_reference || '',
+    delivery_date: original.delivery_date || '',
+    note: original.note || '',
+  })
+
+  // Compute which freeform fields were changed
+  const freeformChanges: { label: string; from: string; to: string }[] = []
+  if (selected === 'freeform') {
+    for (const key of Object.keys(FIELD_LABELS) as (keyof EditableFields)[]) {
+      const origVal = (original[key] as string) || ''
+      const newVal = freeformFields[key] || ''
+      if (origVal !== newVal) {
+        freeformChanges.push({ label: FIELD_LABELS[key], from: origVal, to: newVal })
+      }
+    }
+    // Item description changes
+    original.items.forEach((it, idx) => {
+      const newDesc = itemDescOverrides[idx] ?? it.description
+      if (newDesc !== it.description) {
+        freeformChanges.push({ label: `Položka ${idx + 1} (názov)`, from: it.description, to: newDesc })
+      }
+    })
+  }
 
   const r2 = (n: number) => Math.round(n * 100) / 100
 
@@ -275,16 +366,48 @@ export function CorrectionWizard({ original, onApply }: Props) {
         break
       }
       case 'freeform': {
-        reason = 'Zmena údajov - opravná faktúra bez dopadu na DPH'
-        correctionItems = [{
-          line_number: 1, description: 'Oprava údajov (bez finančného dopadu)', quantity: 0,
-          unit: 'C62', unit_price: 0, vat_category: original.items[0]?.vat_category || 'S', vat_rate: original.items[0]?.vat_rate || 23,
-          discount_percent: 0, discount_amount: 0, line_total: 0,
-          item_number: null, buyer_item_number: null,
-        }]
+        const changeDescriptions = freeformChanges.map(c =>
+          `${c.label}: "${c.from || '(prázdne)'}" → "${c.to || '(prázdne)'}"`
+        )
+        reason = changeDescriptions.length > 0
+          ? `Zmena údajov: ${changeDescriptions.join('; ')}`
+          : 'Zmena údajov - opravná faktúra bez dopadu na DPH'
+        // Use original items with zero values but updated descriptions
+        correctionItems = original.items.map((it, idx) => ({
+          line_number: idx + 1,
+          description: itemDescOverrides[idx] ?? it.description,
+          quantity: 0,
+          unit: it.unit,
+          unit_price: 0,
+          vat_category: it.vat_category || 'S',
+          vat_rate: it.vat_rate,
+          discount_percent: 0,
+          discount_amount: 0,
+          line_total: 0,
+          item_number: it.item_number,
+          buyer_item_number: it.buyer_item_number,
+        }))
         break
       }
     }
+
+    // For freeform (384), also include the corrected non-financial fields
+    const freeformUpdates: Partial<InvoiceFormData> = selected === 'freeform' ? {
+      buyer_name: freeformFields.buyer_name,
+      buyer_ico: freeformFields.buyer_ico,
+      buyer_dic: freeformFields.buyer_dic,
+      buyer_ic_dph: freeformFields.buyer_ic_dph,
+      buyer_street: freeformFields.buyer_street,
+      buyer_city: freeformFields.buyer_city,
+      buyer_postal_code: freeformFields.buyer_postal_code,
+      buyer_country_code: freeformFields.buyer_country_code,
+      buyer_email: freeformFields.buyer_email,
+      buyer_peppol_id: freeformFields.buyer_peppol_id,
+      buyer_reference: freeformFields.buyer_reference,
+      order_reference: freeformFields.order_reference,
+      delivery_date: freeformFields.delivery_date,
+      note: `${baseNote}\n${freeformFields.note || ''}`.trim(),
+    } : {}
 
     onApply({
       items: correctionItems,
@@ -294,6 +417,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
       correction_reason: reason,
       billing_reference_number: original.invoice_number,
       billing_reference_date: original.issue_date,
+      ...freeformUpdates,
     }, selected, docType)
   }
 
@@ -419,6 +543,100 @@ export function CorrectionWizard({ original, onApply }: Props) {
       )}
 
 
+
+      {/* Freeform: editable item descriptions */}
+      {selected === 'freeform' && original.items.length > 0 && (
+        <GlassCard>
+          <h3 className="text-sm font-medium text-foreground mb-1">Položky</h3>
+          <p className="text-xs text-muted-foreground mb-3">Upravte názvy položiek ak sú nesprávne.</p>
+          <div className="space-y-2">
+            {original.items.map((it, idx) => {
+              const currentDesc = itemDescOverrides[idx] ?? it.description
+              const isChanged = currentDesc !== it.description
+              return (
+                <div key={idx} className={`p-2.5 rounded-lg transition-colors ${isChanged ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-secondary/30'}`}>
+                  <label className="block text-xs text-muted-foreground mb-1">
+                    Položka {idx + 1}
+                    {isChanged && <span className="text-violet-400 ml-1">(zmenené)</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={currentDesc}
+                    onChange={(e) => setItemDescOverrides(prev => ({ ...prev, [idx]: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm"
+                  />
+                  {isChanged && (
+                    <p className="text-xs text-muted-foreground mt-1">Pôvodne: {it.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">{it.quantity} {it.unit} x {it.unit_price.toFixed(2)} EUR ({it.vat_rate}% DPH)</p>
+                </div>
+              )
+            })}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Freeform: editable non-financial fields */}
+      {selected === 'freeform' && (
+        <GlassCard>
+          <h3 className="text-sm font-medium text-foreground mb-1">Ostatné údaje</h3>
+          <p className="text-xs text-muted-foreground mb-4">Zmeňte údaje, ktoré chcete opraviť. Dôvod opravy sa vyplní automaticky.</p>
+          <div className="space-y-3">
+            {(Object.keys(FIELD_LABELS) as (keyof EditableFields)[]).map((key) => {
+              const origVal = (original[key] as string) || ''
+              const currentVal = freeformFields[key] || ''
+              const isChanged = origVal !== currentVal
+              return (
+                <div key={key} className={`p-2.5 rounded-lg transition-colors ${isChanged ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-secondary/30'}`}>
+                  <label className="block text-xs text-muted-foreground mb-1">
+                    {FIELD_LABELS[key]}
+                    {isChanged && <span className="text-violet-400 ml-1">(zmenené)</span>}
+                  </label>
+                  {key === 'note' ? (
+                    <textarea
+                      value={currentVal}
+                      onChange={(e) => setFreeformFields(prev => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm resize-none"
+                      rows={2}
+                    />
+                  ) : key === 'delivery_date' ? (
+                    <input
+                      type="date"
+                      value={currentVal}
+                      onChange={(e) => setFreeformFields(prev => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={currentVal}
+                      onChange={(e) => setFreeformFields(prev => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm"
+                    />
+                  )}
+                  {isChanged && origVal && (
+                    <p className="text-xs text-muted-foreground mt-1">Pôvodne: {origVal}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Change summary */}
+          {freeformChanges.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <p className="text-xs font-medium text-violet-400 mb-1">Zhrnutie zmien ({freeformChanges.length})</p>
+              <ul className="text-xs text-muted-foreground space-y-0.5">
+                {freeformChanges.map((c, i) => (
+                  <li key={i}>
+                    <span className="text-foreground">{c.label}</span>: {c.from || '(prázdne)'} &rarr; <span className="text-violet-400">{c.to || '(prázdne)'}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </GlassCard>
+      )}
 
       {/* Apply button */}
       {selected && (

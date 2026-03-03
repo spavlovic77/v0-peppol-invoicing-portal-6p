@@ -74,8 +74,12 @@ export default function NewInvoicePage() {
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
 
   const [originalInvoice, setOriginalInvoice] = useState<{
-    id: string; invoice_number: string; issue_date: string; buyer_name: string;
-    items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
+  id: string; invoice_number: string; issue_date: string; buyer_name: string;
+  buyer_ico: string; buyer_dic: string; buyer_ic_dph: string;
+  buyer_street: string; buyer_city: string; buyer_postal_code: string; buyer_country_code: string;
+  buyer_email: string; buyer_peppol_id: string; buyer_reference: string; order_reference: string;
+  delivery_date: string; note: string; payment_means_code: string;
+  items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
   } | null>(null)
 
   const [formData, setFormData] = useState<InvoiceFormData>({
@@ -246,11 +250,25 @@ export default function NewInvoicePage() {
       const { data: srcInv } = await supabase.from('invoices').select('*').eq('id', correctId).eq('user_id', user.id).single()
       const { data: srcItems } = await supabase.from('invoice_items').select('*').eq('invoice_id', correctId).order('line_number')
       if (srcInv && srcItems) {
-        setOriginalInvoice({
-          id: srcInv.id,
-          invoice_number: srcInv.invoice_number,
-          issue_date: srcInv.issue_date,
-          buyer_name: srcInv.buyer_name,
+  setOriginalInvoice({
+  id: srcInv.id,
+  invoice_number: srcInv.invoice_number,
+  issue_date: srcInv.issue_date,
+  buyer_name: srcInv.buyer_name || '',
+  buyer_ico: srcInv.buyer_ico || '',
+  buyer_dic: srcInv.buyer_dic || '',
+  buyer_ic_dph: srcInv.buyer_ic_dph || '',
+  buyer_street: srcInv.buyer_street || '',
+  buyer_city: srcInv.buyer_city || '',
+  buyer_postal_code: srcInv.buyer_postal_code || '',
+  buyer_country_code: srcInv.buyer_country_code || 'SK',
+  buyer_email: srcInv.buyer_email || '',
+  buyer_peppol_id: srcInv.buyer_peppol_id || '',
+  buyer_reference: srcInv.buyer_reference || '',
+  order_reference: srcInv.order_reference || '',
+  delivery_date: srcInv.delivery_date || '',
+  note: srcInv.note || '',
+  payment_means_code: srcInv.payment_means_code || '30',
           items: srcItems.map((it: Record<string, unknown>) => ({
             description: it.description as string,
             quantity: it.quantity as number,
