@@ -199,9 +199,7 @@ export function AiAssistantPanel() {
                     <Sparkles className="w-6 h-6 text-primary" />
                   </div>
                   <h4 className="text-sm font-semibold text-foreground mb-1">Ahoj! Som tvoj e-fakturacny asistent.</h4>
-                  <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
-                    Spytaj sa ma na pravidla UBL 2.1, EN16931, Peppol BIS 3.0 alebo slovensku DPH legislativu.
-                  </p>
+
                   <div className="grid grid-cols-1 gap-2 w-full">
                     {SUGGESTIONS.map((s) => (
                       <button
