@@ -6,8 +6,8 @@ import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 
 const SUGGESTIONS = [
   'Nie som plátca DPH. Musím vedieť prijať e-faktúru?',
-  'Čo je to elektronická faktúra?',
-  'Čo je to Peppol?',
+  'Som výrobca SW, ako mám nastaviť zaokrúhľovanie?',
+  'Ako mám vytvárať opravné faktúry?',
   'Kto musí vystavovať elektronickú faktúru na Slovensku? Od kedy?',
 ]
 
