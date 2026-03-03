@@ -6,7 +6,8 @@
  *  2. EN 16931   — CEN schematron business rules (BR-*)
  *  3. Peppol BIS — OpenPEPPOL schematron rules (PEPPOL-EN16931-R*)
  *
- * Primary:  peppolvalidator.com API (runs all 3 layers in one call)
+ * Primary:  ion-docval on Fly.io (XSD + EN16931 XSLT + Peppol Schematron)
+ * Secondary: peppolvalidator.com API (runs all 3 layers in one call)
  * Fallback: JS simulation + XSD element order checks
  */
 
@@ -14,7 +15,12 @@ import type { ValidationPhase, ValidationResult } from './validation'
 import { validateStructure, validateEN16931, validatePeppolSchematron } from './validation'
 import type { PeppolInvoice } from './schemas'
 
-// ─── peppolvalidator.com API ─────────────────────────────────────────────────
+// ─── ion-docval on Fly.io (primary) ─────────────────────────────────────────
+
+const ION_DOCVAL_URL = 'https://peppol-validator.fly.dev/api/validate'
+const ION_DOCVAL_TIMEOUT_MS = 15_000
+
+// ─── peppolvalidator.com API (secondary) ─────────────────────────────────────
 
 const VALIDATOR_URL = 'https://peppolvalidator.com/api/v1/validate'
 const API_TIMEOUT_MS = 20_000
@@ -33,6 +39,147 @@ interface ApiResponse {
   errors?: ApiItem[]
   warnings?: ApiItem[]
 }
+
+// ─── ion-docval types & helpers ──────────────────────────────────────────────
+
+interface IonDocvalItem {
+  test?: string
+  message?: string
+  line?: number
+  column?: number
+  location?: string
+}
+
+interface IonDocvalResponse {
+  errors: IonDocvalItem[]
+  warnings: IonDocvalItem[]
+  error_count: number
+  warning_count: number
+  document_type?: string
+}
+
+/**
+ * Classifies an ion-docval item into one of the 3 phases.
+ * ion-docval `test` field is either "XML Schema", "Validator selection",
+ * or the Schematron XPath test expression.
+ * The rule ID (e.g. [BR-06]) is embedded in the `message` field.
+ */
+function classifyIonDocvalItem(item: IonDocvalItem): 'xsd' | 'en' | 'peppol' {
+  const test = (item.test ?? '').toLowerCase()
+  if (test === 'xml schema' || test === 'validator selection') return 'xsd'
+
+  const msg = item.message ?? ''
+  // Extract rule ID from message like "[BR-06]-An Invoice shall..."
+  const ruleMatch = msg.match(/^\[([A-Z0-9-]+)\]/)
+  if (ruleMatch) {
+    const ruleId = ruleMatch[1]
+    if (ruleId.startsWith('PEPPOL')) return 'peppol'
+    if (ruleId.startsWith('BR')) return 'en'
+  }
+
+  // Heuristic from test expression
+  if (test.includes('cvc-') || test.includes('schema')) return 'xsd'
+  if (item.location?.includes('ubl-invoice:') || item.location?.includes('ubl-creditnote:')) return 'peppol'
+
+  return 'en'
+}
+
+function ionDocvalItemToResult(item: IonDocvalItem, passed: boolean, severity: 'error' | 'warning'): ValidationResult {
+  const msg = item.message ?? `Rule violated: ${item.test}`
+  // Extract rule ID from message "[BR-06]-..." or use the test field
+  const ruleMatch = msg.match(/^\[([A-Z0-9-]+)\]/)
+  const rule = ruleMatch ? ruleMatch[1] : (item.test ?? 'UNKNOWN')
+
+  return {
+    rule,
+    severity,
+    message: msg,
+    passed,
+    source: 'api' as const,
+  }
+}
+
+async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, ValidationPhase, ValidationPhase]> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ION_DOCVAL_TIMEOUT_MS)
+
+  let body: IonDocvalResponse
+  try {
+    const res = await fetch(ION_DOCVAL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body: xml,
+      signal: controller.signal,
+    })
+    if (!res.ok) throw new Error(`ion-docval HTTP ${res.status}`)
+    body = await res.json() as IonDocvalResponse
+  } finally {
+    clearTimeout(timer)
+  }
+
+  const selfBilling = isSelfBillingXml(xml)
+  const corrective384 = isCorrectiveInvoice384Xml(xml)
+
+  const xsdResults: ValidationResult[] = []
+  const enResults: ValidationResult[] = []
+  const peppolResults: ValidationResult[] = []
+
+  const bucketMap = { xsd: xsdResults, en: enResults, peppol: peppolResults }
+
+  for (const item of body.errors) {
+    const msg = item.message ?? ''
+    const ruleMatch = msg.match(/^\[([A-Z0-9-]+)\]/)
+    const ruleId = ruleMatch ? ruleMatch[1] : ''
+
+    // Suppress false positives for self-billing URNs
+    if (selfBilling && SELF_BILLING_SUPPRESSED_RULES.has(ruleId)) {
+      peppolResults.push(ionDocvalItemToResult(item, true, 'warning'))
+      continue
+    }
+    // Suppress P0112 for corrective invoices (384)
+    if (corrective384 && CORRECTIVE_384_SUPPRESSED_RULES.has(ruleId)) {
+      peppolResults.push(ionDocvalItemToResult(item, true, 'warning'))
+      continue
+    }
+
+    const bucket = bucketMap[classifyIonDocvalItem(item)]
+    bucket.push(ionDocvalItemToResult(item, false, 'error'))
+  }
+
+  for (const item of body.warnings) {
+    const bucket = bucketMap[classifyIonDocvalItem(item)]
+    bucket.push(ionDocvalItemToResult(item, true, 'warning'))
+  }
+
+  const phase1 = {
+    ...buildPhaseFromResults(
+      'UBL 2.1 XSD validacia',
+      'OASIS UBL 2.1 schema — element poradie, typy, atributy, menove priestory',
+      xsdResults
+    ),
+    apiConfirmed: true,
+  }
+  const phase2 = {
+    ...buildPhaseFromResults(
+      'EN16931 pravidla',
+      'Europske obchodne pravidla pre e-fakturaciu (CEN schematron)',
+      enResults
+    ),
+    apiConfirmed: true,
+  }
+  const phase3 = {
+    ...buildPhaseFromResults(
+      'Peppol BIS 3.0 pravidla',
+      'OpenPEPPOL BIS Billing 3.0 schematron pravidla',
+      peppolResults
+    ),
+    apiConfirmed: true,
+  }
+
+  return [phase1, phase2, phase3]
+}
+
+// ─── peppolvalidator.com helpers ────────────────────────────────────────────
 
 /**
  * Classifies a validation item into one of the 3 phases:
@@ -426,13 +573,45 @@ function mergePhaseResults(apiPhase: ValidationPhase, jsPhase: ValidationPhase):
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
+ * Processes API validation results: applies strict-order logic and merges with JS rules.
+ */
+function processApiResults(
+  structPhase: ValidationPhase,
+  apiPhases: [ValidationPhase, ValidationPhase, ValidationPhase],
+  xml: string,
+  inv: PeppolInvoice
+): ValidationPhase[] {
+  const [xsdPhase, enPhase, peppolPhase] = apiPhases
+
+  // Strict order: stop at first failing layer
+  if (!xsdPhase.passed) {
+    return [structPhase, xsdPhase]
+  }
+  if (!enPhase.passed) {
+    return [structPhase, xsdPhase, enPhase]
+  }
+
+  // API succeeded -- enrich passing phases with JS rule details
+  const jsXsd = validateXsdElementOrder(xml)
+  const jsEn = validateEN16931(inv)
+  const jsPeppol = validatePeppolSchematron(inv)
+
+  const mergedXsd = mergePhaseResults(xsdPhase, jsXsd)
+  const mergedEn = mergePhaseResults(enPhase, jsEn)
+  const mergedPeppol = mergePhaseResults(peppolPhase, jsPeppol)
+
+  return [structPhase, mergedXsd, mergedEn, mergedPeppol]
+}
+
+/**
  * Validates a Peppol invoice using strict 3-layer pipeline:
  *  1. UBL 2.1 XSD (element order, types, namespaces)
  *  2. EN 16931 CEN schematron (BR-* business rules)
  *  3. Peppol BIS 3.0 schematron (PEPPOL-EN16931-R* rules)
  *
- * Primary:  peppolvalidator.com API
- * Fallback: JS simulation with XSD element order checks
+ * Primary:   ion-docval on Fly.io (XSD + EN16931 XSLT + Peppol Schematron)
+ * Secondary: peppolvalidator.com API
+ * Fallback:  JS simulation with XSD element order checks
  *
  * Validation stops at first failing layer (strict order).
  */
@@ -446,31 +625,22 @@ export async function validateInvoiceXml(
     return [structPhase]
   }
 
-  // ── Primary: peppolvalidator.com API ────────────────────────────────────────
+  // ── Primary: ion-docval on Fly.io ──────────────────────────────────────────
   try {
-    const [xsdPhase, enPhase, peppolPhase] = await validateViaApi(xml)
-
-    // Strict order: stop at first failing layer
-    if (!xsdPhase.passed) {
-      return [structPhase, xsdPhase]
-    }
-    if (!enPhase.passed) {
-      return [structPhase, xsdPhase, enPhase]
-    }
-
-    // API succeeded -- enrich passing phases with JS rule details
-    // so users can see exactly what was checked, not just an empty list.
-    const jsXsd = validateXsdElementOrder(xml)
-    const jsEn = validateEN16931(inv)
-    const jsPeppol = validatePeppolSchematron(inv)
-
-    const mergedXsd = mergePhaseResults(xsdPhase, jsXsd)
-    const mergedEn = mergePhaseResults(enPhase, jsEn)
-    const mergedPeppol = mergePhaseResults(peppolPhase, jsPeppol)
-
-    return [structPhase, mergedXsd, mergedEn, mergedPeppol]
+    const apiPhases = await validateViaIonDocval(xml)
+    console.log('[validation] ion-docval (Fly.io) succeeded')
+    return processApiResults(structPhase, apiPhases, xml, inv)
   } catch (err) {
-    console.error('[validation] peppolvalidator.com API failed, using JS fallback:', (err as Error).message)
+    console.error('[validation] ion-docval (Fly.io) failed:', (err as Error).message)
+  }
+
+  // ── Secondary: peppolvalidator.com API ─────────────────────────────────────
+  try {
+    const apiPhases = await validateViaApi(xml)
+    console.log('[validation] peppolvalidator.com succeeded (fallback)')
+    return processApiResults(structPhase, apiPhases, xml, inv)
+  } catch (err) {
+    console.error('[validation] peppolvalidator.com also failed, using JS fallback:', (err as Error).message)
   }
 
   // ── Fallback: JS simulation + XSD element order checks ─────────────────────
