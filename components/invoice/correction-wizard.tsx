@@ -8,6 +8,13 @@ import { fmtDate } from '@/lib/utils'
 
 export type CorrectionScenario = 'full_storno' | 'quantity' | 'price' | 'vat_rate' | 'discount' | 'freeform'
 
+const UNIT_MAP: Record<string, string> = {
+  C62: 'ks', HUR: 'hod', DAY: 'deň', MON: 'mes', KGM: 'kg',
+  MTR: 'm', LTR: 'l', MTK: 'm²', MTQ: 'm³', KMT: 'km',
+  TNE: 't', SET: 'sada', XPK: 'bal',
+}
+function unitLabel(code: string): string { return UNIT_MAP[code] || code }
+
 const SK_VAT_RATES = [
   { value: 23, label: '23%' },
   { value: 19, label: '19%' },
@@ -516,7 +523,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
               <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground truncate">{it.description}</p>
-                  <p className="text-xs text-muted-foreground">Povodne: {it.quantity} {it.unit}</p>
+                  <p className="text-xs text-muted-foreground">Pôvodne: {it.quantity} {unitLabel(it.unit)}</p>
                 </div>
                 <input
                   type="number"
@@ -635,7 +642,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground truncate">{it.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {it.quantity} {it.unit} x {it.unit_price.toFixed(2)} EUR = {it.line_total.toFixed(2)} EUR
+                      {it.quantity} {unitLabel(it.unit)} x {it.unit_price.toFixed(2)} EUR = {it.line_total.toFixed(2)} EUR
                     </p>
                     {pct > 0 && (
                       <p className="text-xs text-pink-400 mt-0.5">Zľava: {discountAmt.toFixed(2)} EUR</p>
@@ -696,7 +703,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
                   {isChanged && (
                     <p className="text-xs text-muted-foreground mt-1">Pôvodne: {it.description}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-0.5">{it.quantity} {it.unit} x {it.unit_price.toFixed(2)} EUR ({it.vat_rate}% DPH)</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{it.quantity} {unitLabel(it.unit)} x {it.unit_price.toFixed(2)} EUR ({it.vat_rate}% DPH)</p>
                 </div>
               )
             })}
