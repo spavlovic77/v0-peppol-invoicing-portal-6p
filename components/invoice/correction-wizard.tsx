@@ -38,7 +38,7 @@ interface OriginalInvoice {
 
 interface Props {
   original: OriginalInvoice
-  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381') => void
+  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381' | '384') => void
 }
 
 const scenarios = [
@@ -91,7 +91,9 @@ const scenarios = [
 
 export function CorrectionWizard({ original, onApply }: Props) {
   const [selected, setSelected] = useState<CorrectionScenario | null>(null)
-  const docType = '381' as const
+  // freeform (Zmena údajov) uses 384 (corrective invoice, no financial impact)
+  // all other scenarios use 381 (credit note)
+  const docType = selected === 'freeform' ? '384' as const : '381' as const
 
   // For quantity scenario: track new quantities per line
   const [qtyOverrides, setQtyOverrides] = useState<Record<number, number>>(
@@ -113,7 +115,9 @@ export function CorrectionWizard({ original, onApply }: Props) {
   function handleApply() {
     if (!selected) return
 
-    const baseNote = `Dobropis k FA ${original.invoice_number}`
+    const baseNote = selected === 'freeform'
+      ? `Opravná faktúra k FA ${original.invoice_number}`
+      : `Dobropis k FA ${original.invoice_number}`
 
     // Build items based on scenario
     let correctionItems: InvoiceFormData['items']
@@ -271,10 +275,10 @@ export function CorrectionWizard({ original, onApply }: Props) {
         break
       }
       case 'freeform': {
-        reason = 'Zmena údajov'
+        reason = 'Zmena údajov - opravná faktúra bez dopadu na DPH'
         correctionItems = [{
-          line_number: 1, description: '', quantity: 1,
-          unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: original.items[0]?.vat_rate || 23,
+          line_number: 1, description: 'Oprava údajov (bez finančného dopadu)', quantity: 0,
+          unit: 'C62', unit_price: 0, vat_category: original.items[0]?.vat_category || 'S', vat_rate: original.items[0]?.vat_rate || 23,
           discount_percent: 0, discount_amount: 0, line_total: 0,
           item_number: null, buyer_item_number: null,
         }]

@@ -92,6 +92,7 @@ export function buildPeppolInvoice(
   // Self-billing MUST use 389, regardless of what is stored
   const typeCode = isSelfBilling ? '389' : (invoice.invoice_type_code || '380')
   const isCreditNote381 = typeCode === '381'
+  const isCorrectiveInvoice384 = typeCode === '384'
   const isVatPayer = profile.is_vat_payer !== false
 
   // Non-VAT payer: force all items to category O (outside scope), 0% rate
@@ -107,7 +108,7 @@ export function buildPeppolInvoice(
   // ================================================================
   // 1. Build invoice lines with per-item discounts
   // For CreditNote (381): quantities and amounts are always POSITIVE
-  // For Negative Invoice (380): quantities can be negative
+  // For Corrective (384): quantities can be zero (no financial impact)
   // ================================================================
   const invoiceLines = items.map((item) => {
     const qty = isCreditNote381 ? Math.abs(item.quantity) : item.quantity

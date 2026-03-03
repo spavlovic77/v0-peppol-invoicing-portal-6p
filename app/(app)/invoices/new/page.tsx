@@ -607,7 +607,7 @@ export default function NewInvoicePage() {
   }
 
   // Correction wizard callback
-  function handleCorrectionApply(updates: Partial<InvoiceFormData>, _scenario: CorrectionScenario, _docType: '381') {
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, _scenario: CorrectionScenario, _docType: '381' | '384') {
     setFormData((prev) => ({ ...prev, ...updates }))
     setCorrectionStep('form')
     setStep(2) // Jump to Items step so user can review
@@ -618,7 +618,7 @@ export default function NewInvoicePage() {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dobropis</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravný doklad</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
           </p>
