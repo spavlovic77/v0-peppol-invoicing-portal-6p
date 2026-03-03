@@ -396,14 +396,19 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
   const isSelfBilling = invoiceMode === 'selfbilling'
   const isReverseCharge = invoiceMode === 'reversecharge'
 
-  const isCreditNote = String(invoice.invoice_type_code || '') === '381' ||
-    String(invoice.invoice_number || '').startsWith('CN-')
+  const typeCode = String(invoice.invoice_type_code || '')
+  const isCreditNote = typeCode === '381' || String(invoice.invoice_number || '').startsWith('CN-')
+  const isCorrectiveInvoice = typeCode === '384'
 
   let pdfTitle = 'FAKTÚRA'
   let pdfSubtitle = isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'
   if (isCreditNote) {
     pdfTitle = 'DOBROPIS'
     pdfSubtitle = 'Opravný daňový doklad'
+  }
+  if (isCorrectiveInvoice) {
+    pdfTitle = 'OPRAVNÁ FAKTÚRA'
+    pdfSubtitle = 'Opravný doklad bez dopadu na DPH (kód 384)'
   }
   if (isSelfBilling) {
     pdfTitle = 'SAMOFAKTÚRA'
@@ -438,8 +443,8 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         </View>
 
-        {/* BG-3: Billing reference for credit notes */}
-        {isCreditNote && (invoice.billing_reference_number || invoice.correction_of) && (
+        {/* BG-3: Billing reference for credit notes and corrective invoices */}
+        {(isCreditNote || isCorrectiveInvoice) && (invoice.billing_reference_number || invoice.correction_of) && (
           <View style={styles.noteBox}>
             <Text style={styles.noteLabel}>Odkaz na pôvodnú faktúru (BG-3)</Text>
             {invoice.billing_reference_number && (
