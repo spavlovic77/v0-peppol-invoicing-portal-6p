@@ -323,6 +323,7 @@ export default function NewInvoicePage() {
       nextNum = (seq.last_number || 0) + 1
     }
 
+    // Prefix determined later for corrections; default to CN for now
     const prefix = correctId ? 'CN' : 'FV'
     const invoiceNumber = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`
     setFormData((prev) => ({
@@ -625,10 +626,23 @@ export default function NewInvoicePage() {
   }
 
   // Correction wizard callback
-  function handleCorrectionApply(updates: Partial<InvoiceFormData>, _scenario: CorrectionScenario, _docType: '381' | '384') {
-    setFormData((prev) => ({ ...prev, ...updates }))
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381' | '384') {
+    setFormData((prev) => {
+      const updated = { ...prev, ...updates }
+      // Update invoice number prefix: OF for corrective (384), CN for credit note (381)
+      if (docType === '384' && updated.invoice_number.startsWith('CN-')) {
+        updated.invoice_number = updated.invoice_number.replace('CN-', 'OF-')
+        updated.variable_symbol = updated.invoice_number.replace(/\D/g, '').slice(-10)
+      }
+      return updated
+    })
     setCorrectionStep('form')
-    setStep(2) // Jump to Items step so user can review
+    // Freeform (Zmena údajov) already has all data edited -> go directly to Súhrn
+    if (scenario === 'freeform') {
+      setStep(3)
+    } else {
+      setStep(2) // Other scenarios -> Items step for review
+    }
   }
 
   // If in correction wizard mode, show the wizard first

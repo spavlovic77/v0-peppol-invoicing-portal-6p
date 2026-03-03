@@ -398,7 +398,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
 
   const typeCode = String(invoice.invoice_type_code || '')
   const isCreditNote = typeCode === '381' || String(invoice.invoice_number || '').startsWith('CN-')
-  const isCorrectiveInvoice = typeCode === '384'
+  const isCorrectiveInvoice = typeCode === '384' || String(invoice.invoice_number || '').startsWith('OF-')
 
   let pdfTitle = 'FAKTÚRA'
   let pdfSubtitle = isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'
