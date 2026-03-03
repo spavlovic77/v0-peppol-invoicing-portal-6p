@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Sun, Moon, Loader2 } from 'lucide-react'
+import { FileText, Sun, Moon, Loader2, Github } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from '@/lib/theme-provider'
 import { createClient } from '@/lib/supabase/client'
@@ -129,13 +129,13 @@ export function LandingContent() {
 
       <div className="w-full max-w-sm text-center">
         {/* Logo + Name */}
-        <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="flex items-center justify-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
             <FileText className="w-6 h-6 text-primary" />
           </div>
-          <span className="text-2xl font-bold text-foreground">{'Zrobenie e-faktúry'}</span>
+          <span className="text-2xl font-bold text-foreground">{'zrobefakturu.sk'}</span>
         </div>
-        <p className="text-lg text-muted-foreground mb-10">pre drobečkov</p>
+        <p className="text-sm text-muted-foreground mb-10 text-balance">{'E-fakturácia cez Peppol pre malých podnikateľov'}</p>
 
         {/* Google Sign In - server-side route to avoid localhost redirect */}
         <a
@@ -166,6 +166,22 @@ export function LandingContent() {
           )}
           {appleLoading ? 'Prihlasovanie...' : 'Prihlásiť sa cez Apple'}
         </button>
+
+        {/* Educational purpose notice */}
+        <div className="mt-8 pt-6 border-t border-border/50">
+          <p className="text-xs text-muted-foreground/70 leading-relaxed text-balance">
+            {'Táto aplikácia slúži na vzdelávacie účely a demonštráciu e-fakturácie cez Peppol. Nie je určená na produkčné použitie.'}
+          </p>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 mt-3 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          >
+            <Github className="w-3.5 h-3.5" />
+            <span>{'Zdrojový kód na GitHub'}</span>
+          </a>
+        </div>
       </div>
     </div>
   )
