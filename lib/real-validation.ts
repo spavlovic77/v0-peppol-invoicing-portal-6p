@@ -312,8 +312,9 @@ function validateXsdElementOrder(xml: string): ValidationPhase {
       'cbc:AllowanceChargeReason', 'cbc:Amount',
     ]
     for (let i = 0; i < acOrder.length - 1; i++) {
-      const a = acXml.indexOf(`<${acOrder[i]}`)
-      const b = acXml.indexOf(`<${acOrder[i + 1]}`)
+      // Use closing > to avoid prefix collisions (e.g. AllowanceChargeReason matching AllowanceChargeReasonCode)
+      const a = acXml.indexOf(`<${acOrder[i]}>`)
+      const b = acXml.indexOf(`<${acOrder[i + 1]}>`)
       if (a !== -1 && b !== -1) {
         const ok = a < b
         check(
