@@ -287,8 +287,6 @@ System automaticky vypocita a vlozi do faktury korekciu (AllowanceCharge), ktora
 
 ## Ako vytvorit opravne faktury (sprievodca)
 
-V nasom systeme existuju tri typy opravnych dokladov. Na strane detailu faktury kliknite na tlacidlo "Opravny doklad". System vas prevedie sprievodcom:
-
 ### 1. Dobropis (Credit Note, kod 381)
 Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH. Cislo faktury zacina prefixom CN.
 
