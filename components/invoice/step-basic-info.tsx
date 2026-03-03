@@ -5,6 +5,14 @@ import { CalendarDays, FileText, CreditCard, AlertTriangle, CheckCircle2, ArrowL
 import { useState, useCallback } from 'react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
+const DUE_DAY_OPTIONS = [14, 30, 60, 90] as const
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 const paymentMethods = [
   { value: '10', label: 'Hotovosť' },
   { value: '30', label: 'Bankový prevod' },
@@ -27,6 +35,7 @@ interface Props {
 export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }: Props) {
   const needsIban = bankTransferCodes.includes(formData.payment_means_code)
   const [ibanTouched, setIbanTouched] = useState(false)
+  const [selectedDays, setSelectedDays] = useState<number>(14)
 
   // Live IBAN display: show formatted value in the input
   const ibanDisplay = formatIban(cleanIban(formData.iban || ''))
@@ -235,11 +244,41 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
             <label className="block text-sm text-muted-foreground mb-1.5">
               Dátum splatnosti *
             </label>
+            {/* Day preset slider */}
+            <div className="flex items-center gap-1 mb-2">
+              {DUE_DAY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDays(d)
+                    if (formData.issue_date) {
+                      updateForm({ due_date: addDays(formData.issue_date, d) })
+                    }
+                  }}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    selectedDays === d
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {d} dní
+                </button>
+              ))}
+            </div>
             <input
               id="due_date"
               type="date"
               value={formData.due_date}
-              onChange={(e) => updateForm({ due_date: e.target.value })}
+              onChange={(e) => {
+                updateForm({ due_date: e.target.value })
+                // Calculate which preset matches (if any)
+                if (formData.issue_date && e.target.value) {
+                  const diff = Math.round((new Date(e.target.value).getTime() - new Date(formData.issue_date).getTime()) / 86400000)
+                  const match = DUE_DAY_OPTIONS.find(d => d === diff)
+                  setSelectedDays(match ?? 0)
+                }
+              }}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
             />
           </div>
