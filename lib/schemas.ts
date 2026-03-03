@@ -26,8 +26,8 @@ export type CompanyProfile = z.infer<typeof companyProfileSchema>
 // Invoice item schema
 export const invoiceItemSchema = z.object({
   line_number: z.number().int().positive(),
-  description: z.string().min(1, 'Popis polozky je povinny'),
-  quantity: z.number().refine(v => v !== 0, 'Mnozstvo nesmie byt nula'),
+  description: z.string().min(1, 'Popis položky je povinný'),
+  quantity: z.number().refine(v => v !== 0, 'Množstvo nesmie byť nula'),
   unit: z.string().default('C62'),
   unit_price: z.number(),
   vat_category: z.string().default('S'),
@@ -43,15 +43,15 @@ export type InvoiceItem = z.infer<typeof invoiceItemSchema>
 
 // Invoice schema
 export const invoiceSchema = z.object({
-  invoice_number: z.string().min(1, 'Cislo faktury je povinne'),
-  issue_date: z.string().min(1, 'Datum vystavenia je povinny'),
-  due_date: z.string().min(1, 'Datum splatnosti je povinny'),
+  invoice_number: z.string().min(1, 'Číslo faktúry je povinné'),
+  issue_date: z.string().min(1, 'Dátum vystavenia je povinný'),
+  due_date: z.string().min(1, 'Dátum splatnosti je povinný'),
   delivery_date: z.string().nullable(),
   currency: z.string().default('EUR'),
   buyer_ico: z.string().nullable(),
   buyer_dic: z.string().nullable(),
   buyer_ic_dph: z.string().nullable(),
-  buyer_name: z.string().min(1, 'Nazov odberatela je povinny'),
+  buyer_name: z.string().min(1, 'Názov odberateľa je povinny'),
   buyer_street: z.string().nullable(),
   buyer_city: z.string().nullable(),
   buyer_postal_code: z.string().nullable(),
@@ -74,7 +74,7 @@ export const invoiceSchema = z.object({
   correction_reason: z.string().nullable().default(null),
   billing_reference_number: z.string().nullable().default(null),
   billing_reference_date: z.string().nullable().default(null),
-  items: z.array(invoiceItemSchema).min(1, 'Faktura musi mat aspon jednu polozku'),
+  items: z.array(invoiceItemSchema).min(1, 'Faktúra musí mať aspoň jednu položku'),
 })
 
 export type InvoiceFormData = z.infer<typeof invoiceSchema>
