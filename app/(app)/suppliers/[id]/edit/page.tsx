@@ -46,8 +46,8 @@ export default function EditSupplierPage() {
     return (
       <div className="max-w-3xl mx-auto">
         <GlassCard className="text-center py-16">
-          <h2 className="text-lg font-semibold text-foreground mb-2">Dodavatel nebol najdeny</h2>
-          <Link href="/suppliers" className="text-primary hover:underline">Spat na zoznam</Link>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Dodavateľ nebol nájdený</h2>
+          <Link href="/suppliers" className="text-primary hover:underline">Späť na zoznam</Link>
         </GlassCard>
       </div>
     )
@@ -61,9 +61,9 @@ export default function EditSupplierPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Spat na dodavatelov
+          Späť na dodávateľov
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Upravit dodavatela</h1>
+        <h1 className="text-2xl font-bold text-foreground">Upraviť dodávateľa</h1>
         <p className="text-muted-foreground mt-1">
           {initial?.company_name}
         </p>
