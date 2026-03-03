@@ -493,6 +493,14 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Payment Details */}
         <View style={styles.paymentBox}>
           <Text style={styles.paymentTitle}>Platobné údaje</Text>
+          {invoice.payment_means_code && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Spôsob úhrady:</Text>
+              <Text style={styles.paymentValue}>
+                {{ '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '49': 'Registračná pokladňa', '58': 'SEPA prevod', '97': 'Vzájomný zápočet' }[String(invoice.payment_means_code)] || String(invoice.payment_means_code)}
+              </Text>
+            </View>
+          )}
           {invoice.bank_name && (
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>Banka:</Text>
@@ -601,7 +609,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             )}
             <View style={styles.totalDivider} />
             <View style={styles.totalRow}>
-              <Text style={styles.grandTotalLabel}>Na úhradu:</Text>
+              <Text style={styles.grandTotalLabel}>{isCreditNote ? 'K vráteniu:' : 'Na úhradu:'}</Text>
               <Text style={styles.grandTotalValue}>
                 {fmt(invoice.total_with_vat as number)} {String(invoice.currency || 'EUR')}
               </Text>
