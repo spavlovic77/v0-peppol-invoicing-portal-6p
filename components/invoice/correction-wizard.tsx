@@ -101,8 +101,8 @@ const scenarios = [
   {
     id: 'full_storno' as const,
     icon: Ban,
-    label: 'Uplne storno',
-    desc: 'Zrusenie celej faktury',
+    label: 'Úplné storno',
+    desc: 'Zrušenie celej faktúry',
     color: 'text-red-400',
     bg: 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20',
     bgActive: 'bg-red-500/20 border-red-500/50 ring-2 ring-red-500/30',
@@ -110,8 +110,8 @@ const scenarios = [
   {
     id: 'quantity' as const,
     icon: Hash,
-    label: 'Zmena mnozstva',
-    desc: 'Dobropis na rozdiel v mnozstve',
+    label: 'Zmena množstva',
+    desc: 'Dobropis na rozdiel v množstve',
     color: 'text-amber-400',
     bg: 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20',
     bgActive: 'bg-amber-500/20 border-amber-500/50 ring-2 ring-amber-500/30',
@@ -129,7 +129,7 @@ const scenarios = [
     id: 'vat_rate' as const,
     icon: Percent,
     label: 'Zmena sadzby DPH',
-    desc: 'Nespravne pouzita sadzba dane',
+    desc: 'Nesprávne použitá sadzba dane',
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20',
     bgActive: 'bg-emerald-500/20 border-emerald-500/50 ring-2 ring-emerald-500/30',
@@ -239,7 +239,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
 
     switch (selected) {
       case 'full_storno': {
-        reason = 'Uplne storno povodnej faktury'
+        reason = 'Úplné storno pôvodnej faktúry'
         correctionItems = original.items.map((it, idx) => ({
           line_number: idx + 1,
           description: it.description,
@@ -486,7 +486,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
         <div className="flex items-center gap-3 mb-1">
           <FileText className="w-5 h-5 text-primary shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Korekcia k fakture {original.invoice_number}</p>
+            <p className="text-sm font-medium text-foreground truncate">Oprava k faktúre {original.invoice_number}</p>
             <p className="text-xs text-muted-foreground">{original.buyer_name} &middot; {fmtDate(original.issue_date)}</p>
           </div>
         </div>
@@ -494,7 +494,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
 
       {/* Scenario selection */}
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Co chcete opravit?</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">Čo chcete opraviť?</h2>
         <div className="grid grid-cols-2 gap-3">
           {scenarios.map((s) => {
             const Icon = s.icon
