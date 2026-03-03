@@ -151,10 +151,10 @@ export default function DashboardPage() {
 
   const filtered = search
     ? invoices.filter(
-        (inv) =>
-          inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-          inv.buyer_name.toLowerCase().includes(search.toLowerCase())
-      )
+      (inv) =>
+        inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
+        inv.buyer_name.toLowerCase().includes(search.toLowerCase())
+    )
     : invoices
 
   // Build parent -> corrections map
@@ -181,16 +181,16 @@ export default function DashboardPage() {
     await supabase.from('invoice_items').delete().eq('invoice_id', inv.id)
     const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
     if (error) {
-      toast.error('Chyba pri mazani: ' + error.message)
+      toast.error('Chyba pri mazaní: ' + error.message)
     } else {
-      toast.success('Faktura bola zmazana')
+      toast.success('Faktúra bola zmazaná')
       setInvoices((prev) => prev.filter((i) => i.id !== inv.id))
     }
   }
 
   function exportCSV() {
     if (filtered.length === 0) return
-    const header = 'Cislo faktury;Odberatel;Datum vystavenia;Datum splatnosti;Suma;Mena;Stav'
+    const header = 'Číslo faktúry;Odberateľ;Dátum vystavenia;Dátum splatnosti;Suma;Mena;Stav'
     const rows = filtered.map((inv) =>
       `${inv.invoice_number};${inv.buyer_name};${fmtDate(inv.issue_date)};${fmtDate(inv.due_date)};${inv.total_with_vat};${inv.currency};${inv.status}`
     )
@@ -212,7 +212,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <Building2 className="w-12 h-12 text-muted-foreground/40 mb-4" />
-        <h2 className="text-lg font-semibold text-foreground mb-2">Vitajte v Peppol Faktúra</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-2">Vitajte</h2>
         <p className="text-sm text-muted-foreground mb-6 max-w-xs">
           Začnite pridaním firmy, za ktorú budete vystavovať faktúry.
         </p>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground">
             ICO: {activeSupplier?.ico}
             {activeSupplier?.is_vat_payer === false && (
-              <span className="ml-2 text-xs text-warning">Neplatca DPH</span>  
+              <span className="ml-2 text-xs text-warning">Neplatca DPH</span>
             )}
           </p>
         </div>
@@ -294,23 +294,23 @@ export default function DashboardPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-  <span className="text-sm font-medium font-mono text-foreground">
-  {inv.invoice_number}
-  </span>
-  {inv.invoice_mode === 'selfbilling' && (
-    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Samofakt.</span>
-  )}
-  {inv.invoice_mode === 'reversecharge' && (
-    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">Rev. charge</span>
-  )}
-  <StatusBadge status={inv.status} />
+                            <span className="text-sm font-medium font-mono text-foreground">
+                              {inv.invoice_number}
+                            </span>
+                            {inv.invoice_mode === 'selfbilling' && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Samofakt.</span>
+                            )}
+                            {inv.invoice_mode === 'reversecharge' && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">Prenes. DPH</span>
+                            )}
+                            <StatusBadge status={inv.status} />
                             {inv.peppol_sent_at && (
                               <span
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-medium"
                                 title={`Zaslané cez Peppol ${new Date(inv.peppol_sent_at).toLocaleString('sk-SK')}`}
                               >
                                 <Globe className="w-3 h-3" />
-                                Peppol
+                                Odoslaná
                               </span>
                             )}
                             {hasCorrections && (
@@ -338,9 +338,9 @@ export default function DashboardPage() {
                               </button>
                             )}
                             <button
-onClick={(e) => { e.stopPropagation(); setDeleteTarget(inv) }}
-  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-  title="Zmazat"
+                              onClick={(e) => { e.stopPropagation(); setDeleteTarget(inv) }}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Zmazať"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -388,9 +388,9 @@ onClick={(e) => { e.stopPropagation(); setDeleteTarget(inv) }}
                               <p className="text-[10px] text-muted-foreground">{cn.currency}</p>
                             </div>
                             <button
-onClick={(e) => { e.stopPropagation(); setDeleteTarget(cn) }}
-  className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-  title="Zmazat"
+                              onClick={(e) => { e.stopPropagation(); setDeleteTarget(cn) }}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Zmazat"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
@@ -423,9 +423,9 @@ onClick={(e) => { e.stopPropagation(); setDeleteTarget(cn) }}
       )}
       <ConfirmModal
         open={!!deleteTarget}
-        title="Zmazat fakturu"
-        description={`Naozaj chcete zmazat fakturu ${deleteTarget?.invoice_number}?`}
-        confirmLabel="Zmazat"
+        title="Zmazať faktúru"
+        description={`Naozaj chcete zmazať faktúru ${deleteTarget?.invoice_number}?`}
+        confirmLabel="Zmazať"
         variant="danger"
         onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget); setDeleteTarget(null) } }}
         onCancel={() => setDeleteTarget(null)}
