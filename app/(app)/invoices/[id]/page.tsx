@@ -361,16 +361,26 @@ export default function InvoiceDetailPage() {
         <ValidationDisplay phases={validation as Array<{ name: string; description: string; results: Array<{ rule: string; severity: 'error' | 'warning'; message: string; passed: boolean }>; passed: boolean; simulated?: boolean }>} />
       )}
 
-      {/* Dobropis button -- only for valid non-credit-note invoices */}
-      {isValid && !isCreditNote && (
-        <Link
-          href={`/invoices/new?correct=${invoice.id}`}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Vytvoriť opravný doklad (dobropis)
-        </Link>
-      )}
+  {/* Dobropis button -- only for valid non-credit-note invoices */}
+  {isValid && !isCreditNote && (
+  invoice.peppol_send_status === 'sent' ? (
+  <button
+  onClick={() => setShowEditModal(true)}
+  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
+  >
+  <RotateCcw className="w-4 h-4" />
+  Vytvoriť opravný doklad (dobropis)
+  </button>
+  ) : (
+  <Link
+  href={`/invoices/new?correct=${invoice.id}`}
+  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
+  >
+  <RotateCcw className="w-4 h-4" />
+  Vytvoriť opravný doklad (dobropis)
+  </Link>
+  )
+  )}
 
       {/* Edit confirmation modal (for valid/sent invoices) */}
       {showEditModal && (
