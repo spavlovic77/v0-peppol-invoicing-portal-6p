@@ -422,44 +422,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
         </div>
       </GlassCard>
 
-      {/* Peppol ID Preview + Status */}
-      {formData.buyer_dic && (
-        <GlassCard className={peppolStatus === 'found' ? 'border-success/30' : peppolStatus === 'not_found' ? 'border-warning/30' : 'border-primary/20'}>
-          <div className="flex items-center gap-3 mb-2">
-            <Globe className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Peppol</h2>
-          </div>
-          <div className="text-sm font-mono font-semibold text-primary mb-2">
-            {PEPPOL_IDENTIFIER_SCHEME}:{formData.buyer_dic}
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            {peppolStatus === 'checking' && (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span className="text-muted-foreground">Overujem registraciu na Peppol...</span>
-              </>
-            )}
-            {peppolStatus === 'found' && (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-success" />
-                <span className="text-success font-medium">{partyLabelCap} je registrovaný na Peppol</span>
-              </>
-            )}
-            {peppolStatus === 'not_found' && (
-              <>
-                <XCircle className="w-4 h-4 text-warning" />
-                <span className="text-warning font-medium">{partyLabelCap} nie je registrovaný na Peppol</span>
-              </>
-            )}
-            {peppolStatus === 'no_key' && (
-              <span className="text-xs text-muted-foreground">AP API kluc nie je nastaveny - overenie Peppol nedostupne</span>
-            )}
-            {peppolStatus === 'error' && (
-              <span className="text-xs text-muted-foreground">Nepodarilo sa overit Peppol registraciu</span>
-            )}
-          </div>
-        </GlassCard>
-      )}
+
     </div>
   )
 }
