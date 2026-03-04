@@ -324,8 +324,8 @@ export default function InvoiceDetailPage() {
             onClick={handleGenerate}
             disabled={generating}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ml-auto ${invoice.status === 'invalid'
-                ? 'bg-warning text-warning-foreground hover:bg-warning/90'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+              ? 'bg-warning text-warning-foreground hover:bg-warning/90'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
@@ -361,26 +361,26 @@ export default function InvoiceDetailPage() {
         <ValidationDisplay phases={validation as Array<{ name: string; description: string; results: Array<{ rule: string; severity: 'error' | 'warning'; message: string; passed: boolean }>; passed: boolean; simulated?: boolean }>} />
       )}
 
-  {/* Dobropis button -- only for valid non-credit-note invoices */}
-  {isValid && !isCreditNote && (
-  (invoice.peppol_send_status === 'sent' || invoice.peppol_send_status === 'delivered') ? (
-  <button
-  onClick={() => setShowEditModal(true)}
-  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
-  >
-  <RotateCcw className="w-4 h-4" />
-  Vytvoriť opravný doklad (dobropis)
-  </button>
-  ) : (
-  <Link
-  href={`/invoices/new?correct=${invoice.id}`}
-  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
-  >
-  <RotateCcw className="w-4 h-4" />
-  Vytvoriť opravný doklad (dobropis)
-  </Link>
-  )
-  )}
+      {/* Dobropis button -- only for valid non-credit-note invoices */}
+      {isValid && !isCreditNote && (
+        (invoice.peppol_send_status === 'sent' || invoice.peppol_send_status === 'delivered') ? (
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Vytvoriť opravný doklad
+          </button>
+        ) : (
+          <Link
+            href={`/invoices/new?correct=${invoice.id}`}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Vytvoriť opravný doklad
+          </Link>
+        )
+      )}
 
       {/* Edit confirmation modal (for valid/sent invoices) */}
       {showEditModal && (
@@ -413,12 +413,10 @@ export default function InvoiceDetailPage() {
               </p>
               <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
                 <p className="text-sm text-warning leading-relaxed">
-                  V takom prípade musite vytvoriť <strong>opravný doklad (dobropis)</strong>, ktorý stornuje alebo upraví pôvodnú faktúru a následne vystaviť novú.
+                  V takom prípade musite vytvoriť <strong>opravný doklad </strong>, ktorý stornuje alebo upraví pôvodnú faktúru.
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Úpravou už odoslanej faktúry porušíte zákonnú povinnosť.
-              </p>
+
             </div>
 
             {/* Footer */}
@@ -430,7 +428,7 @@ export default function InvoiceDetailPage() {
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-warning text-warning-foreground text-sm font-medium hover:bg-warning/90 transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Vytvoriť dobropis (odporúčané)
+                  Vytvoriť opravný doklad (odporúčané)
                 </Link>
               )}
               <div className="flex gap-2">
