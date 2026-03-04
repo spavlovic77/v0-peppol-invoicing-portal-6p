@@ -257,7 +257,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
         break
       }
       case 'quantity': {
-        reason = 'Zmena mnozstva'
+        reason = 'Zmena množstva'
         correctionItems = original.items
           .map((it, idx) => {
             const originalQty = it.quantity
