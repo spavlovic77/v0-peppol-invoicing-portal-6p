@@ -5,6 +5,7 @@ import { GlassCard } from '@/components/glass-card'
 import { Building2, Search, Loader2, Contact, CheckCircle2, XCircle, Globe, ChevronDown, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
 import type { InvoiceFormData } from '@/lib/schemas'
 
 interface BuyerContact {
@@ -55,7 +56,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
       setPeppolStatus('idle')
       return
     }
-    const participantId = `9950:${formData.buyer_dic}`
+    const participantId = `${PEPPOL_IDENTIFIER_SCHEME}:${formData.buyer_dic}`
     setPeppolStatus('checking')
     fetch(`/api/peppol/discover?participant_id=${encodeURIComponent(participantId)}&supplier_id=${supplierId}`)
       .then(res => res.json())
@@ -222,7 +223,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
   const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
       if (res.ok) {
-        const peppolId = data.dic ? `9950:${data.dic}` : null
+        const peppolId = data.dic ? `${PEPPOL_IDENTIFIER_SCHEME}:${data.dic}` : null
         updateForm({
           buyer_ico: data.ico,
           buyer_name: data.company_name || formData.buyer_name,
@@ -429,7 +430,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
             <h2 className="text-sm font-semibold text-foreground">Peppol</h2>
           </div>
           <div className="text-sm font-mono font-semibold text-primary mb-2">
-            9950:{formData.buyer_dic}
+            {PEPPOL_IDENTIFIER_SCHEME}:{formData.buyer_dic}
           </div>
           <div className="flex items-center gap-2 text-sm">
             {peppolStatus === 'checking' && (

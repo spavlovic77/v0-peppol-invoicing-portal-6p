@@ -1,4 +1,5 @@
 import type { PeppolInvoice } from './schemas'
+import { PEPPOL_IDENTIFIER_SCHEME } from './constants'
 
 /**
  * Deterministic Peppol BIS 3.0 invoice builder with Slovak rounding methodology.
@@ -395,7 +396,7 @@ export function buildPeppolInvoice(
     buyerReference: invoice.buyer_reference || invoice.order_reference || invoice.invoice_number,
     orderReferenceId: invoice.order_reference || null,
     supplierEndpointId,
-    supplierEndpointSchemeId: '9950',
+    supplierEndpointSchemeId: PEPPOL_IDENTIFIER_SCHEME,
     supplierPartyName: supplierParty.name,
     supplierStreet: supplierParty.street,
     supplierCity: supplierParty.city,
@@ -405,7 +406,7 @@ export function buildPeppolInvoice(
     supplierTaxId: supplierParty.taxId || supplierParty.companyId,
     supplierVatId: supplierParty.vatId || null,
     customerEndpointId: buyerEndpointId,
-    customerEndpointSchemeId: '9950',
+    customerEndpointSchemeId: PEPPOL_IDENTIFIER_SCHEME,
     customerPartyName: customerParty.name,
     customerStreet: customerParty.street,
     customerCity: customerParty.city,

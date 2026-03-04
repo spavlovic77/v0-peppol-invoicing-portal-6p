@@ -14,7 +14,7 @@ function amount(n: number): string {
   return n.toFixed(2)
 }
 
-// Strip scheme prefix (e.g. "9950:") from endpoint IDs to avoid duplication with schemeID attr
+// Strip scheme prefix (e.g. "0245:") from endpoint IDs to avoid duplication with schemeID attr
 function stripEndpointScheme(id: string | null | undefined): string {
   if (!id) return ''
   return id.replace(/^\d{4}:/, '')

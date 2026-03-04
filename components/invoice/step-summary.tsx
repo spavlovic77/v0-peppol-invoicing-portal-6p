@@ -1,4 +1,5 @@
 import { GlassCard } from '@/components/glass-card'
+import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
 import { FileText, Building2, CreditCard, Package, Calculator } from 'lucide-react'
 import type { InvoiceFormData, CompanyProfile } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
@@ -140,7 +141,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             {profile.dic && <div className="text-muted-foreground">DIC: {profile.dic}</div>}
             {profile.ic_dph && <div className="text-muted-foreground">IC DPH: {profile.ic_dph}</div>}
             {profile.dic && (
-              <div className="text-primary font-mono text-xs mt-2">Peppol: 9950:{profile.dic}</div>
+              <div className="text-primary font-mono text-xs mt-2">Peppol: {PEPPOL_IDENTIFIER_SCHEME}:{profile.dic}</div>
             )}
           </div>
         </GlassCard>
