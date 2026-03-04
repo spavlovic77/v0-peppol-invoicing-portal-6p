@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag, Info } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
 
@@ -496,21 +496,30 @@ export function CorrectionWizard({ original, onApply }: Props) {
       <div>
         <h2 className="text-sm font-medium text-muted-foreground mb-3">Čo chcete opraviť?</h2>
         <div className="grid grid-cols-2 gap-3">
-          {scenarios.map((s) => {
-            const Icon = s.icon
-            const isActive = selected === s.id
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSelected(s.id)}
-                className={`flex flex-col items-center text-center p-4 rounded-xl border transition-all ${isActive ? s.bgActive : s.bg}`}
-              >
-                <Icon className={`w-7 h-7 mb-2 ${s.color}`} />
-                <span className="text-sm font-medium text-foreground">{s.label}</span>
-                <span className="text-xs text-muted-foreground mt-0.5">{s.desc}</span>
-              </button>
-            )
-          })}
+  {scenarios.map((s) => {
+  const Icon = s.icon
+  const isActive = selected === s.id
+  const isDisabled = s.id === 'vat_rate'
+  return (
+  <div key={s.id} className="relative">
+  <button
+  disabled={isDisabled}
+  onClick={() => !isDisabled && setSelected(s.id)}
+  className={`flex flex-col items-center text-center p-4 rounded-xl border transition-all w-full ${isDisabled ? 'opacity-40 cursor-not-allowed bg-secondary/20 border-border/30' : isActive ? s.bgActive : s.bg}`}
+  >
+  <Icon className={`w-7 h-7 mb-2 ${isDisabled ? 'text-muted-foreground/50' : s.color}`} />
+  <span className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{s.label}</span>
+  <span className="text-xs text-muted-foreground mt-0.5">{s.desc}</span>
+  </button>
+  {isDisabled && (
+  <div className="flex items-start gap-1.5 mt-1.5 px-1">
+    <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
+    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Použite Úplné storno a vytvorte novú faktúru so správnou sadzbou'}</span>
+  </div>
+  )}
+  </div>
+  )
+  })}
         </div>
       </div>
 
