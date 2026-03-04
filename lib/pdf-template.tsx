@@ -400,22 +400,15 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
   const isCreditNote = typeCode === '381' || String(invoice.invoice_number || '').startsWith('CN-')
   const isCorrectiveInvoice = typeCode === '384' || String(invoice.invoice_number || '').startsWith('OF-')
 
-  let pdfTitle = 'FAKTÚRA'
-  let pdfSubtitle = isVatPayer ? 'Daňový doklad' : 'Faktúra - dodávateľ nie je platcom DPH'
+  let pdfTitle = 'Náhľad na xml faktúru'
   if (isCreditNote) {
-    pdfTitle = 'DOBROPIS'
-    pdfSubtitle = 'Opravný daňový doklad'
+    pdfTitle = 'Náhľad na xml dobropisu'
   }
   if (isCorrectiveInvoice) {
-    pdfTitle = 'OPRAVNÁ FAKTÚRA'
-    pdfSubtitle = 'Opravný doklad bez dopadu na DPH (kód 384)'
+    pdfTitle = 'Náhľad na xml opravnej faktúry'
   }
   if (isSelfBilling) {
-    pdfTitle = 'SAMOFAKTÚRA'
-    pdfSubtitle = 'Self-billing invoice (InvoiceTypeCode 389)'
-  }
-  if (isReverseCharge) {
-    pdfSubtitle = 'Prenesenie daňovej povinnosti - Reverse charge (§69 ods. 12)'
+    pdfTitle = 'Náhľad na xml samofaktúru'
   }
 
   return (
@@ -424,8 +417,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>{pdfTitle}</Text>
-            <Text style={styles.subtitle}>{pdfSubtitle}</Text>
+  <Text style={styles.title}>{pdfTitle}</Text>
           </View>
           <View style={styles.invoiceInfo}>
             <Text style={styles.infoLabel}>Číslo faktúry</Text>
