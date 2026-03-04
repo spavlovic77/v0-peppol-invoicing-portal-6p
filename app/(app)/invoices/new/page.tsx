@@ -627,12 +627,12 @@ export default function NewInvoicePage() {
   }
 
   // Correction wizard callback
-  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381' | '384') {
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') {
     setFormData((prev) => {
       const updated = { ...prev, ...updates }
-      // Update invoice number prefix: OF for corrective (384), CN for credit note (381)
-      if (docType === '384' && updated.invoice_number.startsWith('CN-')) {
-        updated.invoice_number = updated.invoice_number.replace('CN-', 'OF-')
+      // Update invoice number prefix: FV for re-issued invoice (380), CN for credit note (381)
+      if (docType === '380' && updated.invoice_number.startsWith('CN-')) {
+        updated.invoice_number = updated.invoice_number.replace('CN-', 'FV-')
         updated.variable_symbol = updated.invoice_number.replace(/\D/g, '').slice(-10)
       }
       return updated

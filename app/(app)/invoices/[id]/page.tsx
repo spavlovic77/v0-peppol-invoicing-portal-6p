@@ -244,7 +244,6 @@ export default function InvoiceDetailPage() {
 
   const isValid = invoice.status === 'valid' || invoice.status === 'sent'
   const isCreditNote = invoice.invoice_number.startsWith('CN-')
-  const isCorrectiveInvoice = invoice.invoice_number.startsWith('OF-') || String(invoice.invoice_type_code) === '384'
   const isSelfBilling = invoice.invoice_mode === 'selfbilling'
   const isReverseCharge = invoice.invoice_mode === 'reversecharge'
   const allPassed = Array.isArray(validation) && (validation as Array<{ passed: boolean }>).every((p) => p.passed)

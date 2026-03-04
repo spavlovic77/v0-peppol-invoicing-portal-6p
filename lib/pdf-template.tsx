@@ -398,14 +398,15 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
 
   const typeCode = String(invoice.invoice_type_code || '')
   const isCreditNote = typeCode === '381' || String(invoice.invoice_number || '').startsWith('CN-')
-  const isCorrectiveInvoice = typeCode === '384' || String(invoice.invoice_number || '').startsWith('OF-')
+  // Re-issued invoice: a 380 with a billing reference to the original
+  const isReissuedInvoice = typeCode === '380' && !!invoice.billing_reference_number
 
   let pdfTitle = 'Náhľad na xml faktúru'
   if (isCreditNote) {
     pdfTitle = 'Náhľad na xml dobropisu'
   }
-  if (isCorrectiveInvoice) {
-    pdfTitle = 'Náhľad na xml opravnej faktúry'
+  if (isReissuedInvoice) {
+    pdfTitle = 'Náhľad na xml opravenej faktúry'
   }
   if (isSelfBilling) {
     pdfTitle = 'Náhľad na xml samofaktúru'
@@ -435,8 +436,8 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         </View>
 
-        {/* BG-3: Billing reference for credit notes and corrective invoices */}
-        {(isCreditNote || isCorrectiveInvoice) && (invoice.billing_reference_number || invoice.correction_of) && (
+        {/* BG-3: Billing reference for credit notes and re-issued invoices */}
+        {(isCreditNote || isReissuedInvoice) && (invoice.billing_reference_number || invoice.correction_of) && (
           <View style={styles.noteBox}>
             <Text style={styles.noteLabel}>Odkaz na pôvodnú faktúru (BG-3)</Text>
             {invoice.billing_reference_number && (

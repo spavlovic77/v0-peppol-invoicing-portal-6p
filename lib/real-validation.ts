@@ -118,8 +118,7 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
   }
 
   const selfBilling = isSelfBillingXml(xml)
-  const corrective384 = isCorrectiveInvoice384Xml(xml)
-
+  
   const xsdResults: ValidationResult[] = []
   const enResults: ValidationResult[] = []
   const peppolResults: ValidationResult[] = []
@@ -133,11 +132,6 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
 
     // Suppress false positives for self-billing URNs
     if (selfBilling && SELF_BILLING_SUPPRESSED_RULES.has(ruleId)) {
-      peppolResults.push(ionDocvalItemToResult(item, true, 'warning'))
-      continue
-    }
-    // Suppress P0112 for corrective invoices (384)
-    if (corrective384 && CORRECTIVE_384_SUPPRESSED_RULES.has(ruleId)) {
       peppolResults.push(ionDocvalItemToResult(item, true, 'warning'))
       continue
     }
@@ -236,19 +230,6 @@ function isSelfBillingXml(xml: string): boolean {
   return xml.includes('poacc:selfbilling:')
 }
 
-/**
- * Corrective invoices (384) trigger PEPPOL-EN16931-P0112 which restricts
- * code 384 to German organizations only. We use 384 for non-financial
- * corrections (Zmena údajov) regardless of country, so we suppress this rule.
- */
-const CORRECTIVE_384_SUPPRESSED_RULES = new Set([
-  'PEPPOL-EN16931-P0112',
-])
-
-function isCorrectiveInvoice384Xml(xml: string): boolean {
-  return xml.includes('<cbc:InvoiceTypeCode>384</cbc:InvoiceTypeCode>')
-}
-
 async function validateViaApi(xml: string): Promise<[ValidationPhase, ValidationPhase, ValidationPhase]> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
@@ -268,7 +249,6 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
   }
 
   const selfBilling = isSelfBillingXml(xml)
-  const corrective384 = isCorrectiveInvoice384Xml(xml)
 
   // Split items into 3 buckets
   const xsdResults: ValidationResult[] = []
@@ -281,11 +261,6 @@ async function validateViaApi(xml: string): Promise<[ValidationPhase, Validation
     const ruleId = (item.id ?? item.rule ?? '').toUpperCase()
     // Suppress false positives for self-billing URNs
     if (selfBilling && SELF_BILLING_SUPPRESSED_RULES.has(ruleId)) {
-      peppolResults.push(apiItemToResult(item, true, 'warning'))
-      continue
-    }
-    // Suppress P0112 for corrective invoices (384) -- we allow 384 for non-financial corrections
-    if (corrective384 && CORRECTIVE_384_SUPPRESSED_RULES.has(ruleId)) {
       peppolResults.push(apiItemToResult(item, true, 'warning'))
       continue
     }

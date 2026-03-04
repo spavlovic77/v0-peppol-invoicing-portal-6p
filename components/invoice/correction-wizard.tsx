@@ -57,7 +57,7 @@ interface OriginalInvoice {
   }[]
 }
 
-// Non-financial editable fields for "Zmena údajov" (384)
+// Non-financial editable fields for "Zmena údajov" (re-issued 380)
 interface EditableFields {
   buyer_name: string
   buyer_ico: string
@@ -94,7 +94,7 @@ const FIELD_LABELS: Record<keyof EditableFields, string> = {
 
 interface Props {
   original: OriginalInvoice
-  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381' | '384') => void
+  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') => void
 }
 
 const scenarios = [
@@ -156,9 +156,9 @@ const scenarios = [
 
 export function CorrectionWizard({ original, onApply }: Props) {
   const [selected, setSelected] = useState<CorrectionScenario | null>(null)
-  // freeform (Zmena údajov) uses 384 (corrective invoice, no financial impact)
+  // freeform (Zmena údajov) uses 380 (re-issued standard invoice with corrected data)
   // all other scenarios use 381 (credit note)
-  const docType = selected === 'freeform' ? '384' as const : '381' as const
+  const docType = selected === 'freeform' ? '380' as const : '381' as const
 
   // For quantity scenario: track new quantities per line
   const [qtyOverrides, setQtyOverrides] = useState<Record<number, number>>(
@@ -230,7 +230,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
     if (!selected) return
 
     const baseNote = selected === 'freeform'
-      ? `Opravná faktúra k FA ${original.invoice_number}`
+      ? `Opravená faktúra nahradzujúca FA ${original.invoice_number}`
       : `Dobropis k FA ${original.invoice_number}`
 
     // Build items based on scenario
@@ -429,19 +429,19 @@ export function CorrectionWizard({ original, onApply }: Props) {
         )
         reason = changeDescriptions.length > 0
           ? `Zmena údajov: ${changeDescriptions.join('; ')}`
-          : 'Zmena údajov - opravná faktúra bez dopadu na DPH'
-        // Use original items with zero values but updated descriptions
+          : 'Zmena údajov'
+        // Re-issued invoice with original items at real values but updated descriptions
         correctionItems = original.items.map((it, idx) => ({
           line_number: idx + 1,
           description: itemDescOverrides[idx] ?? it.description,
-          quantity: 0,
+          quantity: it.quantity,
           unit: it.unit,
-          unit_price: 0,
+          unit_price: it.unit_price,
           vat_category: it.vat_category || 'S',
           vat_rate: it.vat_rate,
-          discount_percent: 0,
-          discount_amount: 0,
-          line_total: 0,
+          discount_percent: it.discount_percent || 0,
+          discount_amount: it.discount_amount || 0,
+          line_total: it.line_total,
           item_number: it.item_number,
           buyer_item_number: it.buyer_item_number,
         }))
@@ -449,7 +449,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
       }
     }
 
-    // For freeform (384), also include the corrected non-financial fields
+    // For freeform (380 re-issue), also include the corrected non-financial fields
     const freeformUpdates: Partial<InvoiceFormData> = selected === 'freeform' ? {
       buyer_name: freeformFields.buyer_name,
       buyer_ico: freeformFields.buyer_ico,
