@@ -148,7 +148,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### Identifikatory
 - **CustomizationID**: \`urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0\`
 - **ProfileID**: \`urn:fdc:peppol.eu:2017:poacc:billing:01:1.0\`
-- Pre **self-billing**: \`poacc:selfbilling:3.0\` a \`poacc:selfbilling:01:1.0\` namiesto billing
+- Pre **self-billing** (389): pouzivame rovnake standardne billing identifikatory (ion-docval nepodporuje selfbilling URN)
 
 ### Peppol Schematron Rules (PEPPOL-EN16931-Rxxx)
 - **R001**: ProfileID MUSI byt spravny format

@@ -86,23 +86,6 @@ function buildPhaseFromResults(
   return { name, description, results, passed: errors.length === 0 }
 }
 
-// ─── Self-billing suppression ───────────────────────────────────────────────
-
-/**
- * Self-billing invoices use different CustomizationID / ProfileID URNs
- * (poacc:selfbilling:3.0 / poacc:selfbilling:01:1.0).
- * The standard BIS 3.0 schematron rejects them as unrecognized.
- * We suppress R004 / R007 false positives for self-billing XML.
- */
-const SELF_BILLING_SUPPRESSED_RULES = new Set([
-  'PEPPOL-EN16931-R004',
-  'PEPPOL-EN16931-R007',
-])
-
-function isSelfBillingXml(xml: string): boolean {
-  return xml.includes('poacc:selfbilling:')
-}
-
 // ─── ion-docval validation ──────────────────────────────────────────────────
 
 async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, ValidationPhase, ValidationPhase]> {
@@ -123,8 +106,6 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
     clearTimeout(timer)
   }
 
-  const selfBilling = isSelfBillingXml(xml)
-
   const xsdResults: ValidationResult[] = []
   const enResults: ValidationResult[] = []
   const peppolResults: ValidationResult[] = []
@@ -135,12 +116,6 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
     const msg = item.message ?? ''
     const ruleMatch = msg.match(/^\[([A-Z0-9-]+)\]/)
     const ruleId = ruleMatch ? ruleMatch[1] : ''
-
-    // Suppress false positives for self-billing URNs
-    if (selfBilling && SELF_BILLING_SUPPRESSED_RULES.has(ruleId)) {
-      peppolResults.push(ionDocvalItemToResult(item, true, 'warning'))
-      continue
-    }
 
     const bucket = bucketMap[classifyIonDocvalItem(item)]
     bucket.push(ionDocvalItemToResult(item, false, 'error'))
