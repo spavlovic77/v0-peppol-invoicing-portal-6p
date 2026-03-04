@@ -124,7 +124,7 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
   }
 
   const selfBilling = isSelfBillingXml(xml)
-  
+
   const xsdResults: ValidationResult[] = []
   const enResults: ValidationResult[] = []
   const peppolResults: ValidationResult[] = []
@@ -153,8 +153,8 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
 
   const phase1 = {
     ...buildPhaseFromResults(
-      'UBL 2.1 XSD validacia',
-      'OASIS UBL 2.1 schema — element poradie, typy, atributy, menove priestory',
+      'UBL 2.1 XSD validácia',
+      'OASIS UBL 2.1 schema — element poradie, typy, atribúty, menné priestory',
       xsdResults
     ),
     apiConfirmed: true,
@@ -162,8 +162,8 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
   }
   const phase2 = {
     ...buildPhaseFromResults(
-      'EN16931 pravidla',
-      'Europske obchodne pravidla pre e-fakturaciu (CEN schematron)',
+      'EN16931 pravidlá',
+      'EN pravidlá pre e-fakturáciu (CEN schematron)',
       enResults
     ),
     apiConfirmed: true,
