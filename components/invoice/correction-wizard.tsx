@@ -395,12 +395,13 @@ export function CorrectionWizard({ original, onApply }: Props) {
             const pct = discountPercents[idx] ?? 0
             if (pct <= 0) return null
             const discountAmount = r2(it.line_total * pct / 100)
+            // Use quantity=1 to avoid rounding errors in BR-25 (line_total must == qty * price - discount)
             return {
               line_number: idx + 1,
               description: `${it.description} (zľava ${pct}%)`,
-              quantity: it.quantity,
-              unit: it.unit,
-              unit_price: r2(discountAmount / it.quantity),
+              quantity: 1,
+              unit: 'C62',
+              unit_price: discountAmount,
               vat_category: it.vat_category || 'S',
               vat_rate: it.vat_rate,
               discount_percent: 0,
