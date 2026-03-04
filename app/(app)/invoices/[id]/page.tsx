@@ -363,7 +363,7 @@ export default function InvoiceDetailPage() {
 
   {/* Dobropis button -- only for valid non-credit-note invoices */}
   {isValid && !isCreditNote && (
-  invoice.peppol_send_status === 'sent' ? (
+  (invoice.peppol_send_status === 'sent' || invoice.peppol_send_status === 'delivered') ? (
   <button
   onClick={() => setShowEditModal(true)}
   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
