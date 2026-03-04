@@ -441,7 +441,7 @@ export default function DashboardPage() {
       <ConfirmModal
         open={!!correctionTarget}
         title="Faktúra bola odoslaná cez Peppol"
-        description={`Faktúra ${correctionTarget?.invoice_number} bola už odoslaná príjemcovi cez Peppol sieť. Odporúčame vytvoriť opravný doklad namiesto úpravy pôvodnej faktúry.`}
+        description={`Faktúra ${correctionTarget?.invoice_number} už bola odoslaná príjemcovi cez Peppol sieť. Odporúčame vytvoriť opravný doklad namiesto úpravy pôvodnej faktúry.`}
         confirmLabel="Vytvoriť opravný doklad"
         variant="warning"
         onConfirm={() => { if (correctionTarget) { router.push(`/invoices/new?correct=${correctionTarget.id}`); setCorrectionTarget(null) } }}

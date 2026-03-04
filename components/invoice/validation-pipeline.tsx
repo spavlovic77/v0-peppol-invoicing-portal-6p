@@ -24,7 +24,6 @@ interface ValidationPhase {
   description: string
   results: ValidationResult[]
   passed: boolean
-  simulated?: boolean
 }
 
 interface Props {
@@ -297,11 +296,7 @@ export function ValidationPipeline({ phases, isGenerating }: Props) {
                       Faza {phaseIdx + 1}
                     </span>
                     <span className="font-semibold text-foreground text-sm">{phase.name}</span>
-                    {phase.simulated && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-xs font-medium">
-                        OFFLINE
-                      </span>
-                    )}
+
                   </div>
                   <p className="text-xs text-muted-foreground">{phase.description}</p>
                 </div>
