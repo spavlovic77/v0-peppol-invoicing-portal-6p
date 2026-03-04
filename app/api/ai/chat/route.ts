@@ -31,7 +31,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - **380** = Faktura (Commercial Invoice)
 - **381** = Dobropis (Credit Note)
 - **383** = Debet nota (Debit Note)
-- **384** = Opravna faktura (Corrective Invoice)
+  - **384** = Opravna faktura (Corrective Invoice) — nepouzivame, namiesto toho vystavujeme novu 380 s BT-25 odkazom
 - **386** = Zalohova faktura (Prepayment Invoice)
 - **389** = Samofaktura (Self-billing Invoice)
 - **751** = Informacia o fakture (Invoice Information)
@@ -225,7 +225,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 - Dodavatel MUSI schvalit kazdu samofakturu
 
 **Opravna faktura / Dobropis** - §71 ods. 2, §74:
-- InvoiceTypeCode 381 (dobropis) alebo 384 (opravna faktura)
+  - InvoiceTypeCode 381 (dobropis) alebo 380 s BT-25 odkazom (opravena faktura nahradzujuca povodnu)
 - MUSI odkazovat na povodnu fakturu cez BG-3 (BT-25 = cislo povodnej faktury)
 - Mnozstva a ceny MOZU byt zaporne
 
@@ -302,18 +302,17 @@ Povinne udaje dobropisu:
 - Dovod opravy
 - Vsetky standardne udaje faktury (dodavatel, odberatel, polozky)
 
-# 2. Opravna faktura (Corrective Invoice, kod 384)
-Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom OF.
+# 2. Opravena faktura (Re-issued Invoice, kod 380)
+Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom FV (rovnaky ako standardna faktura).
 
 Scenar:
-- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky maju nulove hodnoty pretoze faktura nema financny dopad.
-
-Poznamka: Kod 384 je v Peppol sieti oficialne obmedzeny na nemecke subjekty (pravidlo P0112). Nas system tuto restrikciu potlaca, pretoze 384 je legitimny UBL typ pre nefinancne korekcie. Validacia zobrazi upozornenie ale nepovazuje ho za chybu.
+- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky nesie povodne hodnoty (mnozstva, ceny) pretoze ide o novu fakturu nahradzujucu povodnu. Odkaz na povodnu fakturu je v BT-25 (Preceding Invoice Reference).
 
 ### Spolocne pravidla pre vsetky opravne doklady
-- Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference
+- Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference (BT-25 a BT-26)
 - Obsahuje cislo povodnej faktury a datum vystavenia povodnej faktury
 - Polozky dobropisu (381) maju kladne hodnoty (CreditNote konvencia)
+- Opravena faktura (380) ma rovnake polozky ako povodna, len s opravenymi udajmi
 - Po vybere scenara a vyplneni udajov vas system presmeruje na suhrn a generovanie faktury
 
 ## Pravidla konverzacie
