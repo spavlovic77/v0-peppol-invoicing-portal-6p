@@ -95,7 +95,13 @@ export function buildUblXml(inv: PeppolInvoice): string {
       <cbc:ID>${escapeXml(inv.billingReferenceNumber)}</cbc:ID>${inv.billingReferenceDate ? `
       <cbc:IssueDate>${escapeXml(inv.billingReferenceDate)}</cbc:IssueDate>` : ''}
     </cac:InvoiceDocumentReference>
-  </cac:BillingReference>\n  ` : ''}  <cac:AccountingSupplierParty>
+  </cac:BillingReference>\n  ` : ''}${(inv.additionalDocumentReferences || []).map(doc => `<cac:AdditionalDocumentReference>
+    <cbc:ID>${escapeXml(doc.id)}</cbc:ID>${doc.description ? `
+    <cbc:DocumentDescription>${escapeXml(doc.description)}</cbc:DocumentDescription>` : ''}
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="${escapeXml(doc.mimeCode)}" filename="${escapeXml(doc.filename)}">${doc.data}</cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>\n  `).join('')}<cac:AccountingSupplierParty>
     <cac:Party>
       <cbc:EndpointID schemeID="${escapeXml(inv.supplierEndpointSchemeId)}">${escapeXml(stripEndpointScheme(inv.supplierEndpointId))}</cbc:EndpointID>
       <cac:PartyName>

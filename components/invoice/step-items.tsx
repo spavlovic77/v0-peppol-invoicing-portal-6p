@@ -1,8 +1,11 @@
 'use client'
 
+import { useRef, useState, useCallback } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Copy, Package, Plus, Trash2, Info } from 'lucide-react'
-import type { InvoiceFormData, InvoiceItem } from '@/lib/schemas'
+import { Copy, Package, Plus, Trash2, Info, Paperclip, Upload, X, FileText } from 'lucide-react'
+import type { InvoiceFormData, InvoiceItem, InvoiceAttachment } from '@/lib/schemas'
+import { ALLOWED_MIME_TYPES, MAX_ATTACHMENT_SIZE } from '@/lib/schemas'
+import { toast } from 'sonner'
 
 interface Props {
   formData: InvoiceFormData
@@ -32,8 +35,74 @@ const vatRates = [
   { value: 0, label: '0% (oslobodené)' },
 ]
 
+const ACCEPT_TYPES = ALLOWED_MIME_TYPES.join(',')
+
+const MIME_LABELS: Record<string, string> = {
+  'application/pdf': 'PDF',
+  'image/png': 'PNG',
+  'image/jpeg': 'JPEG',
+  'text/csv': 'CSV',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
+  'application/vnd.oasis.opendocument.spreadsheet': 'ODS',
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false }: Props) {
   const isReverseCharge = invoiceMode === 'reversecharge'
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  const processFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const existing = formData.attachments || []
+
+    for (const file of fileArray) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type as typeof ALLOWED_MIME_TYPES[number])) {
+        toast.error(`${file.name}: nepodporovaný formát. Povolené: PDF, PNG, JPEG, CSV, Excel, ODS`)
+        continue
+      }
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        toast.error(`${file.name}: súbor je príliš veľký (max ${formatFileSize(MAX_ATTACHMENT_SIZE)})`)
+        continue
+      }
+      if (existing.some(a => a.filename.toLowerCase() === file.name.toLowerCase())) {
+        toast.error(`${file.name}: súbor s rovnakým názvom už existuje`)
+        continue
+      }
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1]
+        const attachment: InvoiceAttachment = {
+          id: `ATT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          filename: file.name,
+          mimeCode: file.type,
+          description: '',
+          data: base64,
+          size: file.size,
+        }
+        updateForm({ attachments: [...(formData.attachments || []), attachment] })
+      }
+      reader.readAsDataURL(file)
+    }
+  }, [formData.attachments, updateForm])
+
+  function removeAttachment(id: string) {
+    updateForm({ attachments: (formData.attachments || []).filter(a => a.id !== id) })
+  }
+
+  function updateAttachmentDescription(id: string, description: string) {
+    updateForm({
+      attachments: (formData.attachments || []).map(a =>
+        a.id === id ? { ...a, description } : a
+      ),
+    })
+  }
 
   function addItem() {
     const newItem: InvoiceItem = {
@@ -248,6 +317,87 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
             </div>
           ))}
         </div>
+      </GlassCard>
+
+      {/* Attachments (BG-24) */}
+      <GlassCard>
+        <div className="flex items-center gap-3 mb-4">
+          <Paperclip className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-foreground">Prílohy</h2>
+          <span className="text-xs text-muted-foreground">(voliteľné)</span>
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setDragOver(false)
+            processFiles(e.dataTransfer.files)
+          }}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+            dragOver
+              ? 'border-primary bg-primary/10'
+              : 'border-border/50 hover:border-primary/50 hover:bg-primary/5'
+          }`}
+        >
+          <Upload className={`w-8 h-8 mx-auto mb-2 ${dragOver ? 'text-primary' : 'text-muted-foreground'}`} />
+          <p className="text-sm text-foreground font-medium">
+            Pretiahnite súbory sem alebo kliknite pre výber
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            PDF, PNG, JPEG, CSV, Excel, ODS &middot; max {formatFileSize(MAX_ATTACHMENT_SIZE)} / súbor
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPT_TYPES}
+            onChange={(e) => {
+              if (e.target.files) processFiles(e.target.files)
+              e.target.value = ''
+            }}
+            className="hidden"
+          />
+        </div>
+
+        {/* Attachment list */}
+        {(formData.attachments || []).length > 0 && (
+          <div className="mt-3 space-y-2">
+            {(formData.attachments || []).map((att) => (
+              <div key={att.id} className="flex items-start gap-3 glass-card rounded-xl p-3">
+                <FileText className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground truncate">{att.filename}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground shrink-0">
+                      {MIME_LABELS[att.mimeCode] || att.mimeCode}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {formatFileSize(att.size)}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={att.description}
+                    onChange={(e) => updateAttachmentDescription(att.id, e.target.value)}
+                    className="glass-input w-full px-2 py-1 rounded-lg text-foreground text-xs"
+                    placeholder="Popis prílohy (voliteľný)"
+                  />
+                </div>
+                <button
+                  onClick={() => removeAttachment(att.id)}
+                  className="p-1.5 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                  title="Odstrániť prílohu"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </GlassCard>
 
       {/* Global Discount */}
