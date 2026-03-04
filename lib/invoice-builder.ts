@@ -326,9 +326,15 @@ export function buildPeppolInvoice(
   // In our system: profile = the user's company (the buyer/issuer in self-billing)
   //                invoice.buyer_* = the counterparty (the supplier in self-billing)
 
-  // Always use standard BIS 3.0 identifiers (ion-docval only recognizes these)
-  const customizationID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
-  const profileID = 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
+  let customizationID: string
+  let profileID: string
+  if (isSelfBilling) {
+    customizationID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0'
+    profileID = 'urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0'
+  } else {
+    customizationID = 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0'
+    profileID = 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
+  }
 
   // Self-billing swaps: AccountingSupplierParty = the counterparty (goods supplier)
   //                     AccountingCustomerParty = our company (the buyer/issuer)

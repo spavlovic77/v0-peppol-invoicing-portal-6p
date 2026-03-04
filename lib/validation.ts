@@ -33,8 +33,16 @@ export function validateStructure(inv: PeppolInvoice): ValidationPhase {
   check('STRUCT-01', !!inv.invoiceId, 'Cislo faktury je povinne')
   check('STRUCT-02', !!inv.issueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.issueDate), 'Datum vystavenia musi byt vo formate YYYY-MM-DD')
   check('STRUCT-03', !!inv.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.dueDate), 'Datum splatnosti musi byt vo formate YYYY-MM-DD')
-  check('STRUCT-04', inv.customizationID === 'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0', 'CustomizationID musi byt spravny Peppol BIS 3.0 identifikator')
-  check('STRUCT-05', inv.profileID === 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0', 'ProfileID musi byt spravny')
+  const validCustomizationIDs = [
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',
+    'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0',
+  ]
+  const validProfileIDs = [
+    'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0',
+    'urn:fdc:peppol.eu:2017:poacc:selfbilling:01:1.0',
+  ]
+  check('STRUCT-04', validCustomizationIDs.includes(inv.customizationID), 'CustomizationID musi byt spravny Peppol BIS 3.0 alebo Self-Billing identifikator')
+  check('STRUCT-05', validProfileIDs.includes(inv.profileID), 'ProfileID musi byt spravny')
   check('STRUCT-06', !!inv.supplierPartyName, 'Nazov dodavatela je povinny')
   check('STRUCT-07', !!inv.customerPartyName, 'Nazov odberatela je povinny')
   check('STRUCT-08', inv.invoiceLines.length > 0, 'Faktura musi mat aspon jednu polozku')
