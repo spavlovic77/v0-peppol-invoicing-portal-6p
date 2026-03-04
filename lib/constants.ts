@@ -7,4 +7,4 @@
  * This value is used as the schemeID for both supplier and buyer
  * EndpointID elements in UBL invoices.
  */
-export const PEPPOL_IDENTIFIER_SCHEME = '0245'
+export const PEPPOL_IDENTIFIER_SCHEME = '9950'
