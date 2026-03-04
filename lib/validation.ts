@@ -166,11 +166,10 @@ export function validateEN16931(inv: PeppolInvoice): ValidationPhase {
     check(`BR-23-L${i + 1}`, !!line.itemName, `Riadok ${i + 1}: musi mat nazov polozky`)
     check(`BR-24-L${i + 1}`, isCreditNote ? true : line.priceAmount >= 0, `Riadok ${i + 1}: cena nesmie byt zaporna`)
 
-    // Check line total calculation (qty * price - discount)
-    const grossTotal = line.invoicedQuantity * line.priceAmount
-    const discountAmt = line.allowanceChargeAmount || 0
-    const expectedTotal = grossTotal - discountAmt
-    check(`BR-25-L${i + 1}`, Math.abs(line.lineExtensionAmount - expectedTotal) < 0.02, `Riadok ${i + 1}: suma riadku (${line.lineExtensionAmount}) sa musi rovnat mnozstvo x cena - zlava (${expectedTotal.toFixed(2)})`)
+    // Check line total: BT-131 = BT-129 * BT-146
+    // priceAmount is already the NET unit price (after line discount), so no separate discount subtraction
+    const expectedTotal = round2(line.invoicedQuantity * line.priceAmount)
+    check(`BR-25-L${i + 1}`, Math.abs(line.lineExtensionAmount - expectedTotal) < 0.02, `Riadok ${i + 1}: suma riadku (${line.lineExtensionAmount}) sa musi rovnat mnozstvo x cena (${expectedTotal.toFixed(2)})`)
   })
 
   // Tax subtotal checks -- SK reverse method may produce values that differ
