@@ -9,6 +9,7 @@ import { GlassCard } from '@/components/glass-card'
 import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
 
 export interface SupplierFormData {
   ico: string
@@ -305,10 +306,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         <GlassCard className="border-primary/20">
           <div className="text-sm text-muted-foreground mb-1">Peppol ID tohto dodavatela</div>
           <div className="text-lg font-mono font-semibold text-primary">
-            9950:{form.dic}
+            {PEPPOL_IDENTIFIER_SCHEME}:{form.dic}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Schema 9950 + DIC
+            Schema {PEPPOL_IDENTIFIER_SCHEME} + DIC
           </div>
         </GlassCard>
       )}
