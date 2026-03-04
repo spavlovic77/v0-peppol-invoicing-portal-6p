@@ -108,12 +108,12 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
             <FileCode className="w-8 h-8 text-chart-2" />
           </div>
           <div>
-            <div className="font-bold text-foreground text-base">UBL XML</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Peppol e-faktura</div>
+            <div className="font-bold text-foreground text-base">XML faktúra</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Faktúra</div>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-medium text-chart-2">
             <Download className="w-3.5 h-3.5" />
-            Stiahnut
+            Stiahnuť
           </div>
         </button>
 
@@ -131,12 +131,12 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
             )}
           </div>
           <div>
-            <div className="font-bold text-foreground text-base">PDF</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Tlacivy doklad</div>
+            <div className="font-bold text-foreground text-base">PDF vizuál</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Vizuál xml</div>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-medium text-destructive">
             <Download className="w-3.5 h-3.5" />
-            {downloadingPdf ? 'Generujem...' : 'Stiahnut'}
+            {downloadingPdf ? 'Generujem...' : 'Stiahnuť'}
           </div>
         </button>
 
@@ -154,12 +154,12 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
             )}
           </div>
           <div>
-            <div className="font-bold text-foreground text-base">XML + PDF</div>
+            <div className="font-bold text-foreground text-base">XML + Vizuál</div>
             <div className="text-xs text-muted-foreground mt-0.5">Obidva naraz</div>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
             <Download className="w-3.5 h-3.5" />
-            {downloadingBoth ? 'Stahuje sa...' : 'Stiahnut vsetko'}
+            {downloadingBoth ? 'Stahuje sa...' : 'Stiahnuť všetko'}
           </div>
         </button>
       </div>
@@ -181,10 +181,10 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
             </div>
             <div className="text-left">
               <div className="font-bold text-foreground text-base">
-                {sending ? 'Odosielam cez Peppol...' : 'Odoslat cez Peppol siet'}
+                {sending ? 'Odosielam cez Peppol...' : 'Odoslať cez Peppol sieť'}
               </div>
               <div className="text-xs text-muted-foreground">
-                Elektronicke dorucenie prijemcovi
+                Elektronické doručenie príjemcovi cez Peppol
               </div>
             </div>
           </button>
