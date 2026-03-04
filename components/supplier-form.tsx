@@ -301,19 +301,6 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         )}
       </GlassCard>
 
-      {/* Peppol ID Preview */}
-      {form.dic && (
-        <GlassCard className="border-primary/20">
-          <div className="text-sm text-muted-foreground mb-1">Peppol ID tohto dodavatela</div>
-          <div className="text-lg font-mono font-semibold text-primary">
-            {PEPPOL_IDENTIFIER_SCHEME}:{form.dic}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Schema {PEPPOL_IDENTIFIER_SCHEME} + DIC
-          </div>
-        </GlassCard>
-      )}
-
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div>
