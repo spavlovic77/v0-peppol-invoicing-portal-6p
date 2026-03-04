@@ -55,6 +55,7 @@ interface InvoiceData {
   invoice_mode?: string
   billing_reference_number?: string | null
   billing_reference_date?: string | null
+  attachments?: Array<{ id: string; filename: string; mimeCode: string; description: string; data: string; size: number }>
 }
 
 interface InvoiceItemData {
@@ -432,5 +433,12 @@ export function buildPeppolInvoice(
     deliveryDate: invoice.delivery_date || null,
     billingReferenceNumber: invoice.billing_reference_number || null,
     billingReferenceDate: invoice.billing_reference_date || null,
+    additionalDocumentReferences: (invoice.attachments || []).map(att => ({
+      id: att.id,
+      description: att.description || null,
+      filename: att.filename,
+      mimeCode: att.mimeCode,
+      data: att.data,
+    })),
   }
 }

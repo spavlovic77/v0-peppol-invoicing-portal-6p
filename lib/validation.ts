@@ -20,8 +20,10 @@ export interface ValidationPhase {
   passed: boolean
   /** true when results come from JS simulation, not real schematron */
   simulated?: boolean
-  /** true when peppolvalidator.com API confirmed this phase */
+  /** true when an external API confirmed this phase */
   apiConfirmed?: boolean
+  /** Which validator produced this result: 'ion-docval' | 'peppolvalidator' | 'js' */
+  validatorName?: 'ion-docval' | 'peppolvalidator' | 'js'
 }
 
 // ============================================================

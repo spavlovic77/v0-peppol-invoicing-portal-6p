@@ -481,6 +481,7 @@ export default function NewInvoicePage() {
         correction_reason: formData.correction_reason || null,
         billing_reference_number: formData.billing_reference_number || null,
         billing_reference_date: formData.billing_reference_date || null,
+        attachments: formData.attachments || [],
       }
 
       let invoiceId: string

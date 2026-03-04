@@ -41,6 +41,29 @@ export const invoiceItemSchema = z.object({
 
 export type InvoiceItem = z.infer<typeof invoiceItemSchema>
 
+// Attachment schema (EN16931 BG-24)
+export const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'text/csv',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.oasis.opendocument.spreadsheet',
+] as const
+
+export const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024 // 5 MB per file
+
+export const attachmentSchema = z.object({
+  id: z.string(),
+  filename: z.string(),
+  mimeCode: z.string(),
+  description: z.string().default(''),
+  data: z.string(), // base64-encoded content
+  size: z.number(), // original file size in bytes
+})
+
+export type InvoiceAttachment = z.infer<typeof attachmentSchema>
+
 // Invoice schema
 export const invoiceSchema = z.object({
   invoice_number: z.string().min(1, 'Číslo faktúry je povinné'),
@@ -75,6 +98,7 @@ export const invoiceSchema = z.object({
   billing_reference_number: z.string().nullable().default(null),
   billing_reference_date: z.string().nullable().default(null),
   items: z.array(invoiceItemSchema).min(1, 'Faktúra musí mať aspoň jednu položku'),
+  attachments: z.array(attachmentSchema).default([]),
 })
 
 export type InvoiceFormData = z.infer<typeof invoiceSchema>
@@ -160,6 +184,14 @@ export const peppolInvoiceSchema = z.object({
   // Correction fields
   billingReferenceNumber: z.string().nullable().default(null).describe('Original invoice number for credit notes (BT-25)'),
   billingReferenceDate: z.string().nullable().default(null).describe('Original invoice issue date (BT-26)'),
+  // Additional supporting documents (BG-24)
+  additionalDocumentReferences: z.array(z.object({
+    id: z.string().describe('Document reference ID (BT-122)'),
+    description: z.string().nullable().describe('Document description (BT-123)'),
+    filename: z.string().describe('Attachment filename'),
+    mimeCode: z.string().describe('MIME type of attachment'),
+    data: z.string().describe('Base64-encoded file content (BT-125)'),
+  })).default([]).describe('Embedded document attachments (BG-24)'),
 })
 
 export type PeppolInvoice = z.infer<typeof peppolInvoiceSchema>
