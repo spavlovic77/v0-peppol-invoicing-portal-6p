@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, FlaskConical, Info, Zap, Globe } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Shield, Info, Zap, Globe } from 'lucide-react'
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
 
@@ -9,8 +9,8 @@ interface ValidationResult {
   severity: 'error' | 'warning'
   message: string
   passed: boolean
-  /** 'api' = confirmed by peppolvalidator.com, 'js' = checked by JS logic */
-  source?: 'api' | 'js'
+  /** 'api' = confirmed by ion-docval */
+  source?: 'api'
 }
 
 interface ValidationPhase {
@@ -18,11 +18,10 @@ interface ValidationPhase {
   description: string
   results: ValidationResult[]
   passed: boolean
-  simulated?: boolean
   /** true when an external API confirmed this phase */
   apiConfirmed?: boolean
   /** Which validator produced this result */
-  validatorName?: 'ion-docval' | 'peppolvalidator' | 'js'
+  validatorName?: 'ion-docval'
 }
 
 interface Props {
@@ -45,7 +44,6 @@ export function ValidationDisplay({ phases }: Props) {
     0
   )
   const allPassed = phases.every((p) => p.passed)
-  const isSimulated = phases.some((p) => p.simulated)
   const totalErrors = phases.reduce(
     (s, p) => s + p.results.filter((r) => !r.passed && r.severity === 'error').length,
     0
@@ -56,12 +54,7 @@ export function ValidationDisplay({ phases }: Props) {
   )
 
   // Determine which validator was used (from the first API-confirmed phase)
-  const usedValidator = phases.find((p) => p.validatorName && p.validatorName !== 'js')?.validatorName
-  const validatorLabel = usedValidator === 'ion-docval'
-    ? 'ion-docval'
-    : usedValidator === 'peppolvalidator'
-      ? 'peppolvalidator.com'
-      : null
+  const validatorLabel = phases.find((p) => p.validatorName)?.validatorName ?? null
 
   return (
     <GlassCard className={allPassed ? 'border-success/20' : 'border-destructive/20'}>
@@ -111,19 +104,6 @@ export function ValidationDisplay({ phases }: Props) {
         </div>
       </button>
 
-      {/* Simulation warning banner */}
-      {isSimulated && (
-        <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
-          <FlaskConical className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs font-semibold text-warning">Simulácia validácie</p>
-            <p className="text-xs text-muted-foreground">
-              Schematron súbory nie sú skompilované a externá API je nedostupná. Výsledky sú orientačné — nespúšťajú sa skutočné PEPPOL pravidlá.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* How validation works */}
       {topOpen && (
         <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50">
@@ -137,9 +117,7 @@ export function ValidationDisplay({ phases }: Props) {
               <li><span className="font-medium text-foreground/70">Peppol BIS 3.0</span> -- pravidla OpenPEPPOL (PEPPOL-EN16931-R*) schematronu</li>
             </ol>
             <p className="pt-0.5">
-              Primarne: <span className="font-mono text-[10px]">ion-docval</span> (Fly.io).
-              Sekundarne: <span className="font-mono text-[10px]">peppolvalidator.com</span> API.
-              Fallback: JS simulacia s kontrolou poradia elementov.
+              Validacny engine: <span className="font-mono text-[10px]">ion-docval</span> (Fly.io) — XSD + EN16931 XSLT + Peppol Schematron.
             </p>
           </div>
         </div>
@@ -182,13 +160,7 @@ export function ValidationDisplay({ phases }: Props) {
                         {phase.apiConfirmed && (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/15 text-primary text-[10px] font-medium">
                             <Globe className="w-3 h-3" />
-                            {phase.validatorName === 'ion-docval' ? 'ion-docval' : 'peppolvalidator.com'}
-                          </span>
-                        )}
-                        {phase.simulated && !phase.apiConfirmed && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-warning/20 text-warning text-[10px] font-medium">
-                            <FlaskConical className="w-3 h-3" />
-                            JS simulacia
+                            ion-docval
                           </span>
                         )}
                       </div>
