@@ -18,8 +18,8 @@ export function ConfirmModal({
   open,
   title,
   description,
-  confirmLabel = 'Potvrdit',
-  cancelLabel = 'Zrusit',
+  confirmLabel = 'Potvrdiť',
+  cancelLabel = 'Zrušiť',
   variant = 'default',
   onConfirm,
   onCancel,
@@ -42,13 +42,13 @@ export function ConfirmModal({
 
   const iconColor =
     variant === 'danger' ? 'text-red-500' :
-    variant === 'warning' ? 'text-amber-500' :
-    'text-primary'
+      variant === 'warning' ? 'text-amber-500' :
+        'text-primary'
 
   const iconBg =
     variant === 'danger' ? 'bg-red-500/10' :
-    variant === 'warning' ? 'bg-amber-500/10' :
-    'bg-primary/10'
+      variant === 'warning' ? 'bg-amber-500/10' :
+        'bg-primary/10'
 
   const confirmBtnClass =
     variant === 'danger'
