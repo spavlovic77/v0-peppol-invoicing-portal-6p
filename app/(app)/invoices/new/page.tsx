@@ -308,23 +308,22 @@ export default function NewInvoicePage() {
       }
     }
 
-    // Generate invoice number scoped to supplier
+    // Generate invoice number scoped to supplier + prefix
     const year = new Date().getFullYear()
+    const prefix = correctId ? 'CN' : 'FV'
     const { data: seq } = await supabase
       .from('invoice_sequences')
       .select('*')
       .eq('user_id', user.id)
       .eq('supplier_id', activeSupplier.id)
       .eq('year', year)
+      .eq('prefix', prefix)
       .maybeSingle()
 
     let nextNum = 1
     if (seq) {
       nextNum = (seq.last_number || 0) + 1
     }
-
-    // Prefix determined later for corrections; default to CN for now
-    const prefix = correctId ? 'CN' : 'FV'
     const invoiceNumber = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`
     setFormData((prev) => ({
       ...prev,
@@ -502,10 +501,10 @@ export default function NewInvoicePage() {
         const year = new Date().getFullYear()
         const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
         const seqPrefix = isCorrectionMode ? 'CN' : 'FV'
-        await supabase.from('invoice_sequences').upsert(
-          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
-          { onConflict: 'user_id,supplier_id,year' }
-        )
+    await supabase.from('invoice_sequences').upsert(
+      { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
+      { onConflict: 'user_id,supplier_id,year,prefix' }
+    )
 
         const { data: invoice, error } = await supabase
           .from('invoices')

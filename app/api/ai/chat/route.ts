@@ -227,7 +227,6 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 **Opravna faktura / Dobropis** - §71 ods. 2, §74:
   - InvoiceTypeCode 381 (dobropis) alebo 380 s BT-25 odkazom (opravena faktura nahradzujuca povodnu)
 - MUSI odkazovat na povodnu fakturu cez BG-3 (BT-25 = cislo povodnej faktury)
-- Mnozstva a ceny MOZU byt zaporne
 
 ### Povinne udaje na fakture podla §74 zakona o DPH
 1. Meno a adresa dodavatela
