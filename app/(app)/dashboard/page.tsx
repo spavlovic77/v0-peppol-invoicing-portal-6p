@@ -79,6 +79,7 @@ export default function DashboardPage() {
   const { activeSupplier, suppliers, loading: supplierLoading } = useActiveSupplier()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
+  const [correctionTarget, setCorrectionTarget] = useState<Invoice | null>(null)
   const { setPageContext } = useAiPanel()
 
   // Feed AI assistant with dashboard stats
@@ -330,7 +331,14 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-0.5">
                             {(inv.status === 'valid' || inv.status === 'sent') && !inv.correction_of && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); router.push(`/invoices/new?correct=${inv.id}`) }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (inv.peppol_send_status === 'sent' || inv.peppol_send_status === 'delivered') {
+                                    setCorrectionTarget(inv)
+                                  } else {
+                                    router.push(`/invoices/new?correct=${inv.id}`)
+                                  }
+                                }}
                                 className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
                                 title="Vytvorit dobropis"
                               >
@@ -429,6 +437,15 @@ export default function DashboardPage() {
         variant="danger"
         onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget); setDeleteTarget(null) } }}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={!!correctionTarget}
+        title="Faktúra bola odoslaná cez Peppol"
+        description={`Faktúra ${correctionTarget?.invoice_number} bola už odoslaná príjemcovi cez Peppol sieť. Odporúčame vytvoriť opravný doklad namiesto úpravy pôvodnej faktúry.`}
+        confirmLabel="Vytvoriť opravný doklad"
+        variant="warning"
+        onConfirm={() => { if (correctionTarget) { router.push(`/invoices/new?correct=${correctionTarget.id}`); setCorrectionTarget(null) } }}
+        onCancel={() => setCorrectionTarget(null)}
       />
     </div>
   )
