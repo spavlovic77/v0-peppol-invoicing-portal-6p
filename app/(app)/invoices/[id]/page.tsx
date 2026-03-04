@@ -297,20 +297,20 @@ export default function InvoiceDetailPage() {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        {(invoice.status === 'draft' || invoice.status === 'invalid') ? (
-          <Link
-            href={`/invoices/new?edit=${invoice.id}`}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Upraviť
-          </Link>
-        ) : (
+        {(invoice.peppol_send_status === 'sent' || invoice.peppol_send_status === 'delivered') ? (
           <button
             onClick={() => setShowEditModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" /> Upraviť
           </button>
+        ) : (
+          <Link
+            href={`/invoices/new?edit=${invoice.id}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card text-sm text-foreground hover:bg-secondary transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Upraviť
+          </Link>
         )}
 
         <button
