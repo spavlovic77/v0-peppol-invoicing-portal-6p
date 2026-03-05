@@ -5,7 +5,6 @@ import { useAiPanel } from '@/lib/ai-context'
 import { X, Trash2, Send, Sparkles, Loader2 } from 'lucide-react'
 
 const SUGGESTIONS = [
-  'Vysvetli mi ako mám zaokrúhľovať tak, aby bola faktúra platná',
   'Ako mám vytvárať opravné faktúry?'
 ]
 
