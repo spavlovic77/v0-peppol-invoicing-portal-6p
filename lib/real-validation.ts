@@ -13,10 +13,12 @@ import type { ValidationPhase, ValidationResult } from './validation'
 import { validateStructure } from './validation'
 import type { PeppolInvoice } from './schemas'
 
-// ─── ion-docval on Fly.io ───────────────────────────────────────────────────
+// ─── Peppol Validator API (proxied ion-docval) ──────────────────────────────
 
-const ION_DOCVAL_URL = 'https://peppol-validator.fly.dev/api/validate'
-const ION_DOCVAL_TIMEOUT_MS = 15_000
+const ION_DOCVAL_URL = process.env.PEPPOL_VALIDATOR_API_URL || 'https://peppol-validator-api.vercel.app/api/v1/validate'
+const ION_DOCVAL_API_KEY = process.env.PEPPOL_VALIDATOR_API_KEY || ''
+const ION_DOCVAL_API_SECRET = process.env.PEPPOL_VALIDATOR_API_SECRET || ''
+const ION_DOCVAL_TIMEOUT_MS = 30_000
 
 // ─── ion-docval types & helpers ─────────────────────────────────────────────
 
@@ -96,7 +98,11 @@ async function validateViaIonDocval(xml: string): Promise<[ValidationPhase, Vali
   try {
     const res = await fetch(ION_DOCVAL_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/xml' },
+      headers: {
+        'Content-Type': 'application/xml',
+        'X-API-Key': ION_DOCVAL_API_KEY,
+        'X-API-Secret': ION_DOCVAL_API_SECRET,
+      },
       body: xml,
       signal: controller.signal,
     })
