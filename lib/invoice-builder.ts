@@ -2,15 +2,11 @@ import type { PeppolInvoice } from './schemas'
 import { PEPPOL_IDENTIFIER_SCHEME } from './constants'
 
 /**
- * Deterministic Peppol BIS 3.0 invoice builder with Slovak rounding methodology.
+ * Deterministic Peppol BIS 3.0 invoice builder.
  *
- * Slovak tax law calculates tax in reverse: tax = gross * rate / (100 + rate)
- * EN16931 calculates forward: tax = taxBase * rate / 100
- * These two methods produce different results due to rounding.
- *
- * Solution: Calculate using SK method, then emit a corrective AllowanceCharge (BG-20/BG-21)
- * with ReasonCode=ZZZ to bridge the gap so EN16931 validation passes:
- *   BT-116 = SUM(BT-131) + SUM(charges) - SUM(allowances)
+ * Uses EN16931 forward VAT calculation as per Peppol BIS 3.0 chapter 10.4:
+ *   tax = taxBase * rate / 100
+ *   taxBase = SUM(line extension amounts) - allowances + charges
  */
 
 interface SupplierProfile {
@@ -153,19 +149,15 @@ export function buildPeppolInvoice(
 
   const documentAllowances: PeppolInvoice['documentAllowances'] = []
 
-  // Group lines by tax rate -- track both net total and per-line gross sum
-  // For negative invoices (380), lineExtensionAmount can be negative; SK method uses absolute
-  const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number; grossSum: number }>()
+  // Group lines by tax rate for EN16931 tax calculation
+  const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number }>()
   for (const line of invoiceLines) {
     const key = `${line.classifiedTaxCategoryId}-${line.taxPercent}`
-    // SK: gross each line individually, then sum (rounding per line)
-    const lineGross = round2(line.lineExtensionAmount * (100 + line.taxPercent) / 100)
     const existing = taxGroups.get(key)
     if (existing) {
       existing.lineTotal += line.lineExtensionAmount
-      existing.grossSum += lineGross
     } else {
-      taxGroups.set(key, { rate: line.taxPercent, catId: line.classifiedTaxCategoryId, lineTotal: line.lineExtensionAmount, grossSum: lineGross })
+      taxGroups.set(key, { rate: line.taxPercent, catId: line.classifiedTaxCategoryId, lineTotal: line.lineExtensionAmount })
     }
   }
 
@@ -210,32 +202,24 @@ export function buildPeppolInvoice(
   }
 
   const userAllowancesTotal = round2(documentAllowances.filter(a => !a.isCharge).reduce((s, a) => s + a.amount, 0))
-  const taxExclusiveAmount_EN = round2(lineExtensionAmountTotal - userAllowancesTotal)
+  const userChargesTotal = round2(documentAllowances.filter(a => a.isCharge).reduce((s, a) => s + a.amount, 0))
 
   // ================================================================
-  // 5. SK reverse method: calculate tax and tax base per SK law
+  // 5. EN16931 forward VAT calculation (Peppol BIS 3.0 chapter 10.4)
   // ================================================================
-  // For each tax group:
-  //   grossWithVat = taxBase_EN * (100 + rate) / 100
-  //   tax_SK = round2(grossWithVat * rate / (100 + rate))
-  //   taxBase_SK = round2(grossWithVat - tax_SK)
-  //   correction = taxBase_SK - taxBase_EN
-  //
-  // If correction != 0, emit corrective AllowanceCharge with ZZZ
+  // tax = taxBase * rate / 100
+  // taxBase = lineExtensionAmountTotal - allowances + charges (per tax category)
 
-  let totalCorrections = 0 // net corrections (positive = charge, negative = allowance)
+  const taxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number; taxExemptionReasonCode: string | null; taxExemptionReason: string | null }[] = []
 
-  const skTaxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number; taxExemptionReasonCode: string | null; taxExemptionReason: string | null }[] = []
-
-  for (const [key, enGroup] of enTaxGroups) {
+  for (const [, enGroup] of enTaxGroups) {
     const rate = enGroup.rate
-    const taxBase_EN = enGroup.taxBase
+    const taxBase = enGroup.taxBase
 
+    // Determine exemption reason for zero-rate categories
+    let exemptionCode: string | null = null
+    let exemptionReason: string | null = null
     if (rate === 0) {
-      // Zero-rate: no rounding issue possible
-      // Determine exemption reason based on tax category
-      let exemptionCode: string | null = null
-      let exemptionReason: string | null = null
       if (enGroup.catId === 'AE') {
         exemptionCode = 'vatex-eu-ae'
         exemptionReason = 'Reverse charge'
@@ -246,77 +230,33 @@ export function buildPeppolInvoice(
         exemptionCode = 'vatex-eu-e'
         exemptionReason = 'Exempt from VAT'
       }
-      skTaxSubtotals.push({
-        taxableAmount: taxBase_EN,
-        taxAmount: 0,
-        taxCategoryId: enGroup.catId,
-        taxPercent: rate,
-        taxExemptionReasonCode: exemptionCode,
-        taxExemptionReason: exemptionReason,
-      })
-      continue
     }
 
-    // Gross with VAT = sum of per-line gross amounts (rounded per line, then summed)
-    // This is the SK-correct method: gross each line individually
-    const taxGroup = taxGroups.get(key)
-    let grossWithVat = taxGroup ? round2(taxGroup.grossSum) : round2(taxBase_EN * (100 + rate) / 100)
+    // EN16931 forward calculation: tax = taxBase * rate / 100
+    const taxAmount = round2(taxBase * rate / 100)
 
-    // If global discount was applied, reduce gross proportionally
-    if (globalDiscountAmt > 0 && lineExtensionAmountTotal > 0 && taxGroup) {
-      const proportion = taxGroup.lineTotal / lineExtensionAmountTotal
-      const discountGross = round2(round2(globalDiscountAmt * proportion) * (100 + rate) / 100)
-      grossWithVat = round2(grossWithVat - discountGross)
-    }
-
-    // SK reverse calculation
-    const tax_SK = round2(grossWithVat * rate / (100 + rate))
-    const taxBase_SK = round2(grossWithVat - tax_SK)
-
-    // Correction = difference between SK and EN tax bases
-    const correction = round2(taxBase_SK - taxBase_EN)
-
-    if (correction !== 0) {
-      totalCorrections += correction
-
-      // Charge codes use UNCL 7161 (ZZZ = Mutually defined)
-      // Allowance codes use UNCL 5189 (104 = Special agreement)
-      const isCharge = correction > 0
-      documentAllowances.push({
-        amount: round2(Math.abs(correction)),
-        reason: 'Vzajomne definovane',
-        reasonCode: isCharge ? 'ZZZ' : '104',
-        taxCategoryId: enGroup.catId,
-        taxPercent: rate,
-        isCharge,
-      })
-    }
-
-    // Use SK values for tax subtotals
-    skTaxSubtotals.push({
-      taxableAmount: taxBase_SK,
-      taxAmount: tax_SK,
+    taxSubtotals.push({
+      taxableAmount: taxBase,
+      taxAmount,
       taxCategoryId: enGroup.catId,
       taxPercent: rate,
-      taxExemptionReasonCode: null,
-      taxExemptionReason: null,
+      taxExemptionReasonCode: exemptionCode,
+      taxExemptionReason: exemptionReason,
     })
   }
 
   // ================================================================
-  // 6. Final totals using SK-correct values
+  // 6. Final totals using EN16931 values
   // ================================================================
-  // BT-116 taxExclusiveAmount = taxExclusiveAmount_EN + charges - allowances (ZZZ only)
-  // Which equals SUM(taxBase_SK) across all groups
-  const taxExclusiveAmount = round2(taxExclusiveAmount_EN + totalCorrections)
-
-  const taxAmountTotal = round2(skTaxSubtotals.reduce((s, t) => s + t.taxAmount, 0))
+  // BT-116 taxExclusiveAmount = SUM(BT-131) - allowances + charges
+  const taxExclusiveAmount = round2(lineExtensionAmountTotal - userAllowancesTotal + userChargesTotal)
+  const taxAmountTotal = round2(taxSubtotals.reduce((s, t) => s + t.taxAmount, 0))
   const taxInclusiveAmount = round2(taxExclusiveAmount + taxAmountTotal)
   const payableAmount = taxInclusiveAmount
 
   // Separate allowances and charges for LegalMonetaryTotal
-  const allowanceTotalAmount = round2(documentAllowances.filter(a => !a.isCharge).reduce((s, a) => s + a.amount, 0))
-  const chargeTotalAmount = round2(documentAllowances.filter(a => a.isCharge).reduce((s, a) => s + a.amount, 0))
+  const allowanceTotalAmount = userAllowancesTotal
+  const chargeTotalAmount = userChargesTotal
 
   // ================================================================
   // 7. Peppol identifiers + self-billing role swap
@@ -418,7 +358,7 @@ export function buildPeppolInvoice(
     paymentId: invoice.variable_symbol || null,
     iban: invoice.iban || profile.iban || null,
     bic: invoice.swift || profile.swift || null,
-    taxSubtotals: skTaxSubtotals,
+    taxSubtotals,
     taxAmountTotal,
     lineExtensionAmountTotal,
     taxExclusiveAmount,
