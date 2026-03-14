@@ -31,7 +31,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - **380** = Faktura (Commercial Invoice)
 - **381** = Dobropis (Credit Note)
 - **383** = Debet nota (Debit Note)
-  - **384** = Opravna faktura (Corrective Invoice) — nepouzivame, namiesto toho vystavujeme novu 380 s BT-25 odkazom
+- **384** = Opravna faktura (Corrective Invoice)
 - **386** = Zalohova faktura (Prepayment Invoice)
 - **389** = Samofaktura (Self-billing Invoice)
 - **751** = Informacia o fakture (Invoice Information)
@@ -256,38 +256,10 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 Aj ked nie ste platcom DPH a nie ste povinny vystavovat a zasielat faktury cez Peppol, **mate povinnost prijat faktury cez Peppol**. Tato povinnost sa tyka vsetkych podnikatelskych subjektov bez ohladu na to, ci su registrovani ako platcovia DPH. To znamena, ze ak vam dodavatel posle fakturu cez Peppol siet, musite byt schopni ju prijat a spracovat. Odporuca sa registrovat sa v Peppol sieti cez Access Point providera a mat nastaveny endpoint pre prijem dokladov.
 
 
-### Ak sa používateľ spýta: Vysvetli mi ako mám zaokrúhľovať tak, aby bola faktúra platna tak odpovedaj takto:
-
-Slovensky zakon o DPH a europska norma EN 16931 pocitaju DPH opacnym smerom. Kvoli zaokruhlovaniu to produkuje mierne odlisne vysledky:
-- Slovensky sposob (zhora nadol): Zacina od celkovej sumy s DPH a pocita spatne. Dan sa vypocita ako suma s DPH vynasobena sadzbou a vydelena sadzbou plus sto. Zaklad dane je potom suma s DPH minus dan.
-- Europsky sposob EN 16931 (zdola nahor): Zacina od suctu riadkov a pocita dopredu. Zaklad dane je sucet vsetkych riadkovych sum. Dan sa vypocita ako zaklad dane vynasobeny sadzbou a vydeleny sto.
-
-Kazdy riadok je zaokruhleny na 2 desatinne miesta. Ked scitate vela zaokruhlench riadkov, celkovy zaklad dane sa mierne lisi od zakladu dane ziskaneho slovenskou reverznou metodou. Typicky rozdiel je 0.01 az 1.00 EUR.
-
-### Riesenie: Automaticka korekcia
-System automaticky vypocita a vlozi do faktury korekciu (AllowanceCharge), ktora vyrovnava zaokruhlovaci rozdiel:
-- Ak je slovensky zaklad vyssi nez europsky: vlozi sa prirazka (Charge) s kodom ZZZ
-- Ak je slovensky zaklad nizsi nez europsky: vlozi sa zlava (Allowance) s kodom 104 (Special agreement)
-- Dovod korekcie: "Vzajomne definovane"
-
-### Ako to funguje krok za krokom
-1. Pre kazdy riadok faktury sa vypocita suma riadku (mnozstvo krat cena, zaokruhlene na 2 miesta)
-2. Pre kazdy riadok sa vypocita hruba suma aj s DPH — dolezite je, ze sa to pocita per riadok, nie z celkoveho suctu
-3. Scitaju sa vsetky riadkove sumy (europsky zaklad) a vsetky hrube sumy
-4. Zo suctu hrubych sum sa slovenskou metodou vypocita dan a zaklad dane
-5. Rozdiel medzi slovenskym a europskym zakladom je korekcia
-6. Ak je rozdiel nenulovy, system ho automaticky vlozi do faktury
-
-### Dolezite pravidla
-- Pre zlavy (allowances) sa pouziva kod 104, nie ZZZ — kod ZZZ je len pre prirazky (charges)
-- Hruba suma sa musi pocitat pre kazdy riadok zvlast, nie z celkoveho zakladu
-- Aj rozdiel 0.01 EUR sa musi korigovat, inak Peppol validacia zlyha
-- Do korekcie sa nesmie vkladat zakladna suma (BaseAmount) ani koeficient (MultiplierFactorNumeric) — sposobilo by to zlyhanie pravidla R040
-
 ## Ak sa používateľ spýta: Ako mám vytvárať opravné faktúry tak odpovedaj takto:
 
 # 1. Dobropis (Credit Note, kod 381)
-Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH. Cislo faktury zacina prefixom CN.
+Pouziva sa pri financnych korekciach — ked sa meni suma, mnozstvo, cena alebo DPH. Cislo faktury zacina prefixom napr. DP.
 
 Scenare dobropisu:
 - Uplne storno — Kompletne zrusenie povodnej faktury. System prekopiruje vsetky polozky z povodnej faktury do dobropisu.
@@ -301,17 +273,16 @@ Povinne udaje dobropisu:
 - Dovod opravy
 - Vsetky standardne udaje faktury (dodavatel, odberatel, polozky)
 
-# 2. Opravena faktura (Re-issued Invoice, kod 380)
-Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom FV (rovnaky ako standardna faktura).
+# 2. Opravna faktura (Corrective Invoice, kod 384)
+Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom napr. OP
 
 Scenar:
-- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky nesie povodne hodnoty (mnozstva, ceny) pretoze ide o novu fakturu nahradzujucu povodnu. Odkaz na povodnu fakturu je v BT-25 (Preceding Invoice Reference).
+- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky nesú nulove hodnoty (mnozstva, ceny). Odkaz na povodnu fakturu je v BT-25 (Preceding Invoice Reference).
 
 ### Spolocne pravidla pre vsetky opravne doklady
 - Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference (BT-25 a BT-26)
 - Obsahuje cislo povodnej faktury a datum vystavenia povodnej faktury
 - Polozky dobropisu (381) maju kladne hodnoty (CreditNote konvencia)
-- Opravena faktura (380) ma rovnake polozky ako povodna, len s opravenymi udajmi
 - Po vybere scenara a vyplneni udajov vas system presmeruje na suhrn a generovanie faktury
 
 ## Pravidla konverzacie

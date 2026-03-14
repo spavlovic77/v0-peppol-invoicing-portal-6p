@@ -89,7 +89,8 @@ export function buildPeppolInvoice(
   const isReverseCharge = invoiceMode === 'reversecharge'
   // Self-billing MUST use 389, regardless of what is stored
   const typeCode = isSelfBilling ? '389' : (invoice.invoice_type_code || '380')
-  const isCreditNote381 = typeCode === '381'
+  // 381 = Credit Note, 384 = Corrective Invoice -- both reference original and use positive values
+  const isCreditOrCorrective = typeCode === '381' || typeCode === '384'
   const isVatPayer = profile.is_vat_payer !== false
 
   // Non-VAT payer: force all items to category O (outside scope), 0% rate
@@ -104,10 +105,10 @@ export function buildPeppolInvoice(
 
   // ================================================================
   // 1. Build invoice lines with per-item discounts
-  // For CreditNote (381): quantities and amounts are always POSITIVE
+  // For CreditNote (381) and Corrective Invoice (384): quantities and amounts are always POSITIVE
   // ================================================================
   const invoiceLines = items.map((item) => {
-    const qty = isCreditNote381 ? Math.abs(item.quantity) : item.quantity
+    const qty = isCreditOrCorrective ? Math.abs(item.quantity) : item.quantity
     const grossAmount = round2(qty * item.unit_price)
     const discountAmt = round2(item.discount_amount ? Math.abs(item.discount_amount) : (Math.abs(grossAmount) * (item.discount_percent || 0)) / 100)
     const lineExtension = round2(grossAmount - discountAmt)

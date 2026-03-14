@@ -52,6 +52,9 @@ export function validateStructure(inv: PeppolInvoice): ValidationPhase {
   check('STRUCT-12', !!inv.customerCountryCode && inv.customerCountryCode.length === 2, 'Kod krajiny odberatela musi mat 2 znaky')
   check('STRUCT-13', !!inv.buyerReference, 'Referencia odberatela je povinna pre Peppol')
   check('STRUCT-14', ['380', '381', '383', '384', '386', '389', '751'].includes(inv.invoiceTypeCode), 'Kod typu dokumentu musi byt platny (380, 381, 384, atd.)')
+  // BR-55: For Credit Note (381) and Corrective Invoice (384), billing reference is mandatory
+  const needsBillingRef = inv.invoiceTypeCode === '381' || inv.invoiceTypeCode === '384'
+  check('STRUCT-15', !needsBillingRef || !!inv.billingReferenceNumber, 'Dobropis (381) a opravna faktura (384) musia mat referenciu na povodnu fakturu')
 
   return {
     name: 'Strukturalna validacia',

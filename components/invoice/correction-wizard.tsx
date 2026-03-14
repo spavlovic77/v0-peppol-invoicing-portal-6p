@@ -147,7 +147,7 @@ const scenarios = [
     id: 'freeform' as const,
     icon: PenLine,
     label: 'Zmena údajov',
-    desc: 'Všeobecné údaje',
+    desc: 'Opravná faktúra (384)',
     color: 'text-violet-400',
     bg: 'bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/20',
     bgActive: 'bg-violet-500/20 border-violet-500/50 ring-2 ring-violet-500/30',
@@ -156,9 +156,9 @@ const scenarios = [
 
 export function CorrectionWizard({ original, onApply }: Props) {
   const [selected, setSelected] = useState<CorrectionScenario | null>(null)
-  // freeform (Zmena údajov) uses 380 (re-issued standard invoice with corrected data)
+  // freeform (Zmena údajov) uses 384 (corrective invoice per EN16931/Peppol BIS 3.0)
   // all other scenarios use 381 (credit note)
-  const docType = selected === 'freeform' ? '380' as const : '381' as const
+  const docType = selected === 'freeform' ? '384' as const : '381' as const
 
   // For quantity scenario: track new quantities per line
   const [qtyOverrides, setQtyOverrides] = useState<Record<number, number>>(
