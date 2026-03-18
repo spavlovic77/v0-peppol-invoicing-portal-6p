@@ -215,7 +215,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
   const sanitized = buyerIco.replace(/\s/g, '')
   setBuyerIco(sanitized)
   if (!sanitized || sanitized.length < 6) {
-  toast.error('Zadajte platne ICO')
+  toast.error('Zadajte platné IČO')
   return
   }
   setLookingUp(true)
@@ -288,7 +288,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-foreground truncate">{b.company_name}</div>
                     <div className="text-xs text-muted-foreground">
-                      ICO: {b.ico}
+                      IČO: {b.ico}
                       <span className="ml-2 text-muted-foreground/60">{b.invoice_count}x</span>
                     </div>
                   </div>
@@ -321,7 +321,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
                 >
                   <div className="font-medium text-foreground truncate">{c.company_name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {c.ico && `ICO: ${c.ico}`}
+                    {c.ico && `IČO: ${c.ico}`}
                     {c.city && ` | ${c.city}`}
                   </div>
                 </button>
@@ -342,7 +342,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
             type="text"
             value={buyerIco}
             onChange={(e) => setBuyerIco(e.target.value)}
-            placeholder={`ICO ${partyLabel}`}
+            placeholder={`IČO ${partyLabel}`}
             className="glass-input flex-1 px-3.5 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground text-sm"
             maxLength={10}
           />
@@ -371,20 +371,20 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" placeholder="Názov odberateľa" />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">ICO</label>
+            <label className="block text-xs text-muted-foreground mb-1">IČO</label>
             <input type="text" value={formData.buyer_ico || ''}
               onChange={(e) => updateForm({ buyer_ico: e.target.value.replace(/\s/g, '') })}
               onBlur={(e) => { const v = e.target.value.replace(/\s/g, ''); if (v !== e.target.value) updateForm({ buyer_ico: v }) }}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">DIC</label>
+            <label className="block text-xs text-muted-foreground mb-1">DIČ</label>
             <input id="buyer_dic" type="text" value={formData.buyer_dic || ''}
               onChange={(e) => updateForm({ buyer_dic: e.target.value })}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">IC DPH</label>
+            <label className="block text-xs text-muted-foreground mb-1">IČ DPH</label>
             <input type="text" value={formData.buyer_ic_dph || ''}
               onChange={(e) => updateForm({ buyer_ic_dph: e.target.value })}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
@@ -408,7 +408,7 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">PSC</label>
+            <label className="block text-xs text-muted-foreground mb-1">PSČ</label>
             <input type="text" value={formData.buyer_postal_code || ''}
               onChange={(e) => updateForm({ buyer_postal_code: e.target.value })}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />

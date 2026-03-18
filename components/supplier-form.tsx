@@ -64,7 +64,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
     const sanitized = icoInput.replace(/\s/g, '')
     setIcoInput(sanitized)
     if (!sanitized || sanitized.length < 6) {
-      toast.error('Zadajte platne ICO (min. 6 znakov)')
+      toast.error('Zadajte platné IČO (min. 6 znakov)')
       return
     }
     setLookingUp(true)
@@ -97,7 +97,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
 
   async function handleSave() {
     if (!form.company_name || !form.ico) {
-      toast.error('Nazov firmy a ICO su povinne')
+      toast.error('Názov firmy a IČO sú povinné')
       return
     }
     setSaving(true)
@@ -173,7 +173,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
             type="text"
             value={icoInput}
             onChange={(e) => setIcoInput(e.target.value)}
-            placeholder="Zadajte ICO (napr. 36421928)"
+            placeholder="Zadajte IČO (napr. 36421928)"
             className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
             maxLength={10}
           />
@@ -206,14 +206,14 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <Field label="Názov firmy *" value={form.company_name} onChange={(v) => updateField('company_name', v)} />
-          <Field label="ICO" value={form.ico} onChange={(v) => updateField('ico', v)} />
-          <Field label="DIC" value={form.dic} onChange={(v) => updateField('dic', v)} />
+          <Field label="IČO" value={form.ico} onChange={(v) => updateField('ico', v)} />
+          <Field label="DIČ" value={form.dic} onChange={(v) => updateField('dic', v)} />
           {form.is_vat_payer && (
-            <Field label="IC DPH" value={form.ic_dph} onChange={(v) => updateField('ic_dph', v)} />
+            <Field label="IČ DPH" value={form.ic_dph} onChange={(v) => updateField('ic_dph', v)} />
           )}
           <Field label="Ulica" value={form.street} onChange={(v) => updateField('street', v)} />
           <Field label="Mesto" value={form.city} onChange={(v) => updateField('city', v)} />
-          <Field label="PSC" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
+          <Field label="PSČ" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
           <Field label="Krajina" value={form.country_code} onChange={(v) => updateField('country_code', v)} />
         </div>
         <div className="mt-5 pt-5 border-t border-border">

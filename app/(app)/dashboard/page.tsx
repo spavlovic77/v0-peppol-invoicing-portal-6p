@@ -235,7 +235,7 @@ export default function DashboardPage() {
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-foreground truncate">{activeSupplier?.company_name}</h1>
           <p className="text-sm text-muted-foreground">
-            ICO: {activeSupplier?.ico}
+            IČO: {activeSupplier?.ico}
             {activeSupplier?.is_vat_payer === false && (
               <span className="ml-2 text-xs text-warning">Neplatca DPH</span>
             )}

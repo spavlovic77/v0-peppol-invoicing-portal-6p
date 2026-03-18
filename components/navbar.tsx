@@ -144,7 +144,7 @@ export function Navbar() {
                         <Building2 className="w-4 h-4 shrink-0" />
                         <div className="min-w-0">
                           <div className="truncate font-medium">{s.company_name}</div>
-                          <div className="text-xs text-muted-foreground">{'ICO: '}{s.ico}</div>
+                          <div className="text-xs text-muted-foreground">{'IČO: '}{s.ico}</div>
                         </div>
                       </button>
                     ))}
@@ -400,7 +400,7 @@ export function Navbar() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-foreground truncate">{s.company_name}</div>
-                        <div className="text-xs text-muted-foreground">ICO: {s.ico}</div>
+                        <div className="text-xs text-muted-foreground">IČO: {s.ico}</div>
                       </div>
                     </button>
                   )

@@ -15,10 +15,10 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - **BG-1** Hlavicka faktury: BT-1 (cislo faktury), BT-2 (datum vyhotovenia), BT-3 (InvoiceTypeCode), BT-5 (mena)
 - **BG-2** Referencne udaje procesu: BT-10 (referencia odberatela), BT-11 (odkaz na projekt), BT-13 (cislo objednavky)
 - **BG-3** Odkaz na predchadzajucu fakturu (povinne pre dobropisy a opravne faktury): BT-25 (cislo povodnej faktury), BT-26 (datum)
-- **BG-4** Dodavatel (Seller): BT-27 (nazov), BT-28 (obchodne meno), BT-29 (ID dodavatela), BT-30 (registracia), BT-31 (IC DPH), BT-32 (DIC), BT-34 (elektronicky endpoint)
-- **BG-5** Postova adresa dodavatela: BT-35 (ulica), BT-36 (doplnok), BT-37 (mesto), BT-38 (PSC), BT-39 (region), BT-40 (kod krajiny)
-- **BG-7** Odberatel (Buyer): BT-44 (nazov), BT-45 (obchodne meno), BT-46 (ID), BT-47 (registracia), BT-48 (IC DPH), BT-49 (elektronicky endpoint)
-- **BG-8** Postova adresa odberatela: BT-50 (ulica), BT-52 (mesto), BT-53 (PSC), BT-55 (kod krajiny)
+- **BG-4** Dodavatel (Seller): BT-27 (nazov), BT-28 (obchodne meno), BT-29 (ID dodavatela), BT-30 (registracia), BT-31 (IČ DPH), BT-32 (DIČ), BT-34 (elektronicky endpoint)
+- **BG-5** Postova adresa dodavatela: BT-35 (ulica), BT-36 (doplnok), BT-37 (mesto), BT-38 (PSČ), BT-39 (region), BT-40 (kod krajiny)
+- **BG-7** Odberatel (Buyer): BT-44 (nazov), BT-45 (obchodne meno), BT-46 (ID), BT-47 (registracia), BT-48 (IČ DPH), BT-49 (elektronicky endpoint)
+- **BG-8** Postova adresa odberatela: BT-50 (ulica), BT-52 (mesto), BT-53 (PSČ), BT-55 (kod krajiny)
 - **BG-16** Platobne instrukcie: BT-81 (PaymentMeansCode), BT-82 (popis platby), BT-83 (remittance info), BT-84 (IBAN)
 - **BG-17** Bankovy ucet (Credit transfer): BT-84 (IBAN), BT-85 (BIC), BT-86 (nazov banky/uctu)
 - **BG-22** Celkove sumy: BT-106 (suma riadkov bez DPH), BT-109 (zaklad dane), BT-110 (DPH celkom), BT-112 (suma s DPH), BT-113 (zaplatena zaloha), BT-115 (suma na uhradu)
@@ -86,7 +86,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - BR-27: Kazdy riadok MUSI mat DPH kategoriu (BT-151) a sadzbu (BT-152)
 
 ### Vypoctove pravidla (BR-CO-xx)
-- BR-CO-03: IC DPH (BT-31) MUSI zacinat 2-miestnym kodom krajiny
+- BR-CO-03: IČ DPH (BT-31) MUSI zacinat 2-miestnym kodom krajiny
 - BR-CO-04: Kazdy VAT rozpis MUSI mat vypocet: BT-117 = BT-116 * (BT-119 / 100), zaokruhlene na 2 desatinne miesta
 - BR-CO-10: Suma riadkov (BT-106) = sucet BT-131 vsetkych riadkov
 - BR-CO-11: Sum of allowances = sucet BT-92
@@ -103,14 +103,14 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 ### Pravidla pre standardnu DPH (BR-S-xx)
 - BR-S-01: Ak existuje riadok s kategoriou S, MUSI existovat VAT rozpis s S
 - BR-S-02: Zaklad dane v rozpise S = sucet riadkov s kategoriou S + charges - allowances s S
-- BR-S-05: Faktura s riadkami S MUSI mat IC DPH dodavatela (BT-31)
-- BR-S-06: Faktura s riadkami S MUSI mat IC DPH ALEBO DIC odberatela
+- BR-S-05: Faktura s riadkami S MUSI mat IČ DPH dodavatela (BT-31)
+- BR-S-06: Faktura s riadkami S MUSI mat IČ DPH ALEBO DIČ odberatela
 - BR-S-08: Rozpis S NESMI mat dovod oslobodenia (BT-120/BT-121)
 
 ### Pravidla pre reverse charge (BR-AE-xx)
 - BR-AE-01: Ak existuje riadok s AE, MUSI existovat presne jeden rozpis s AE
-- BR-AE-02: Faktura s AE MUSI mat IC DPH dodavatela (BT-31)
-- BR-AE-03: Faktura s AE MUSI mat IC DPH odberatela (BT-48)
+- BR-AE-02: Faktura s AE MUSI mat IČ DPH dodavatela (BT-31)
+- BR-AE-03: Faktura s AE MUSI mat IČ DPH odberatela (BT-48)
 - BR-AE-05: VSETKY riadky MUSIA mat kategoriu AE (nemozno miesat s inymi)
 - BR-AE-07: Ziadne document-level allowances s inou kategoriou ako AE
 - BR-AE-08: Ziadne document-level charges s inou kategoriou ako AE
@@ -118,25 +118,25 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - BR-AE-10: Rozpis AE MUSI mat TaxExemptionReasonCode ("vatex-eu-ae") ALEBO TaxExemptionReason ("Prenesenie danovej povinnosti" / "Reverse charge")
 
 ### Pravidla pre nulovu sadzbu (BR-Z-xx)
-- BR-Z-05: Faktura s Z MUSI mat IC DPH dodavatela
+- BR-Z-05: Faktura s Z MUSI mat IČ DPH dodavatela
 - BR-Z-08: Rozpis Z NESMI mat dovod oslobodenia
 - BR-Z-09: Suma DPH v rozpise Z MUSI byt 0
 
 ### Pravidla pre oslobodenie (BR-E-xx)
 - BR-E-01: Ak existuje riadok s E, MUSI existovat VAT rozpis s E
-- BR-E-05: Faktura s E MUSI mat IC DPH dodavatela
+- BR-E-05: Faktura s E MUSI mat IČ DPH dodavatela
 - BR-E-08: Rozpis E NESMI mat sadzbu != 0
 - BR-E-09: Suma DPH v rozpise E MUSI byt 0
 - BR-E-10: Rozpis E MUSI mat dovod oslobodenia (BT-120 alebo BT-121)
 
 ### Pravidla pre intra-EU (BR-IC-xx / BR-K)
-- BR-IC-01/BR-K: Ak existuje riadok s K, dodavatel aj odberatel MUSIA mat IC DPH
+- BR-IC-01/BR-K: Ak existuje riadok s K, dodavatel aj odberatel MUSIA mat IČ DPH
 - BR-IC-11: Suma DPH v rozpise K MUSI byt 0
 - BR-IC-12: Rozpis K MUSI mat dovod oslobodenia
 
 ### Pravidla mimo rozsahu (BR-O-xx)
 - BR-O-01: Ak existuje riadok s O, MUSI existovat VAT rozpis s O
-- BR-O-05: Faktura s O NESMI mat IC DPH dodavatela
+- BR-O-05: Faktura s O NESMI mat IČ DPH dodavatela
 - BR-O-08: Rozpis O NESMI mat sadzbu != 0
 - BR-O-09: Suma DPH v rozpise O MUSI byt 0
 - BR-O-10: Rozpis O MUSI mat dovod oslobodenia
@@ -176,7 +176,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ### Endpoint a identifikatory v Peppol
 - **EndpointID** je povinny pre dodavatela (BT-34) aj odberatela (BT-49)
 - **schemeID** pouziva ICD kody (ISO 6523):
-  - \`0245\` = SK identifikator (pre slovenske subjekty), hodnota = DIC
+  - \`0245\` = SK identifikator (pre slovenske subjekty), hodnota = DIČ
   - \`9906\` = IT:VAT, \`0007\` = SE:ORGNR, \`0088\` = EAN/GLN, \`0060\` = DUNS
   - \`9930\` = DE:VAT, \`0190\` = NL:OINO
 
@@ -197,10 +197,10 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 ## Slovensky kontext (Zakon 222/2004 Z.z. o DPH)
 
 ### Identifikatory
-- **ICO**: 8-miestne identifikacne cislo organizacie
-- **DIC**: Danove identifikacne cislo (format: cisla, zvycajne 10-miestne)
-- **IC DPH**: Identifikacne cislo pre DPH (format: SK + 10 cislic, napr. SK2022182030), povinne pre platcov DPH
-- **Peppol Participant ID**: format \`0245:{DIC}\` pre slovenske subjekty
+- **IČO**: 8-miestne identifikacne cislo organizacie
+- **DIČ**: Danove identifikacne cislo (format: cisla, zvycajne 10-miestne)
+- **IČ DPH**: Identifikacne cislo pre DPH (format: SK + 10 cislic, napr. SK2022182030), povinne pre platcov DPH
+- **Peppol Participant ID**: format \`0245:{DIČ}\` pre slovenske subjekty
 
 ### Sadzby DPH (platne od 1.1.2025)
 - **23%** = zakladna sadzba (pred 2025: 20%)
@@ -230,9 +230,9 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 
 ### Povinne udaje na fakture podla §74 zakona o DPH
 1. Meno a adresa dodavatela
-2. IC DPH dodavatela
+2. IČ DPH dodavatela
 3. Meno a adresa odberatela
-4. IC DPH odberatela (ak je platca DPH)
+4. IČ DPH odberatela (ak je platca DPH)
 5. Poradove cislo faktury
 6. Datum vyhotovenia
 7. Datum dodania (ak sa lisi od datumu vyhotovenia)
@@ -277,7 +277,7 @@ Povinne udaje dobropisu:
 Pouziva sa pre nefinancne zmeny — oprava udajov bez dopadu na DPH alebo sumy. Cislo faktury zacina prefixom napr. OP
 
 Scenar:
-- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, ICO, DIC, IC DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky nesú nulove hodnoty (mnozstva, ceny). Odkaz na povodnu fakturu je v BT-25 (Preceding Invoice Reference).
+- Zmena udajov — Oprava nefinancnych udajov ako nazov odberatela, IČO, DIČ, IČ DPH, adresa, email, Peppol ID, cislo objednavky, datum dodania, poznamka alebo nazvy poloziek. Po vybere scenara system zobrazi formular so vsetkymi editovatelanymi polami predvyplnenymi z povodnej faktury. Zmenene polia su zvyraznene. Dovod opravy sa vyplni automaticky na zaklade vykonanych zmien. Polozky nesú nulove hodnoty (mnozstva, ceny). Odkaz na povodnu fakturu je v BT-25 (Preceding Invoice Reference).
 
 ### Spolocne pravidla pre vsetky opravne doklady
 - Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference (BT-25 a BT-26)

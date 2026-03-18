@@ -215,11 +215,11 @@ export default function BuyersPage() {
             </button>
           </div>
 
-          {/* ICO Lookup */}
+          {/* IČO Lookup */}
           <div className="flex gap-3 mb-4">
             <input
               type="text" value={form.ico || ''} onChange={(e) => setForm({ ...form, ico: e.target.value })}
-              placeholder="ICO odberatela" className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground" maxLength={10}
+              placeholder="IČO odberateľa" className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground" maxLength={10}
             />
             <button onClick={lookupICO} disabled={lookingUp}
               className="px-4 py-2.5 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
@@ -269,8 +269,8 @@ export default function BuyersPage() {
                 <div className="min-w-0">
                   <h3 className="font-medium text-foreground truncate">{b.company_name}</h3>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                    {b.ico && <span>{'ICO: '}{b.ico}</span>}
-                    {b.dic && <span>{'DIC: '}{b.dic}</span>}
+                    {b.ico && <span>{'IČO: '}{b.ico}</span>}
+                    {b.dic && <span>{'DIČ: '}{b.dic}</span>}
                     {(b.street || b.city) && (
                       <span>{[b.street, b.postal_code, b.city].filter(Boolean).join(', ')}</span>
                     )}

@@ -137,8 +137,8 @@ export default function SuppliersPage() {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-sm text-muted-foreground">
-                        <span>{'ICO: '}{s.ico}</span>
-                        {s.dic && <span>{'DIC: '}{s.dic}</span>}
+                        <span>{'IČO: '}{s.ico}</span>
+                        {s.dic && <span>{'DIČ: '}{s.dic}</span>}
                       </div>
                       {(s.street || s.city) && (
                         <div className="text-sm text-muted-foreground mt-0.5">
