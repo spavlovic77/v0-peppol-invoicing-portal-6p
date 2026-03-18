@@ -24,13 +24,13 @@ export async function GET(request: Request) {
   const ico = searchParams.get('ico')
 
   if (!ico || ico.length < 6 || ico.length > 8) {
-    return NextResponse.json({ error: 'Neplatne ICO (6-8 cifier)' }, { status: 400 })
+    return NextResponse.json({ error: 'Neplatné IČO (6-8 číslic)' }, { status: 400 })
   }
 
   const paddedICO = ico.padStart(8, '0')
 
   try {
-    // Step 1: Search for the company by ICO
+    // Step 1: Search for the company by IČO
     const searchUrl = `https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&pokracovat-za-id=1&max-zaznamov=1&ico=${paddedICO}`
     const searchRes = await fetch(searchUrl, {
       headers: { Accept: 'application/json' },
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
     if (!searchData.id || searchData.id.length === 0) {
       return NextResponse.json(
-        { error: 'Subjekt s danym ICO nebol najdeny v registri' },
+        { error: 'Subjekt s daným IČO nebol nájdený v registri' },
         { status: 404 }
       )
     }

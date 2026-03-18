@@ -229,8 +229,8 @@ export default function OnboardingPage() {
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground ml-7">
                 <span>IČO: {company.ico}</span>
-                {company.dic && <span>DIC: {company.dic}</span>}
-                {company.ic_dph && <span>IC DPH: {company.ic_dph}</span>}
+                {company.dic && <span>DIČ: {company.dic}</span>}
+                {company.ic_dph && <span>IČ DPH: {company.ic_dph}</span>}
                 {company.city && <span>{company.street}, {company.city}</span>}
               </div>
             </div>

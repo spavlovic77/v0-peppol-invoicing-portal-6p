@@ -31,7 +31,7 @@ export function validateStructure(inv: PeppolInvoice): ValidationPhase {
   }
 
   check('STRUCT-01', !!inv.invoiceId, 'Cislo faktury je povinne')
-  check('STRUCT-02', !!inv.issueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.issueDate), 'Datum vystavenia musi byt vo formate YYYY-MM-DD')
+  check('STRUCT-02', !!inv.issueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.issueDate), 'Datum vyhotovenia musi byt vo formate YYYY-MM-DD')
   check('STRUCT-03', !!inv.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(inv.dueDate), 'Datum splatnosti musi byt vo formate YYYY-MM-DD')
   const validCustomizationIDs = [
     'urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0',

@@ -108,7 +108,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Vystavena</span>
+            <span className="text-muted-foreground">Vyhotovená</span>
             <div className="text-foreground font-medium">{fmtDate(formData.issue_date)}</div>
           </div>
           <div>
@@ -137,9 +137,9 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <div className="text-foreground font-medium">{profile.company_name}</div>
             <div className="text-muted-foreground">{profile.street}</div>
             <div className="text-muted-foreground">{profile.postal_code} {profile.city}</div>
-            <div className="text-muted-foreground mt-2">ICO: {profile.ico}</div>
-            {profile.dic && <div className="text-muted-foreground">DIC: {profile.dic}</div>}
-            {profile.ic_dph && <div className="text-muted-foreground">IC DPH: {profile.ic_dph}</div>}
+            <div className="text-muted-foreground mt-2">IČO: {profile.ico}</div>
+            {profile.dic && <div className="text-muted-foreground">DIČ: {profile.dic}</div>}
+            {profile.ic_dph && <div className="text-muted-foreground">IČ DPH: {profile.ic_dph}</div>}
             {profile.dic && (
               <div className="text-primary font-mono text-xs mt-2">Peppol: {PEPPOL_IDENTIFIER_SCHEME}:{profile.dic}</div>
             )}
@@ -155,9 +155,9 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <div className="text-foreground font-medium">{formData.buyer_name}</div>
             <div className="text-muted-foreground">{formData.buyer_street}</div>
             <div className="text-muted-foreground">{formData.buyer_postal_code} {formData.buyer_city}</div>
-            {formData.buyer_ico && <div className="text-muted-foreground mt-2">ICO: {formData.buyer_ico}</div>}
-            {formData.buyer_dic && <div className="text-muted-foreground">DIC: {formData.buyer_dic}</div>}
-            {formData.buyer_ic_dph && <div className="text-muted-foreground">IC DPH: {formData.buyer_ic_dph}</div>}
+            {formData.buyer_ico && <div className="text-muted-foreground mt-2">IČO: {formData.buyer_ico}</div>}
+            {formData.buyer_dic && <div className="text-muted-foreground">DIČ: {formData.buyer_dic}</div>}
+            {formData.buyer_ic_dph && <div className="text-muted-foreground">IČ DPH: {formData.buyer_ic_dph}</div>}
             {formData.buyer_peppol_id && (
               <div className="text-chart-2 font-mono text-xs mt-2">Peppol: {formData.buyer_peppol_id}</div>
             )}
@@ -173,10 +173,10 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
         </div>
         <div className="grid md:grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Sposob platby</span>
+            <span className="text-muted-foreground">Spôsob platby</span>
             <div className="text-foreground">
               {
-                { '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '97': 'Vzájomný zápočet', '49': 'Registračná pokladňa' }[formData.payment_means_code] || formData.payment_means_code
+                { '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '97': 'Vzájomný zápočet' }[formData.payment_means_code] || formData.payment_means_code
               }
             </div>
           </div>

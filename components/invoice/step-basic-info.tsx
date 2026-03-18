@@ -19,7 +19,6 @@ const paymentMethods = [
   { value: '42', label: 'Dobierka' },
   { value: '48', label: 'Platobná karta' },
   { value: '97', label: 'Vzájomný zápočet' },
-  { value: '49', label: 'Registračná pokladňa' },
 ]
 
 const bankTransferCodes = ['30', '58']
@@ -230,7 +229,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
         <div className="grid md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              Dátum vystavenia *
+              Dátum vyhotovenia *
             </label>
             <input
               id="issue_date"

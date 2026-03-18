@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
   function exportCSV() {
     if (filtered.length === 0) return
-    const header = 'Číslo faktúry;Odberateľ;Dátum vystavenia;Dátum splatnosti;Suma;Mena;Stav'
+    const header = 'Číslo faktúry;Odberateľ;Dátum vyhotovenia;Dátum splatnosti;Suma;Mena;Stav'
     const rows = filtered.map((inv) =>
       `${inv.invoice_number};${inv.buyer_name};${fmtDate(inv.issue_date)};${fmtDate(inv.due_date)};${inv.total_with_vat};${inv.currency};${inv.status}`
     )
@@ -235,7 +235,7 @@ export default function DashboardPage() {
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-foreground truncate">{activeSupplier?.company_name}</h1>
           <p className="text-sm text-muted-foreground">
-            ICO: {activeSupplier?.ico}
+            IČO: {activeSupplier?.ico}
             {activeSupplier?.is_vat_payer === false && (
               <span className="ml-2 text-xs text-warning">Neplatca DPH</span>
             )}
