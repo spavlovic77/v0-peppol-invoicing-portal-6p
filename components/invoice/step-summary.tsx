@@ -108,7 +108,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Vystavena</span>
+            <span className="text-muted-foreground">Vyhotovená</span>
             <div className="text-foreground font-medium">{fmtDate(formData.issue_date)}</div>
           </div>
           <div>
@@ -173,7 +173,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
         </div>
         <div className="grid md:grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-muted-foreground">Sposob platby</span>
+            <span className="text-muted-foreground">Spôsob platby</span>
             <div className="text-foreground">
               {
                 { '10': 'Hotovosť', '30': 'Bankový prevod', '42': 'Dobierka', '48': 'Platobná karta', '97': 'Vzájomný zápočet' }[formData.payment_means_code] || formData.payment_means_code
