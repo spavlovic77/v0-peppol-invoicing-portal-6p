@@ -19,7 +19,6 @@ const paymentMethods = [
   { value: '42', label: 'Dobierka' },
   { value: '48', label: 'Platobná karta' },
   { value: '97', label: 'Vzájomný zápočet' },
-  { value: '49', label: 'Registračná pokladňa' },
 ]
 
 const bankTransferCodes = ['30', '58']
