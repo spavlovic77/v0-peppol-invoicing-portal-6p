@@ -110,7 +110,7 @@ export const peppolInvoiceLineSchema = z.object({
   unitCode: z.string().describe('UN/ECE rec 20 unit code, e.g. C62 for unit, HUR for hour'),
   lineExtensionAmount: z.number().describe('Line net amount = quantity * price'),
   itemName: z.string().describe('Item name/description'),
-  classifiedTaxCategoryId: z.string().describe('Tax category: S=standard, Z=zero, E=exempt, AE=reverse charge'),
+  classifiedTaxCategoryId: z.string().describe('Tax category: S=standard, E=exempt/zero, AE=reverse charge'),
   taxPercent: z.number().describe('VAT percentage, e.g. 20 for 20%'),
   priceAmount: z.number().describe('Price per unit without VAT'),
   sellersItemIdentification: z.string().nullable().describe('Seller item number'),
