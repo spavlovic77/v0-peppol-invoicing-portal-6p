@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
   function exportCSV() {
     if (filtered.length === 0) return
-    const header = 'Číslo faktúry;Odberateľ;Dátum vystavenia;Dátum splatnosti;Suma;Mena;Stav'
+    const header = 'Číslo faktúry;Odberateľ;Dátum vyhotovenia;Dátum splatnosti;Suma;Mena;Stav'
     const rows = filtered.map((inv) =>
       `${inv.invoice_number};${inv.buyer_name};${fmtDate(inv.issue_date)};${fmtDate(inv.due_date)};${inv.total_with_vat};${inv.currency};${inv.status}`
     )

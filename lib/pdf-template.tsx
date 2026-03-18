@@ -423,7 +423,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           <View style={styles.invoiceInfo}>
             <Text style={styles.infoLabel}>Číslo faktúry</Text>
             <Text style={styles.infoValue}>{String(invoice.invoice_number)}</Text>
-            <Text style={styles.infoLabel}>Dátum vystavenia</Text>
+            <Text style={styles.infoLabel}>Dátum vyhotovenia</Text>
             <Text style={styles.infoValue}>{fmtDateEu(String(invoice.issue_date))}</Text>
             <Text style={styles.infoLabel}>Dátum splatnosti</Text>
             <Text style={styles.infoValue}>{fmtDateEu(String(invoice.due_date))}</Text>

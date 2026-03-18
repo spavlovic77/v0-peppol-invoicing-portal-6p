@@ -229,7 +229,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
         <div className="grid md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-muted-foreground mb-1.5">
-              Dátum vystavenia *
+              Dátum vyhotovenia *
             </label>
             <input
               id="issue_date"

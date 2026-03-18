@@ -67,7 +67,7 @@ export type InvoiceAttachment = z.infer<typeof attachmentSchema>
 // Invoice schema
 export const invoiceSchema = z.object({
   invoice_number: z.string().min(1, 'Číslo faktúry je povinné'),
-  issue_date: z.string().min(1, 'Dátum vystavenia je povinný'),
+  issue_date: z.string().min(1, 'Dátum vyhotovenia je povinný'),
   due_date: z.string().min(1, 'Dátum splatnosti je povinný'),
   delivery_date: z.string().nullable(),
   currency: z.string().default('EUR'),

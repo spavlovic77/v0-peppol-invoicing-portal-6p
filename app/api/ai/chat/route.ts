@@ -12,7 +12,7 @@ Norma definuje semanticky datovy model pre jadro elektronickej faktury. Plati pr
 Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouzivame vylucne UBL 2.1.
 
 ### Povinne Obchodne Skupiny (BG) a Terminy (BT)
-- **BG-1** Hlavicka faktury: BT-1 (cislo faktury), BT-2 (datum vystavenia), BT-3 (InvoiceTypeCode), BT-5 (mena)
+- **BG-1** Hlavicka faktury: BT-1 (cislo faktury), BT-2 (datum vyhotovenia), BT-3 (InvoiceTypeCode), BT-5 (mena)
 - **BG-2** Referencne udaje procesu: BT-10 (referencia odberatela), BT-11 (odkaz na projekt), BT-13 (cislo objednavky)
 - **BG-3** Odkaz na predchadzajucu fakturu (povinne pre dobropisy a opravne faktury): BT-25 (cislo povodnej faktury), BT-26 (datum)
 - **BG-4** Dodavatel (Seller): BT-27 (nazov), BT-28 (obchodne meno), BT-29 (ID dodavatela), BT-30 (registracia), BT-31 (IC DPH), BT-32 (DIC), BT-34 (elektronicky endpoint)
@@ -62,7 +62,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 
 ### Zakladne pravidla (BR-xx)
 - BR-01: Faktura MUSI mat unikatne cislo (BT-1)
-- BR-02: Faktura MUSI mat datum vystavenia (BT-2)
+- BR-02: Faktura MUSI mat datum vyhotovenia (BT-2)
 - BR-03: Faktura MUSI mat InvoiceTypeCode (BT-3)
 - BR-04: Faktura MUSI mat kod objednavky alebo referenciu odberatela (BT-10/BT-13)
 - BR-05: Faktura MUSI mat kod meny (BT-5)
@@ -234,8 +234,8 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 3. Meno a adresa odberatela
 4. IC DPH odberatela (ak je platca DPH)
 5. Poradove cislo faktury
-6. Datum vystavenia
-7. Datum dodania (ak sa lisi od datumu vystavenia)
+6. Datum vyhotovenia
+7. Datum dodania (ak sa lisi od datumu vyhotovenia)
 8. Zaklad dane pre kazdu sadzbu, cena bez DPH
 9. Sadzba dane a celkova suma dane
 10. Celkova suma s DPH
@@ -281,7 +281,7 @@ Scenar:
 
 ### Spolocne pravidla pre vsetky opravne doklady
 - Kazdy opravny doklad musi odkazovat na povodnu fakturu cez BillingReference (BT-25 a BT-26)
-- Obsahuje cislo povodnej faktury a datum vystavenia povodnej faktury
+- Obsahuje cislo povodnej faktury a datum vyhotovenia povodnej faktury
 - Polozky dobropisu (381) maju kladne hodnoty (CreditNote konvencia)
 - Po vybere scenara a vyplneni udajov vas system presmeruje na suhrn a generovanie faktury
 
