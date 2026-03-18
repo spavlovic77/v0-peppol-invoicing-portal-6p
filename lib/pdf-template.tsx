@@ -114,13 +114,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#eee',
   },
-  col1: { width: '5%' },
-  col2: { width: '37%' },
-  col3: { width: '10%', textAlign: 'right' },
-  col4: { width: '8%', textAlign: 'center' },
-  col5: { width: '15%', textAlign: 'right' },
-  col6: { width: '10%', textAlign: 'right' },
-  col7: { width: '15%', textAlign: 'right' },
+  col1: { width: '4%' },
+  col2: { width: '32%' },
+  col3: { width: '8%', textAlign: 'right' },
+  col4: { width: '7%', textAlign: 'center' },
+  col5: { width: '12%', textAlign: 'right' },
+  col6: { width: '9%', textAlign: 'right' },
+  col7: { width: '9%', textAlign: 'right' },
+  col8: { width: '12%', textAlign: 'right' },
   totalsBox: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -528,20 +529,27 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={[styles.tableHeaderText, styles.col3]}>Mn.</Text>
             <Text style={[styles.tableHeaderText, styles.col4]}>MJ</Text>
             <Text style={[styles.tableHeaderText, styles.col5]}>Cena/MJ</Text>
-            {isVatPayer && <Text style={[styles.tableHeaderText, styles.col6]}>DPH</Text>}
-            <Text style={[styles.tableHeaderText, styles.col7]}>Celkom</Text>
+            <Text style={[styles.tableHeaderText, styles.col6]}>Zľava</Text>
+            {isVatPayer && <Text style={[styles.tableHeaderText, styles.col7]}>DPH</Text>}
+            <Text style={[styles.tableHeaderText, styles.col8]}>Celkom</Text>
           </View>
-          {items.map((item, i) => (
+          {items.map((item, i) => {
+            const discPct = Number(item.discount_percent || 0)
+            const discAmt = Number(item.discount_amount || 0)
+            const hasDiscount = discPct > 0 || discAmt > 0
+            return (
             <View key={i} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
               <Text style={styles.col1}>{i + 1}</Text>
               <Text style={styles.col2}>{String(item.description)}</Text>
               <Text style={styles.col3}>{String(item.quantity)}</Text>
               <Text style={styles.col4}>{unitLabel(String(item.unit || 'C62'))}</Text>
               <Text style={styles.col5}>{fmt(item.unit_price as number)}</Text>
-              {isVatPayer && <Text style={styles.col6}>{String(item.vat_rate)}%</Text>}
-              <Text style={styles.col7}>{fmt(item.line_total as number)}</Text>
+              <Text style={styles.col6}>{hasDiscount ? (discPct > 0 ? `${discPct}%` : fmt(discAmt)) : '-'}</Text>
+              {isVatPayer && <Text style={styles.col7}>{String(item.vat_rate)}%</Text>}
+              <Text style={styles.col8}>{fmt(item.line_total as number)}</Text>
             </View>
-          ))}
+            )
+          })}
         </View>
 
         {/* VAT Recapitulation */}
