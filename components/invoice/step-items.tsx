@@ -150,7 +150,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
       if (isReverseCharge) {
         updated.vat_category = 'AE'
         updated.vat_rate = 0
-      } else if (updates.vat_rate === 0) updated.vat_category = 'Z'
+      } else if (updates.vat_rate === 0) updated.vat_category = 'E'
       else if (updates.vat_rate !== undefined && updates.vat_rate > 0) updated.vat_category = 'S'
       return updated
     })

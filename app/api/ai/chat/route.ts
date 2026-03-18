@@ -117,12 +117,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - BR-AE-09: Suma DPH v rozpise AE MUSI byt 0
 - BR-AE-10: Rozpis AE MUSI mat TaxExemptionReasonCode ("vatex-eu-ae") ALEBO TaxExemptionReason ("Prenesenie danovej povinnosti" / "Reverse charge")
 
-### Pravidla pre nulovu sadzbu (BR-Z-xx)
-- BR-Z-05: Faktura s Z MUSI mat IČ DPH dodavatela
-- BR-Z-08: Rozpis Z NESMI mat dovod oslobodenia
-- BR-Z-09: Suma DPH v rozpise Z MUSI byt 0
-
-### Pravidla pre oslobodenie (BR-E-xx)
+### Pravidla pre oslobodenie/nulovu sadzbu (BR-E-xx)
 - BR-E-01: Ak existuje riadok s E, MUSI existovat VAT rozpis s E
 - BR-E-05: Faktura s E MUSI mat IČ DPH dodavatela
 - BR-E-08: Rozpis E NESMI mat sadzbu != 0
