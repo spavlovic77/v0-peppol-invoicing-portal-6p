@@ -217,18 +217,18 @@ export function buildPeppolInvoice(
     const rate = enGroup.rate
     const taxBase = enGroup.taxBase
 
-    // Determine exemption reason for zero-rate categories
+    // Determine exemption reason for zero-rate categories (VATEX codes must be uppercase)
     let exemptionCode: string | null = null
     let exemptionReason: string | null = null
     if (rate === 0) {
       if (enGroup.catId === 'AE') {
-        exemptionCode = 'vatex-eu-ae'
+        exemptionCode = 'VATEX-EU-AE'
         exemptionReason = 'Reverse charge'
       } else if (enGroup.catId === 'O') {
-        exemptionCode = 'vatex-eu-o'
+        exemptionCode = 'VATEX-EU-O'
         exemptionReason = 'Not subject to VAT'
       } else if (enGroup.catId === 'E') {
-        exemptionCode = 'vatex-eu-e'
+        exemptionCode = 'VATEX-EU-132'
         exemptionReason = 'Exempt from VAT'
       }
     }
