@@ -15,9 +15,9 @@ export default function NewSupplierPage() {
           <ArrowLeft className="w-4 h-4" />
           Spat na dodavatelov
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Novy dodavatel</h1>
+        <h1 className="text-2xl font-bold text-foreground">Nový dodávateľ</h1>
         <p className="text-muted-foreground mt-1">
-          Pridajte novu firmu, za ktoru budete vystavovat faktury
+          Pridajte novú firmu, za ktorú budete vystavovať faktúry
         </p>
       </div>
       <SupplierForm />
