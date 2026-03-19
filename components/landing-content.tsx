@@ -170,7 +170,7 @@ export function LandingContent() {
         {/* Educational purpose notice */}
         <div className="mt-8 pt-6 border-t border-border/50">
           <p className="text-xs text-muted-foreground/70 leading-relaxed text-balance">
-            {'Táto aplikácia slúži na vzdelávacie účely a demonštráciu e-fakturácie cez Peppol. Nie je určená na produkčné použitie.'}
+            {'Táto aplikácia slúži na vzdelávacie účely a ukážku ako vytvoriť elektronickú faktúru. Nie je určená na produkčné použitie.'}
           </p>
           <a
             href="https://github.com"
