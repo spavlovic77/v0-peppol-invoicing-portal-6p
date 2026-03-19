@@ -112,7 +112,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <div className="text-foreground font-medium">{fmtDate(formData.issue_date)}</div>
           </div>
           <div>
-            <span className="text-muted-foreground">Splatnost</span>
+            <span className="text-muted-foreground">Splatnosť</span>
             <div className="text-foreground font-medium">{fmtDate(formData.due_date)}</div>
           </div>
           <div>
@@ -131,18 +131,15 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
         <GlassCard>
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">{isSelfBilling ? 'Odberateľ (vy)' : 'Dodávateľ'}</h2>
-        </div>
-        <div className="space-y-1 text-sm">
+            <h2 className="font-semibold text-foreground">{isSelfBilling ? 'Odberateľ (vy)' : 'Dodávateľ'}</h2>
+          </div>
+          <div className="space-y-1 text-sm">
             <div className="text-foreground font-medium">{profile.company_name}</div>
             <div className="text-muted-foreground">{profile.street}</div>
             <div className="text-muted-foreground">{profile.postal_code} {profile.city}</div>
             <div className="text-muted-foreground mt-2">IČO: {profile.ico}</div>
             {profile.dic && <div className="text-muted-foreground">DIČ: {profile.dic}</div>}
             {profile.ic_dph && <div className="text-muted-foreground">IČ DPH: {profile.ic_dph}</div>}
-            {profile.dic && (
-              <div className="text-primary font-mono text-xs mt-2">Peppol: {PEPPOL_IDENTIFIER_SCHEME}:{profile.dic}</div>
-            )}
           </div>
         </GlassCard>
 
@@ -158,9 +155,6 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             {formData.buyer_ico && <div className="text-muted-foreground mt-2">IČO: {formData.buyer_ico}</div>}
             {formData.buyer_dic && <div className="text-muted-foreground">DIČ: {formData.buyer_dic}</div>}
             {formData.buyer_ic_dph && <div className="text-muted-foreground">IČ DPH: {formData.buyer_ic_dph}</div>}
-            {formData.buyer_peppol_id && (
-              <div className="text-chart-2 font-mono text-xs mt-2">Peppol: {formData.buyer_peppol_id}</div>
-            )}
           </div>
         </GlassCard>
       </div>

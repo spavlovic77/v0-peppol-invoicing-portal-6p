@@ -225,7 +225,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                   type="text"
                   value={item.description}
                   onChange={(e) => updateItem(i, { description: e.target.value })}
-                  className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                  className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.description ? 'ring-1 ring-destructive/50' : ''}`}
                   placeholder="Popis položky"
                 />
               </div>

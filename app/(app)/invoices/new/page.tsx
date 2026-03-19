@@ -338,6 +338,13 @@ export default function NewInvoicePage() {
     if (!supplierLoading) loadData()
   }, [loadData, supplierLoading])
 
+  // Reset step to 0 when starting a fresh new invoice (not edit/duplicate/correct)
+  useEffect(() => {
+    if (!editId && !duplicateId && !correctId) {
+      setStep(0)
+    }
+  }, [editId, duplicateId, correctId])
+
   // Auto-focus on the field that caused a validation failure (when redirected back from handleCreate)
   useEffect(() => {
     const focusStepParam = searchParams.get('focusStep')
@@ -649,7 +656,7 @@ export default function NewInvoicePage() {
   }
 
   // Correction wizard callback
-  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') {
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381' | '384') {
     setFormData((prev) => {
       const updated = { ...prev, ...updates }
       // Update invoice number prefix: FV for re-issued invoice (380), CN for credit note (381)
@@ -704,7 +711,7 @@ export default function NewInvoicePage() {
 
       <InvoiceWizardStepper steps={steps.map((s) => s.label)} currentStep={step} />
 
-      <div>{steps[step].component}</div>
+      <div>{steps[step]?.component ?? steps[0].component}</div>
 
       <div className="flex justify-between">
         <button
