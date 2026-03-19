@@ -170,7 +170,7 @@ export function LandingContent() {
         {/* Educational purpose notice */}
         <div className="mt-8 pt-6 border-t border-border/50">
           <p className="text-xs text-muted-foreground/70 leading-relaxed text-balance">
-            Tato aplikacia sluzi na vzdelavacie ucely a ukazku ako vytvorit elektronicku fakturu. Nie je urcena na produkcne pouzitie.
+            Tato aplikacia sluzi na vzdelavacie ucely. Nie je urcena na produkcne pouzitie.
           </p>
           <a
             href="https://github.com"
