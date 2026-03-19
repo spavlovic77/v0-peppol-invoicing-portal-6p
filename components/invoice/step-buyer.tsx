@@ -388,6 +388,9 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
             <input type="text" value={formData.buyer_ic_dph || ''}
               onChange={(e) => updateForm({ buyer_ic_dph: e.target.value })}
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
+            {!formData.buyer_ic_dph && formData.buyer_country_code && formData.buyer_country_code !== 'SK' && (
+              <p className="text-xs text-amber-500 mt-1">Pre EU odberateľa odporúčame vyplniť IČ DPH</p>
+            )}
           </div>
           <div>
             <label className="block text-xs text-muted-foreground mb-1">E-mail</label>
@@ -396,28 +399,28 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
               className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Ulica</label>
+            <label className="block text-xs text-muted-foreground mb-1">Ulica *</label>
             <input type="text" value={formData.buyer_street || ''}
               onChange={(e) => updateForm({ buyer_street: e.target.value })}
-              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_street ? 'ring-1 ring-destructive/50' : ''}`} />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Mesto</label>
+            <label className="block text-xs text-muted-foreground mb-1">Mesto *</label>
             <input type="text" value={formData.buyer_city || ''}
               onChange={(e) => updateForm({ buyer_city: e.target.value })}
-              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_city ? 'ring-1 ring-destructive/50' : ''}`} />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">PSČ</label>
+            <label className="block text-xs text-muted-foreground mb-1">PSČ *</label>
             <input type="text" value={formData.buyer_postal_code || ''}
               onChange={(e) => updateForm({ buyer_postal_code: e.target.value })}
-              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_postal_code ? 'ring-1 ring-destructive/50' : ''}`} />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Krajina</label>
+            <label className="block text-xs text-muted-foreground mb-1">Krajina *</label>
             <input id="buyer_country_code" type="text" value={formData.buyer_country_code}
               onChange={(e) => updateForm({ buyer_country_code: e.target.value })}
-              className="glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm" maxLength={2} />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_country_code ? 'ring-1 ring-destructive/50' : ''}`} maxLength={2} />
           </div>
         </div>
       </GlassCard>
