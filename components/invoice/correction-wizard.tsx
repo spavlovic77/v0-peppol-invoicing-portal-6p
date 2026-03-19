@@ -483,7 +483,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
     }
 
     // For credit note scenarios (381), use direct creation if available (skip form, create immediately)
-    const directCreateScenarios: CorrectionScenario[] = ['full_storno', 'qty_change', 'price_change', 'discount_grant']
+    const directCreateScenarios: CorrectionScenario[] = ['full_storno', 'quantity', 'price', 'discount']
     if (directCreateScenarios.includes(selected) && onDirectCreate && docType === '381') {
       onDirectCreate(updates, selected, '381')
       return
@@ -827,7 +827,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               <Loader2 className="w-4 h-4 animate-spin" />
               Vytvára sa dobropis...
             </>
-          ) : ['full_storno', 'qty_change', 'price_change', 'discount_grant'].includes(selected) && onDirectCreate ? (
+          ) : ['full_storno', 'quantity', 'price', 'discount'].includes(selected) && onDirectCreate ? (
             <>
               Vytvoriť dobropis
               <ChevronRight className="w-4 h-4" />
