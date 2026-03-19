@@ -538,7 +538,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       {/* Quantity adjustment UI */}
       {selected === 'quantity' && (
         <GlassCard>
-          <h3 className="text-sm font-medium text-foreground mb-3">Upravte mnozstva (novy stav po korekcii)</h3>
+          <h3 className="text-sm font-medium text-foreground mb-3">Upravte množstvá (nový stav po korekcii)</h3>
           <div className="space-y-2">
             {original.items.map((it, idx) => (
               <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
