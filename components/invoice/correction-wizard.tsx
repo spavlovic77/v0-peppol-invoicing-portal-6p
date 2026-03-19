@@ -482,8 +482,9 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       ...freeformUpdates,
     }
 
-    // For full_storno, use direct creation if available (skip form, create immediately)
-    if (selected === 'full_storno' && onDirectCreate) {
+    // For credit note scenarios (381), use direct creation if available (skip form, create immediately)
+    const directCreateScenarios: CorrectionScenario[] = ['full_storno', 'qty_change', 'price_change', 'discount_grant']
+    if (directCreateScenarios.includes(selected) && onDirectCreate && docType === '381') {
       onDirectCreate(updates, selected, '381')
       return
     }
@@ -538,7 +539,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       {/* Quantity adjustment UI */}
       {selected === 'quantity' && (
         <GlassCard>
-          <h3 className="text-sm font-medium text-foreground mb-3">Upravte mnozstva (novy stav po korekcii)</h3>
+          <h3 className="text-sm font-medium text-foreground mb-3">Upravte množstvá (nový stav po korekcii)</h3>
           <div className="space-y-2">
             {original.items.map((it, idx) => (
               <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
@@ -826,7 +827,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               <Loader2 className="w-4 h-4 animate-spin" />
               Vytvára sa dobropis...
             </>
-          ) : selected === 'full_storno' && onDirectCreate ? (
+          ) : ['full_storno', 'qty_change', 'price_change', 'discount_grant'].includes(selected) && onDirectCreate ? (
             <>
               Vytvoriť dobropis
               <ChevronRight className="w-4 h-4" />
