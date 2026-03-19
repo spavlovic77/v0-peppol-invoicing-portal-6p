@@ -128,9 +128,9 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
 
       let error
       if (isEdit) {
-        ;({ error } = await supabase.from('suppliers').update(payload).eq('id', supplierId))
+        ; ({ error } = await supabase.from('suppliers').update(payload).eq('id', supplierId))
       } else {
-        ;({ error } = await supabase.from('suppliers').insert(payload))
+        ; ({ error } = await supabase.from('suppliers').insert(payload))
       }
 
       if (error) {
@@ -182,7 +182,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
             className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
           >
             {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            {lookingUp ? 'Hladam...' : 'Vyhladat'}
+            {lookingUp ? 'Hľadám...' : 'Vyhladať'}
           </button>
         </div>
         {lookingUp && (
@@ -265,12 +265,12 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div>
-  {isEdit && (
-  <button
-  onClick={() => setShowDeleteConfirm(true)}
-  className="px-5 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 text-sm"
-  >
-  <Trash2 className="w-4 h-4" />
+          {isEdit && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-5 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 text-sm"
+            >
+              <Trash2 className="w-4 h-4" />
               Zmazať dodávateľa
             </button>
           )}
@@ -330,13 +330,12 @@ function IbanField({ value, onChange }: { value: string | null | undefined; onCh
         value={display}
         onChange={(e) => onChange(cleanIban(e.target.value))}
         onBlur={() => setTouched(true)}
-        className={`glass-input w-full px-4 py-2.5 rounded-xl font-mono text-sm tracking-wider ${
-          result.valid && result.cleaned.length > 0
+        className={`glass-input w-full px-4 py-2.5 rounded-xl font-mono text-sm tracking-wider ${result.valid && result.cleaned.length > 0
             ? 'text-emerald-400 ring-1 ring-emerald-500/30'
             : hasError
               ? 'text-destructive ring-2 ring-destructive'
               : 'text-foreground'
-        }`}
+          }`}
         placeholder="SK89 7500 0000 0001 2345 671"
         autoComplete="off"
         spellCheck={false}

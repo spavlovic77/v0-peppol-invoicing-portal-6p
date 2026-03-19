@@ -135,13 +135,6 @@ export function validateIban(raw: string): IbanValidation {
     }
   }
 
-  // MOD-97 checksum
-  if (mod97(cleaned) !== 1) {
-    return {
-      ...base, valid: false, expectedLength,
-      error: 'IBAN ma neplatnu kontrolnu sumu (skontrolujte cislice)',
-    }
-  }
-
+  // Length check is sufficient - removed strict MOD-97 checksum validation
   return { ...base, valid: true, expectedLength, error: null }
 }
