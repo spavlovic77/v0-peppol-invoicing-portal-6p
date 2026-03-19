@@ -816,18 +816,18 @@ export default function NewInvoicePage() {
 
       // Validation failed -> extract errors and show in wizard
       if (genData.validation) {
-        type Phase = { checks: { ruleId: string; passed: boolean; message: string }[] }
+        type Phase = { checks?: { ruleId: string; passed: boolean; message: string }[] }
         const failedChecks = (genData.validation as Phase[])
-          .flatMap((p) => p.checks)
-          .filter((c) => !c.passed)
+          .flatMap((p) => p.checks || [])
+          .filter((c) => c && !c.passed)
           .map((c) => c.message)
 
         // Delete the invalid invoice
         await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId)
         await supabase.from('invoices').delete().eq('id', invoiceId)
 
-        setDirectCreationErrors(failedChecks)
-        return { success: false, errors: failedChecks }
+        setDirectCreationErrors(failedChecks.length > 0 ? failedChecks : ['Validácia zlyhala'])
+        return { success: false, errors: failedChecks.length > 0 ? failedChecks : ['Validácia zlyhala'] }
       }
 
       // Unknown error
