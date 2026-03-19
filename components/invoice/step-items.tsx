@@ -232,14 +232,14 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
 
               <div className={`grid grid-cols-2 ${isVatPayer ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Množstvo</label>
+                  <label className="block text-xs text-muted-foreground mb-1">Množstvo *</label>
                   <input
                     id={`item_qty_${i}`}
                     type="number"
                     value={item.quantity}
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.quantity ? 'ring-1 ring-destructive/50' : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.001"
                   />
@@ -257,14 +257,14 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">{isVatPayer ? 'Cena/j. bez DPH' : 'Cena/j.'}</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{isVatPayer ? 'Cena/j. bez DPH *' : 'Cena/j. *'}</label>
                   <input
                     id={`item_price_${i}`}
                     type="number"
                     value={item.unit_price}
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.unit_price ? 'ring-1 ring-destructive/50' : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.01"
                   />

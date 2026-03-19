@@ -436,6 +436,29 @@ export default function NewInvoicePage() {
 
   async function handleCreate() {
     if (!activeSupplier) return
+    
+    // Validate mandatory fields per Slovak VAT law 222/2004 §74
+    const errors: string[] = []
+    if (!formData.delivery_date) errors.push('Dátum dodania je povinný')
+    if (!formData.buyer_name) errors.push('Názov odberateľa je povinný')
+    if (!formData.buyer_street) errors.push('Ulica odberateľa je povinná')
+    if (!formData.buyer_city) errors.push('Mesto odberateľa je povinné')
+    if (!formData.buyer_postal_code) errors.push('PSČ odberateľa je povinné')
+    if (!formData.buyer_country_code) errors.push('Krajina odberateľa je povinná')
+    
+    // Validate items
+    for (let i = 0; i < formData.items.length; i++) {
+      const item = formData.items[i]
+      if (!item.description) errors.push(`Položka ${i + 1}: Popis je povinný`)
+      if (!item.quantity) errors.push(`Položka ${i + 1}: Množstvo je povinné`)
+      if (!item.unit_price) errors.push(`Položka ${i + 1}: Jednotková cena je povinná`)
+    }
+    
+    if (errors.length > 0) {
+      toast.error(`Chýbajú povinné údaje: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` a ${errors.length - 3} ďalších` : ''}`)
+      return
+    }
+    
     setCreating(true)
 
     try {
