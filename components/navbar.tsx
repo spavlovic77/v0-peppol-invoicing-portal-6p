@@ -362,7 +362,7 @@ export function Navbar() {
           <div className="relative w-[90vw] max-w-sm bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <h3 className="text-base font-semibold">Nová faktúra</h3>
+              <h3 className="text-base font-semibold">{pendingMode === 'selfbilling' ? 'Nová samofaktúra' : 'Nová faktúra'}</h3>
               <button
                 onClick={() => setShowNewInvoiceModal(false)}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -374,7 +374,7 @@ export function Navbar() {
             {/* Body */}
             <div className="px-5 py-4 space-y-3">
               <p className="text-sm text-muted-foreground">
-                Faktúra bude vystavená za firmu:
+                {pendingMode === 'selfbilling' ? 'Faktúra bude vystavená týmto odberateľom:' : 'Faktúra bude vystavená za firmu:'}
               </p>
 
               {/* Supplier pick list */}
