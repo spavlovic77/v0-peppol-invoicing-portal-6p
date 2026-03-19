@@ -369,7 +369,7 @@ export default function InvoiceDetailPage() {
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
           >
             <RotateCcw className="w-4 h-4" />
-            Vytvoriť opravný doklad
+            Vytvoriť opravnú faktúru
           </button>
         ) : (
           <Link
@@ -377,7 +377,7 @@ export default function InvoiceDetailPage() {
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-warning/15 text-warning font-medium text-sm hover:bg-warning/25 transition-colors border border-warning/20"
           >
             <RotateCcw className="w-4 h-4" />
-            Vytvoriť opravný doklad
+            Vytvoriť opravnú faktúru
           </Link>
         )
       )}
@@ -413,7 +413,7 @@ export default function InvoiceDetailPage() {
               </p>
               <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
                 <p className="text-sm text-warning leading-relaxed">
-                  V takom prípade musite vytvoriť <strong>opravný doklad </strong>, ktorý stornuje alebo upraví pôvodnú faktúru.
+                  V takom prípade musite vytvoriť <strong>opravnú faktúru </strong>, ktorá stornuje alebo upraví pôvodnú faktúru.
                 </p>
               </div>
 
@@ -428,7 +428,7 @@ export default function InvoiceDetailPage() {
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-warning text-warning-foreground text-sm font-medium hover:bg-warning/90 transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Vytvoriť opravný doklad (odporúčané)
+                  Vytvoriť opravnú faktúru (odporúčané)
                 </Link>
               )}
               <div className="flex gap-2">

@@ -13,7 +13,7 @@ export default function NewSupplierPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Spat na dodavatelov
+          Späť na dodávateľov
         </Link>
         <h1 className="text-2xl font-bold text-foreground">Nový dodávateľ</h1>
         <p className="text-muted-foreground mt-1">
