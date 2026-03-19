@@ -443,7 +443,7 @@ export default function NewInvoicePage() {
 
   async function handleCreate() {
     if (!activeSupplier) return
-    
+
     // Validate mandatory fields per Slovak VAT law 222/2004 §74
     const errors: string[] = []
     if (!formData.delivery_date) errors.push('Dátum dodania je povinný')
@@ -452,7 +452,7 @@ export default function NewInvoicePage() {
     if (!formData.buyer_city) errors.push('Mesto odberateľa je povinné')
     if (!formData.buyer_postal_code) errors.push('PSČ odberateľa je povinné')
     if (!formData.buyer_country_code) errors.push('Krajina odberateľa je povinná')
-    
+
     // Validate items
     for (let i = 0; i < formData.items.length; i++) {
       const item = formData.items[i]
@@ -460,12 +460,12 @@ export default function NewInvoicePage() {
       if (!item.quantity) errors.push(`Položka ${i + 1}: Množstvo je povinné`)
       if (!item.unit_price) errors.push(`Položka ${i + 1}: Jednotková cena je povinná`)
     }
-    
+
     if (errors.length > 0) {
       toast.error(`Chýbajú povinné údaje: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` a ${errors.length - 3} ďalších` : ''}`)
       return
     }
-    
+
     setCreating(true)
 
     try {
@@ -531,10 +531,10 @@ export default function NewInvoicePage() {
         const year = new Date().getFullYear()
         const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
         const seqPrefix = isCorrectionMode ? 'CN' : 'FV'
-    await supabase.from('invoice_sequences').upsert(
-      { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
-      { onConflict: 'user_id,supplier_id,year,prefix' }
-    )
+        await supabase.from('invoice_sequences').upsert(
+          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
+          { onConflict: 'user_id,supplier_id,year,prefix' }
+        )
 
         const { data: invoice, error } = await supabase
           .from('invoices')
@@ -680,7 +680,7 @@ export default function NewInvoicePage() {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravný doklad</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravná faktúra</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
           </p>
@@ -702,7 +702,7 @@ export default function NewInvoicePage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-lg font-bold text-foreground">
-          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
+          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravná faktúra' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {isSelfBilling ? `Odberateľ: ${activeSupplier.company_name}` : activeSupplier.company_name}
@@ -736,7 +736,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravný doklad' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
+            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravnú faktúru' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
           </button>
         )}
       </div>
