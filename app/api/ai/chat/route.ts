@@ -115,7 +115,7 @@ Implementacia je cez UBL 2.1 (OASIS) alebo UN/CEFACT CII. V nasom systeme pouziv
 - BR-AE-07: Ziadne document-level allowances s inou kategoriou ako AE
 - BR-AE-08: Ziadne document-level charges s inou kategoriou ako AE
 - BR-AE-09: Suma DPH v rozpise AE MUSI byt 0
-- BR-AE-10: Rozpis AE MUSI mat TaxExemptionReasonCode ("vatex-eu-ae") ALEBO TaxExemptionReason ("Prenesenie danovej povinnosti" / "Reverse charge")
+- BR-AE-10: Rozpis AE MUSI mat TaxExemptionReasonCode ("VATEX-EU-AE") ALEBO TaxExemptionReason ("Prenesenie danovej povinnosti" / "Reverse charge")
 
 ### Pravidla pre oslobodenie/nulovu sadzbu (BR-E-xx)
 - BR-E-01: Ak existuje riadok s E, MUSI existovat VAT rozpis s E
@@ -208,7 +208,7 @@ Zdroj: https://docs.peppol.eu/poacc/upgrade-3/2025-Q4/
 **Reverse charge** (prenesenie danovej povinnosti) - §69 ods. 12:
 - Odberatel je povinny priznat a odviest dan
 - Na fakture MUSI byt text: "Prenesenie danovej povinnosti"
-- UBL: VAT kategoria AE, sadzba 0%, TaxExemptionReasonCode: \`vatex-eu-ae\`
+- UBL: VAT kategoria AE, sadzba 0%, TaxExemptionReasonCode: \`VATEX-EU-AE\`
 - TaxExemptionReason: "Prenesenie danovej povinnosti"
 - Pouziva sa pri: stavebnictvo, dodanie kovov, predaj emisnych kvot, elektronicky odpad
 
