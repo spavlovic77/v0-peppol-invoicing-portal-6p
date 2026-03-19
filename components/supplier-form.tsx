@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
-import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, Key, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
@@ -49,7 +49,6 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
-  const [showApiKey, setShowApiKey] = useState(false)
   const [icoInput, setIcoInput] = useState(initial?.ico || '')
   const router = useRouter()
   const supabase = createClient()
@@ -261,44 +260,6 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Telefon" value={form.phone} onChange={(v) => updateField('phone', v)} type="tel" />
           <Field label="Web stránka" value={form.web} onChange={(v) => updateField('web', v)} className="md:col-span-2" />
         </div>
-      </GlassCard>
-
-      {/* AP API Key */}
-      <GlassCard>
-        <div className="flex items-center gap-3 mb-4">
-          <Key className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Peppol Access Point (ION AP)</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          API kluc pre odosielanie faktur cez Peppol siet. Ziskate ho na{' '}
-          <a href="https://ion-ap.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">ion-ap.net</a>
-        </p>
-        <div className="relative">
-          <label className="block text-sm text-muted-foreground mb-1.5">AP API kluc</label>
-          <div className="flex gap-2">
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              value={form.ap_api_key}
-              onChange={(e) => updateField('ap_api_key', e.target.value)}
-              placeholder="napr. d5ac88320c6078db43677a00ecd2a9a3d3d2bcf5"
-              className="glass-input flex-1 px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground font-mono text-sm"
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="p-2.5 rounded-xl glass-card text-muted-foreground hover:text-foreground transition-colors shrink-0"
-              title={showApiKey ? 'Skryt kluc' : 'Zobrazit kluc'}
-            >
-              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-        {form.ap_api_key && (
-          <div className="mt-3 flex items-center gap-2 text-xs text-success">
-            <div className="w-2 h-2 rounded-full bg-success" />
-            AP kluc je nastaveny - mozete odosielat faktury cez Peppol
-          </div>
-        )}
       </GlassCard>
 
       {/* Actions */}
