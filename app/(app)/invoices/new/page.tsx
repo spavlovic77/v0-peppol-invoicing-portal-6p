@@ -656,7 +656,7 @@ export default function NewInvoicePage() {
   }
 
   // Correction wizard callback
-  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') {
+  function handleCorrectionApply(updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381' | '384') {
     setFormData((prev) => {
       const updated = { ...prev, ...updates }
       // Update invoice number prefix: FV for re-issued invoice (380), CN for credit note (381)

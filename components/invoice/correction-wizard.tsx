@@ -94,7 +94,7 @@ const FIELD_LABELS: Record<keyof EditableFields, string> = {
 
 interface Props {
   original: OriginalInvoice
-  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381') => void
+  onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381' | '384') => void
 }
 
 const scenarios = [

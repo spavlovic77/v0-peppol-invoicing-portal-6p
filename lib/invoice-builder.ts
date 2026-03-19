@@ -117,14 +117,23 @@ export function buildPeppolInvoice(
     const netPricePerUnit = qty !== 0 ? round2(lineExtension / qty) : item.unit_price
     const adjustedLineExtension = round2(qty * netPricePerUnit)
 
+    // Determine correct tax category based on rate and user input
+    // E (Exempt) and O (Outside scope) require 0% rate; AE (Reverse charge) also requires 0%
+    // If rate > 0, force category to S (Standard)
+    const rate = item.vat_rate ?? 23
+    let taxCategory = item.vat_category || 'S'
+    if (rate > 0 && (taxCategory === 'E' || taxCategory === 'O')) {
+      taxCategory = 'S' // Force standard category for non-zero rates
+    }
+    
     return {
       id: String(item.line_number),
       invoicedQuantity: qty,
       unitCode: item.unit || 'C62',
       lineExtensionAmount: adjustedLineExtension,
       itemName: item.description,
-      classifiedTaxCategoryId: item.vat_category || 'S',
-      taxPercent: item.vat_rate ?? 23,
+      classifiedTaxCategoryId: taxCategory,
+      taxPercent: rate,
       priceAmount: netPricePerUnit,
       sellersItemIdentification: item.item_number || null,
       buyersItemIdentification: item.buyer_item_number || null,
