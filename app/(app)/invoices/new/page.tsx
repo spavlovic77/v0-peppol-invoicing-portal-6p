@@ -72,6 +72,8 @@ export default function NewInvoicePage() {
   const isEditMode = !!editId
   const isCorrectionMode = !!correctId
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
+  const [directCreating, setDirectCreating] = useState(false)
+  const [directCreationErrors, setDirectCreationErrors] = useState<string[]>([])
 
   const [originalInvoice, setOriginalInvoice] = useState<{
     id: string; invoice_number: string; issue_date: string; buyer_name: string;
@@ -443,7 +445,7 @@ export default function NewInvoicePage() {
 
   async function handleCreate() {
     if (!activeSupplier) return
-    
+
     // Validate mandatory fields per Slovak VAT law 222/2004 §74
     const errors: string[] = []
     if (!formData.delivery_date) errors.push('Dátum dodania je povinný')
@@ -452,7 +454,7 @@ export default function NewInvoicePage() {
     if (!formData.buyer_city) errors.push('Mesto odberateľa je povinné')
     if (!formData.buyer_postal_code) errors.push('PSČ odberateľa je povinné')
     if (!formData.buyer_country_code) errors.push('Krajina odberateľa je povinná')
-    
+
     // Validate items
     for (let i = 0; i < formData.items.length; i++) {
       const item = formData.items[i]
@@ -460,12 +462,12 @@ export default function NewInvoicePage() {
       if (!item.quantity) errors.push(`Položka ${i + 1}: Množstvo je povinné`)
       if (!item.unit_price) errors.push(`Položka ${i + 1}: Jednotková cena je povinná`)
     }
-    
+
     if (errors.length > 0) {
       toast.error(`Chýbajú povinné údaje: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` a ${errors.length - 3} ďalších` : ''}`)
       return
     }
-    
+
     setCreating(true)
 
     try {
@@ -531,10 +533,10 @@ export default function NewInvoicePage() {
         const year = new Date().getFullYear()
         const seqNum = parseInt(formData.invoice_number.split('-').pop() || '1')
         const seqPrefix = isCorrectionMode ? 'CN' : 'FV'
-    await supabase.from('invoice_sequences').upsert(
-      { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
-      { onConflict: 'user_id,supplier_id,year,prefix' }
-    )
+        await supabase.from('invoice_sequences').upsert(
+          { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: seqPrefix },
+          { onConflict: 'user_id,supplier_id,year,prefix' }
+        )
 
         const { data: invoice, error } = await supabase
           .from('invoices')
@@ -675,17 +677,188 @@ export default function NewInvoicePage() {
     }
   }
 
+  // Direct creation for full_storno - creates credit note immediately without form steps
+  async function handleDirectCreate(updates: Partial<InvoiceFormData>, _scenario: CorrectionScenario, _docType: '381'): Promise<{ success: boolean; errors?: string[] }> {
+    if (!activeSupplier || !originalInvoice) return { success: false, errors: ['Chýba dodávateľ alebo pôvodná faktúra'] }
+
+    setDirectCreating(true)
+    setDirectCreationErrors([])
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Nie ste prihlásený')
+
+      // Build full invoice data from original + updates
+      const mergedData: InvoiceFormData = {
+        ...formData,
+        ...updates,
+        invoice_type_code: '381',
+        buyer_name: originalInvoice.buyer_name,
+        buyer_ico: originalInvoice.buyer_ico,
+        buyer_dic: originalInvoice.buyer_dic,
+        buyer_ic_dph: originalInvoice.buyer_ic_dph,
+        buyer_street: originalInvoice.buyer_street,
+        buyer_city: originalInvoice.buyer_city,
+        buyer_postal_code: originalInvoice.buyer_postal_code,
+        buyer_country_code: originalInvoice.buyer_country_code,
+        buyer_email: originalInvoice.buyer_email,
+        buyer_peppol_id: originalInvoice.buyer_peppol_id,
+        buyer_reference: originalInvoice.buyer_reference,
+        order_reference: originalInvoice.order_reference,
+        delivery_date: originalInvoice.delivery_date || formData.delivery_date,
+        payment_means_code: originalInvoice.payment_means_code || formData.payment_means_code,
+      }
+
+      // Calculate totals for the credit note
+      const items = updates.items || []
+      const itemTotals = items.reduce((acc, item) => {
+        const lineNet = item.line_total
+        const lineVat = Math.round(lineNet * (item.vat_rate / 100) * 100) / 100
+        return { net: acc.net + lineNet, vat: acc.vat + lineVat }
+      }, { net: 0, vat: 0 })
+
+      const invoicePayload = {
+        user_id: user.id,
+        supplier_id: activeSupplier.id,
+        invoice_number: mergedData.invoice_number,
+        issue_date: mergedData.issue_date,
+        due_date: mergedData.due_date,
+        delivery_date: mergedData.delivery_date,
+        currency: mergedData.currency,
+        buyer_ico: mergedData.buyer_ico,
+        buyer_dic: mergedData.buyer_dic,
+        buyer_ic_dph: mergedData.buyer_ic_dph,
+        buyer_name: mergedData.buyer_name,
+        buyer_street: mergedData.buyer_street,
+        buyer_city: mergedData.buyer_city,
+        buyer_postal_code: mergedData.buyer_postal_code,
+        buyer_country_code: mergedData.buyer_country_code,
+        buyer_email: mergedData.buyer_email,
+        buyer_peppol_id: mergedData.buyer_peppol_id,
+        order_reference: mergedData.order_reference,
+        buyer_reference: mergedData.buyer_reference,
+        payment_means_code: mergedData.payment_means_code,
+        bank_name: mergedData.bank_name,
+        iban: mergedData.iban,
+        swift: mergedData.swift,
+        variable_symbol: mergedData.variable_symbol,
+        total_without_vat: Math.round(itemTotals.net * 100) / 100,
+        total_vat: Math.round(itemTotals.vat * 100) / 100,
+        total_with_vat: Math.round((itemTotals.net + itemTotals.vat) * 100) / 100,
+        global_discount_percent: 0,
+        global_discount_amount: 0,
+        note: mergedData.note,
+        status: 'final',
+        invoice_mode: mergedData.invoice_mode || 'standard',
+        invoice_type_code: '381',
+        correction_of: updates.correction_of || null,
+        correction_reason: updates.correction_reason || null,
+        billing_reference_number: updates.billing_reference_number || null,
+        billing_reference_date: updates.billing_reference_date || null,
+        attachments: [],
+      }
+
+      // Create invoice
+      const year = new Date().getFullYear()
+      const seqNum = parseInt(mergedData.invoice_number.split('-').pop() || '1')
+      await supabase.from('invoice_sequences').upsert(
+        { user_id: user.id, supplier_id: activeSupplier.id, year, last_number: seqNum, prefix: 'CN' },
+        { onConflict: 'user_id,supplier_id,year,prefix' }
+      )
+
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert(invoicePayload)
+        .select()
+        .single()
+      if (invoiceError) throw invoiceError
+
+      const invoiceId = invoice.id
+
+      // Insert items
+      const dbItems = items.map((item) => {
+        const gross = item.quantity * item.unit_price
+        const discountAmt = item.discount_amount || Math.round(gross * (item.discount_percent || 0) / 100 * 100) / 100
+        return {
+          invoice_id: invoiceId,
+          line_number: item.line_number,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price: item.unit_price,
+          vat_category: item.vat_category,
+          vat_rate: item.vat_rate,
+          discount_percent: item.discount_percent || 0,
+          discount_amount: discountAmt,
+          line_total: Math.round((gross - discountAmt) * 100) / 100,
+          item_number: item.item_number,
+          buyer_item_number: item.buyer_item_number,
+        }
+      })
+
+      const { error: itemsError } = await supabase.from('invoice_items').insert(dbItems)
+      if (itemsError) throw itemsError
+
+      // Generate XML and validate
+      const genRes = await fetch('/api/invoice/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId }),
+      })
+      const genData = await genRes.json()
+
+      if (genRes.ok && genData.allPassed) {
+        // Validation passed -> redirect to invoice detail
+        toast.success(`Dobropis ${mergedData.invoice_number} bol vytvorený a je validný`)
+        router.push(`/invoices/${invoiceId}`)
+        return { success: true }
+      }
+
+      // Validation failed -> extract errors and show in wizard
+      if (genData.validation) {
+        type Phase = { checks: { ruleId: string; passed: boolean; message: string }[] }
+        const failedChecks = (genData.validation as Phase[])
+          .flatMap((p) => p.checks)
+          .filter((c) => !c.passed)
+          .map((c) => c.message)
+
+        // Delete the invalid invoice
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId)
+        await supabase.from('invoices').delete().eq('id', invoiceId)
+
+        setDirectCreationErrors(failedChecks)
+        return { success: false, errors: failedChecks }
+      }
+
+      // Unknown error
+      setDirectCreationErrors(['Neznáma chyba pri validácii'])
+      return { success: false, errors: ['Neznáma chyba pri validácii'] }
+    } catch (err) {
+      const errMsg = (err as Error).message
+      setDirectCreationErrors([errMsg])
+      return { success: false, errors: [errMsg] }
+    } finally {
+      setDirectCreating(false)
+    }
+  }
+
   // If in correction wizard mode, show the wizard first
   if (isCorrectionMode && correctionStep === 'wizard' && originalInvoice) {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravný doklad</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Opravná faktúra</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Dodavatel: <span className="text-foreground font-medium">{activeSupplier.company_name}</span>
           </p>
         </div>
-        <CorrectionWizard original={originalInvoice} onApply={handleCorrectionApply} />
+        <CorrectionWizard 
+          original={originalInvoice} 
+          onApply={handleCorrectionApply}
+          onDirectCreate={handleDirectCreate}
+          isCreating={directCreating}
+          creationErrors={directCreationErrors}
+        />
       </div>
     )
   }
@@ -702,7 +875,7 @@ export default function NewInvoicePage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-lg font-bold text-foreground">
-          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravný doklad' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
+          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravná faktúra' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {isSelfBilling ? `Odberateľ: ${activeSupplier.company_name}` : activeSupplier.company_name}
@@ -736,7 +909,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravný doklad' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
+            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravnú faktúru' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
           </button>
         )}
       </div>
