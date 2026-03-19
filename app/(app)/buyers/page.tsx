@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
 import { useActiveSupplier } from '@/lib/supplier-context'
 import { GlassCard } from '@/components/glass-card'
 import { toast } from 'sonner'
@@ -74,7 +73,6 @@ export default function BuyersPage() {
           street: data.street || prev.street,
           city: data.city || prev.city,
           postal_code: data.postal_code || prev.postal_code,
-          peppol_id: data.dic ? `${PEPPOL_IDENTIFIER_SCHEME}:${data.dic}` : prev.peppol_id,
         }))
         toast.success('Údaje boli načítané')
       } else {
@@ -238,7 +236,6 @@ export default function BuyersPage() {
             <BField label="Ulica" value={form.street || ''} onChange={(v) => setForm({ ...form, street: v })} />
             <BField label="Mesto" value={form.city || ''} onChange={(v) => setForm({ ...form, city: v })} />
             <BField label="PSČ" value={form.postal_code || ''} onChange={(v) => setForm({ ...form, postal_code: v })} />
-            <BField label="Peppol ID" value={form.peppol_id || ''} onChange={(v) => setForm({ ...form, peppol_id: v })} placeholder={`napr. ${PEPPOL_IDENTIFIER_SCHEME}:2022182030`} />
           </div>
 
           <div className="flex justify-end">
@@ -274,7 +271,6 @@ export default function BuyersPage() {
                     {(b.street || b.city) && (
                       <span>{[b.street, b.postal_code, b.city].filter(Boolean).join(', ')}</span>
                     )}
-                    {b.peppol_id && <span className="font-mono text-xs text-primary/70">Peppol: {b.peppol_id}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
