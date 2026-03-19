@@ -232,6 +232,22 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
   function handleApply() {
     if (!selected) return
 
+    // Validate quantity/price reductions for credit note scenarios
+    if (selected === 'quantity') {
+      const hasIncrease = original.items.some((it, idx) => (qtyOverrides[idx] ?? it.quantity) > it.quantity)
+      const hasDecrease = original.items.some((it, idx) => (qtyOverrides[idx] ?? it.quantity) < it.quantity)
+      if (hasIncrease || !hasDecrease) {
+        return // Block - no valid quantity reduction or has invalid increase
+      }
+    }
+    if (selected === 'price') {
+      const hasIncrease = original.items.some((it, idx) => (priceOverrides[idx] ?? it.unit_price) > it.unit_price)
+      const hasDecrease = original.items.some((it, idx) => (priceOverrides[idx] ?? it.unit_price) < it.unit_price)
+      if (hasIncrease || !hasDecrease) {
+        return // Block - no valid price reduction or has invalid increase
+      }
+    }
+
     const baseNote = selected === 'freeform'
       ? `Opravená faktúra nahradzujúca FA ${original.invoice_number}`
       : `Dobropis k FA ${original.invoice_number}`
@@ -540,49 +556,81 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       {selected === 'quantity' && (
         <GlassCard>
           <h3 className="text-sm font-medium text-foreground mb-3">Upravte množstvá (nový stav po korekcii)</h3>
+          <p className="text-xs text-muted-foreground mb-3">Znížte množstvo aspoň pri jednej položke. Ostatné môžete ponechať bez zmeny.</p>
           <div className="space-y-2">
-            {original.items.map((it, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
+            {original.items.map((it, idx) => {
+              const currentQty = qtyOverrides[idx] ?? it.quantity
+              const isDecreased = currentQty < it.quantity
+              const isIncreased = currentQty > it.quantity
+              return (
+              <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground truncate">{it.description}</p>
-                  <p className="text-xs text-muted-foreground">Pôvodne: {it.quantity} {unitLabel(it.unit)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pôvodne: {it.quantity} {unitLabel(it.unit)}
+                    {isDecreased && <span className="text-emerald-400 ml-1"> → {currentQty} (zníženie o {it.quantity - currentQty})</span>}
+                    {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
+                  </p>
                 </div>
                 <input
                   type="number"
                   min={0}
                   max={it.quantity}
-                  value={qtyOverrides[idx] ?? it.quantity}
+                  step="any"
+                  value={currentQty}
                   onChange={(e) => setQtyOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
-                  className="w-20 px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm text-center"
+                  className={`w-20 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-center ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
                 />
               </div>
-            ))}
+              )
+            })}
           </div>
+          {original.items.some((it, idx) => (qtyOverrides[idx] ?? it.quantity) > it.quantity) ? (
+            <p className="text-xs text-destructive mt-3">Množstvo nie je možné zvýšiť</p>
+          ) : !original.items.some((it, idx) => (qtyOverrides[idx] ?? it.quantity) < it.quantity) && (
+            <p className="text-xs text-amber-500 mt-3">Znížte množstvo aspoň pri jednej položke</p>
+          )}
         </GlassCard>
       )}
 
       {/* Price adjustment UI */}
       {selected === 'price' && (
         <GlassCard>
-          <h3 className="text-sm font-medium text-foreground mb-3">Upravte ceny (nova spravna cena)</h3>
+          <h3 className="text-sm font-medium text-foreground mb-3">Upravte ceny (nová správna cena)</h3>
+          <p className="text-xs text-muted-foreground mb-3">Znížte cenu aspoň pri jednej položke. Ostatné môžete ponechať bez zmeny.</p>
           <div className="space-y-2">
-            {original.items.map((it, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30">
+            {original.items.map((it, idx) => {
+              const currentPrice = priceOverrides[idx] ?? it.unit_price
+              const isDecreased = currentPrice < it.unit_price
+              const isIncreased = currentPrice > it.unit_price
+              return (
+              <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground truncate">{it.description}</p>
-                  <p className="text-xs text-muted-foreground">Povodna cena: {it.unit_price.toFixed(2)} EUR</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pôvodná cena: {it.unit_price.toFixed(2)} EUR
+                    {isDecreased && <span className="text-emerald-400 ml-1"> → {currentPrice.toFixed(2)} EUR (zníženie o {(it.unit_price - currentPrice).toFixed(2)})</span>}
+                    {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
+                  </p>
                 </div>
                 <input
                   type="number"
                   min={0}
+                  max={it.unit_price}
                   step={0.01}
-                  value={priceOverrides[idx] ?? it.unit_price}
+                  value={currentPrice}
                   onChange={(e) => setPriceOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
-                  className="w-24 px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm text-right"
+                  className={`w-24 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-right ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
                 />
               </div>
-            ))}
+              )
+            })}
           </div>
+          {original.items.some((it, idx) => (priceOverrides[idx] ?? it.unit_price) > it.unit_price) ? (
+            <p className="text-xs text-destructive mt-3">Cenu nie je možné zvýšiť</p>
+          ) : !original.items.some((it, idx) => (priceOverrides[idx] ?? it.unit_price) < it.unit_price) && (
+            <p className="text-xs text-amber-500 mt-3">Znížte cenu aspoň pri jednej položke</p>
+          )}
         </GlassCard>
       )}
 
