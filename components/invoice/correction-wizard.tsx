@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag, Info } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag, Info, Loader2, AlertCircle } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
 
@@ -95,6 +95,9 @@ const FIELD_LABELS: Record<keyof EditableFields, string> = {
 interface Props {
   original: OriginalInvoice
   onApply: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '380' | '381' | '384') => void
+  onDirectCreate?: (updates: Partial<InvoiceFormData>, scenario: CorrectionScenario, docType: '381') => Promise<{ success: boolean; errors?: string[] }>
+  isCreating?: boolean
+  creationErrors?: string[]
 }
 
 const scenarios = [
@@ -154,7 +157,7 @@ const scenarios = [
   },
 ]
 
-export function CorrectionWizard({ original, onApply }: Props) {
+export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating, creationErrors }: Props) {
   const [selected, setSelected] = useState<CorrectionScenario | null>(null)
   // freeform (Zmena údajov) uses 384 (corrective invoice per EN16931/Peppol BIS 3.0)
   // all other scenarios use 381 (credit note)
@@ -468,7 +471,7 @@ export function CorrectionWizard({ original, onApply }: Props) {
       note: `${baseNote}\n${freeformFields.note || ''}`.trim(),
     } : {}
 
-    onApply({
+    const updates: Partial<InvoiceFormData> = {
       items: correctionItems,
       note: baseNote,
       invoice_type_code: docType,
@@ -477,7 +480,15 @@ export function CorrectionWizard({ original, onApply }: Props) {
       billing_reference_number: original.invoice_number,
       billing_reference_date: original.issue_date,
       ...freeformUpdates,
-    }, selected, docType)
+    }
+
+    // For full_storno, use direct creation if available (skip form, create immediately)
+    if (selected === 'full_storno' && onDirectCreate) {
+      onDirectCreate(updates, selected, '381')
+      return
+    }
+
+    onApply(updates, selected, docType)
   }
 
   return (
@@ -783,14 +794,49 @@ export function CorrectionWizard({ original, onApply }: Props) {
         </GlassCard>
       )}
 
+      {/* Validation errors from direct creation */}
+      {creationErrors && creationErrors.length > 0 && (
+        <GlassCard className="border-destructive/50 bg-destructive/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-destructive mb-2">Validácia zlyhala</p>
+              <ul className="text-xs text-destructive/80 space-y-1">
+                {creationErrors.slice(0, 5).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+                {creationErrors.length > 5 && (
+                  <li className="text-muted-foreground">...a {creationErrors.length - 5} ďalších chýb</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Apply button */}
       {selected && (
         <button
           onClick={handleApply}
-          className="w-full px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+          disabled={isCreating}
+          className="w-full px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Pripraviť korekciu
-          <ChevronRight className="w-4 h-4" />
+          {isCreating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Vytvára sa dobropis...
+            </>
+          ) : selected === 'full_storno' && onDirectCreate ? (
+            <>
+              Vytvoriť dobropis
+              <ChevronRight className="w-4 h-4" />
+            </>
+          ) : (
+            <>
+              Pripraviť korekciu
+              <ChevronRight className="w-4 h-4" />
+            </>
+          )}
         </button>
       )}
     </div>
