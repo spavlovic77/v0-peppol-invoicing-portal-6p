@@ -235,11 +235,32 @@ export function Navbar() {
           {tabs.map(({ href, label, icon: Icon }) => {
             const active = isTabActive(href)
             const isNova = href === '/invoices/new'
+            
+            if (isNova) {
+              return (
+                <button
+                  key={href}
+                  onClick={handleNewInvoiceClick}
+                  className={cn(
+                    'flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors',
+                    active ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  <div className={cn(
+                    'w-8 h-8 rounded-xl flex items-center justify-center transition-colors',
+                    active && 'bg-primary/15'
+                  )}>
+                    <Icon className="w-[18px] h-[18px]" />
+                  </div>
+                  <span className="text-[10px] font-medium leading-none">{label}</span>
+                </button>
+              )
+            }
+            
             return (
               <Link
                 key={href}
                 href={href}
-                onClick={isNova ? handleNewInvoiceClick : undefined}
                 className={cn(
                   'flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors',
                   active ? 'text-primary' : 'text-muted-foreground'

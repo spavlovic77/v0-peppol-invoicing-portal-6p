@@ -67,43 +67,27 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       return
     }
     setLookingUp(true)
-    console.log('[v0] lookupICO started for:', sanitized)
     try {
       const res = await fetch(`/api/rpo?ico=${sanitized}`)
       const data = await res.json()
-      console.log('[v0] RUZ API response:', res.ok, data)
       if (res.ok) {
-        console.log('[v0] Updating form with data:', {
-          ico: data.ico,
-          company_name: data.company_name,
-          dic: data.dic,
-          ic_dph: data.ic_dph,
-          street: data.street,
-          city: data.city,
-          postal_code: data.postal_code,
-        })
-        setForm((prev) => {
-          const newForm = {
-            ...prev,
-            ico: data.ico || icoInput,
-            company_name: data.company_name || prev.company_name,
-            dic: data.dic || prev.dic,
-            ic_dph: data.ic_dph || prev.ic_dph,
-            street: data.street || prev.street,
-            city: data.city || prev.city,
-            postal_code: data.postal_code || prev.postal_code,
-            registration_court: data.registration_court || prev.registration_court,
-            registration_number: data.registration_number || prev.registration_number,
-          }
-          console.log('[v0] New form state:', newForm)
-          return newForm
-        })
+        setForm((prev) => ({
+          ...prev,
+          ico: data.ico || icoInput,
+          company_name: data.company_name || prev.company_name,
+          dic: data.dic || prev.dic,
+          ic_dph: data.ic_dph || prev.ic_dph,
+          street: data.street || prev.street,
+          city: data.city || prev.city,
+          postal_code: data.postal_code || prev.postal_code,
+          registration_court: data.registration_court || prev.registration_court,
+          registration_number: data.registration_number || prev.registration_number,
+        }))
         toast.success('Udaje boli nacitane z registra')
       } else {
         toast.error(data.error || 'Nepodarilo sa nacitat udaje')
       }
-    } catch (err) {
-      console.error('[v0] lookupICO error:', err)
+    } catch {
       toast.error('Chyba pri komunikacii so serverom')
     } finally {
       setLookingUp(false)
