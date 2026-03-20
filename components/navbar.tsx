@@ -46,6 +46,7 @@ export function Navbar() {
   const [pendingMode, setPendingMode] = useState<string>('standard')
   const newDropdownRef = useRef<HTMLDivElement>(null)
   const mobileNewDropdownRef = useRef<HTMLDivElement>(null)
+  const modalJustOpenedRef = useRef(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -113,10 +114,14 @@ export function Navbar() {
     }
     console.log('[v0] Multiple suppliers, showing modal')
     setModalSupplier(activeSupplier)
-    // Small delay to prevent touch event propagation issues on mobile devices
+    // Set flag to prevent immediate backdrop click from closing the modal on mobile
+    modalJustOpenedRef.current = true
+    setShowNewInvoiceModal(true)
+    // Reset flag after a short delay (enough for touch events to finish)
     setTimeout(() => {
-      setShowNewInvoiceModal(true)
-    }, 50)
+      modalJustOpenedRef.current = false
+      console.log('[v0] Modal ready for backdrop clicks')
+    }, 300)
   }
 
   function handleModalConfirm() {
@@ -428,7 +433,12 @@ export function Navbar() {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setShowNewInvoiceModal(false)}
+            onClick={() => {
+              console.log('[v0] Backdrop clicked, modalJustOpened:', modalJustOpenedRef.current)
+              if (!modalJustOpenedRef.current) {
+                setShowNewInvoiceModal(false)
+              }
+            }}
           />
           {/* Modal card */}
           <div className="relative w-[90vw] max-w-sm bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
