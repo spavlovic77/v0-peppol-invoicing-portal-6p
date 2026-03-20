@@ -528,7 +528,7 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           {scenarios.map((s) => {
             const Icon = s.icon
             const isActive = selected === s.id
-            const isDisabled = s.id === 'vat_rate'
+            const isDisabled = s.id === 'vat_rate' || s.id === 'freeform'
             return (
               <div key={s.id} className="relative">
                 <button
@@ -540,10 +540,16 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
                   <span className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{s.label}</span>
                   <span className="text-xs text-muted-foreground mt-0.5">{s.desc}</span>
                 </button>
-                {isDisabled && (
+                {s.id === 'vat_rate' && isDisabled && (
                   <div className="flex items-start gap-1.5 mt-1.5 px-1">
                     <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
-                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Použite Úplné storno a vytvorte novú faktúru so správnou sadzbou'}</span>
+                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Pouzite Uplne storno a vytvorte novu fakturu so spravnou sadzbou'}</span>
+                  </div>
+                )}
+                {s.id === 'freeform' && isDisabled && (
+                  <div className="flex items-start gap-1.5 mt-1.5 px-1">
+                    <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
+                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Funkcia docasne nedostupna'}</span>
                   </div>
                 )}
               </div>
