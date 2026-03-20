@@ -639,9 +639,6 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Vystavené v systéme Peppol Faktúra | Peppol BIS 3.0
-          </Text>
-          <Text style={styles.footerText}>
             {String(profile.company_name)} | IČO: {String(profile.ico)}
           </Text>
         </View>
