@@ -45,6 +45,7 @@ export function Navbar() {
   const [showNewDropdown, setShowNewDropdown] = useState(false)
   const [pendingMode, setPendingMode] = useState<string>('standard')
   const newDropdownRef = useRef<HTMLDivElement>(null)
+  const mobileNewDropdownRef = useRef<HTMLDivElement>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -60,7 +61,8 @@ export function Navbar() {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowDropdown(false)
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false)
-      if (newDropdownRef.current && !newDropdownRef.current.contains(e.target as Node)) setShowNewDropdown(false)
+      if (newDropdownRef.current && !newDropdownRef.current.contains(e.target as Node) && 
+          mobileNewDropdownRef.current && !mobileNewDropdownRef.current.contains(e.target as Node)) setShowNewDropdown(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -238,22 +240,23 @@ export function Navbar() {
             
             if (isNova) {
               return (
-                <button
-                  key={href}
-                  onClick={handleNewInvoiceClick}
-                  className={cn(
-                    'flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors',
-                    active ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  <div className={cn(
-                    'w-8 h-8 rounded-xl flex items-center justify-center transition-colors',
-                    active && 'bg-primary/15'
-                  )}>
-                    <Icon className="w-[18px] h-[18px]" />
-                  </div>
-                  <span className="text-[10px] font-medium leading-none">{label}</span>
-                </button>
+                <div key={href} ref={mobileNewDropdownRef} className="flex-1">
+                  <button
+                    onClick={handleNewInvoiceClick}
+                    className={cn(
+                      'flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors',
+                      active ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-8 h-8 rounded-xl flex items-center justify-center transition-colors',
+                      active && 'bg-primary/15'
+                    )}>
+                      <Icon className="w-[18px] h-[18px]" />
+                    </div>
+                    <span className="text-[10px] font-medium leading-none">{label}</span>
+                  </button>
+                </div>
               )
             }
             
