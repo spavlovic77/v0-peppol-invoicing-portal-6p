@@ -96,15 +96,27 @@ export function Navbar() {
     })
   }
 
-  function handleSelectMode(mode: string) {
+  function handleSelectMode(mode: string, e?: React.MouseEvent) {
+    e?.preventDefault()
+    e?.stopPropagation()
+    
+    console.log('[v0] handleSelectMode called with mode:', mode)
+    console.log('[v0] suppliers.length:', suppliers.length, 'suppliers:', suppliers)
+    console.log('[v0] activeSupplier:', activeSupplier)
+    
     setShowNewDropdown(false)
     setPendingMode(mode)
     if (suppliers.length <= 1) {
+      console.log('[v0] Only 1 or 0 suppliers, navigating directly')
       router.push(`/invoices/new?mode=${mode}`)
       return
     }
+    console.log('[v0] Multiple suppliers, showing modal')
     setModalSupplier(activeSupplier)
-    setShowNewInvoiceModal(true)
+    // Small delay to prevent touch event propagation issues on mobile devices
+    setTimeout(() => {
+      setShowNewInvoiceModal(true)
+    }, 50)
   }
 
   function handleModalConfirm() {
@@ -320,12 +332,13 @@ export function Navbar() {
           <div className="absolute bottom-full left-0 right-0 mb-2 px-4">
             <div className="bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
               <div className="p-2">
-                {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
-                  <button
-                    key={mode}
-                    onClick={() => handleSelectMode(mode)}
-                    className="w-full text-left px-3 py-3 rounded-xl text-sm transition-colors flex items-center gap-3 text-foreground hover:bg-secondary"
-                  >
+                        {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
+                          <button
+                            key={mode}
+                            onClick={(e) => handleSelectMode(mode, e)}
+                            onTouchEnd={(e) => { e.preventDefault(); handleSelectMode(mode); }}
+                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
+                          >
                     <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <MIcon className="w-4.5 h-4.5 text-primary" />
                     </div>
@@ -370,7 +383,8 @@ export function Navbar() {
                         {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
                           <button
                             key={mode}
-                            onClick={() => handleSelectMode(mode)}
+                            onClick={(e) => handleSelectMode(mode, e)}
+                            onTouchEnd={(e) => { e.preventDefault(); handleSelectMode(mode); }}
                             className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
                           >
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
