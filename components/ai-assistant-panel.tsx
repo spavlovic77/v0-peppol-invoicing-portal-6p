@@ -195,7 +195,7 @@ export function AiAssistantPanel() {
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                     <Sparkles className="w-6 h-6 text-primary" />
                   </div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1">Som tvoj e-fakturačný asistent. MOje odpovede overuj voči platnej legislatíve</h4>
+                  <h4 className="text-sm font-semibold text-foreground mb-1">Som tvoj e-fakturačný asistent. Moje odpovede overuj voči platnej legislatíve</h4>
 
                   <div className="grid grid-cols-1 gap-2 w-full">
                     {SUGGESTIONS.map((s) => (
@@ -218,7 +218,7 @@ export function AiAssistantPanel() {
               {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="flex items-center gap-2 px-3 py-2">
                   <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
-                  <span className="text-xs text-muted-foreground">Premyslam...</span>
+                  <span className="text-xs text-muted-foreground">Premýšľam...</span>
                 </div>
               )}
             </div>
@@ -241,7 +241,7 @@ export function AiAssistantPanel() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Poloz otazku..."
+                  placeholder="Polož otázku..."
                   rows={1}
                   className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none max-h-24"
                   style={{ minHeight: '20px' }}
