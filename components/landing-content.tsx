@@ -173,7 +173,7 @@ export function LandingContent() {
             Táto aplikácia slúži iba na vzdelávacie účely. Nie je určená na produkčné použitie.
           </p>
           <a
-            href="https://github.com"
+            href="https://github.com/spavlovic77/v0-peppol-invoicing-portal-6p"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 mt-3 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
