@@ -274,25 +274,32 @@ export function Navbar() {
                   </button>
                   {/* Mobile dropdown popup */}
                   {showNewDropdown && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">
-                      <div className="p-1.5">
-                        {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
-                          <button
-                            key={mode}
-                            onClick={() => handleSelectMode(mode)}
-                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <MIcon className="w-4 h-4 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-medium">{mLabel}</div>
-                              <div className="text-xs text-muted-foreground">{desc}</div>
-                            </div>
-                          </button>
-                        ))}
+                    <>
+                      {/* Backdrop */}
+                      <div 
+                        className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40"
+                        onClick={() => setShowNewDropdown(false)}
+                      />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">
+                        <div className="p-1.5">
+                          {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
+                            <button
+                              key={mode}
+                              onClick={() => handleSelectMode(mode)}
+                              className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <MIcon className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-medium">{mLabel}</div>
+                                <div className="text-xs text-muted-foreground">{desc}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               )
@@ -346,7 +353,7 @@ export function Navbar() {
         )}
       </nav>
 
-      {/* ───── Desktop horizontal nav (inside top bar on md+) ───── */}
+      {/* ────��� Desktop horizontal nav (inside top bar on md+) ───── */}
       <nav className="hidden md:block glass-card border-b border-border">
         <div className="max-w-7xl mx-auto px-3 flex items-center gap-1 h-10">
           {tabs.map(({ href, label, icon: Icon }) => {
