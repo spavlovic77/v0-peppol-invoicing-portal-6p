@@ -636,12 +636,6 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         )}
 
-        {/* Footer */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            {String(profile.company_name)} | IČO: {String(profile.ico)}
-          </Text>
-        </View>
       </Page>
     </Document>
   )
