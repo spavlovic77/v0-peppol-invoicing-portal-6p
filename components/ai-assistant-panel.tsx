@@ -95,7 +95,7 @@ export function AiAssistantPanel() {
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
-        setMessages((prev) => prev.map((m) => m.id === asstMsg.id ? { ...m, content: 'Chyba pri komunikacii s AI. Skuste to znova.' } : m))
+        setMessages((prev) => prev.map((m) => m.id === asstMsg.id ? { ...m, content: 'Chyba pri komunikacii s AI. Skúste to znova.' } : m))
       }
     } finally {
       setIsLoading(false)
@@ -195,7 +195,7 @@ export function AiAssistantPanel() {
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                     <Sparkles className="w-6 h-6 text-primary" />
                   </div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1">Ahoj! Som tvoj e-fakturacny asistent.</h4>
+                  <h4 className="text-sm font-semibold text-foreground mb-1">Som tvoj e-fakturačný asistent. MOje odpovede overuj voči platnej legislatíve</h4>
 
                   <div className="grid grid-cols-1 gap-2 w-full">
                     {SUGGESTIONS.map((s) => (
