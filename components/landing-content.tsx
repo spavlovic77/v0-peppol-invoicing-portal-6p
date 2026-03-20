@@ -133,7 +133,7 @@ export function LandingContent() {
           <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
             <FileText className="w-6 h-6 text-primary" />
           </div>
-          <span className="text-2xl font-bold text-foreground">{'zrobefakturu.sk'}</span>
+          <span className="text-2xl font-bold"><span className="text-red-500">zrobe</span><span className="text-blue-500">fakturu</span><span className="text-foreground">.sk</span></span>
         </div>
         <p className="text-sm text-muted-foreground mb-10 text-balance">{'Tvorba e-faktúr pre drobných podnikateľov'}</p>
 
