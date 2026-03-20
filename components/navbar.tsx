@@ -61,8 +61,15 @@ export function Navbar() {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowDropdown(false)
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false)
-      if (newDropdownRef.current && !newDropdownRef.current.contains(e.target as Node) && 
-          mobileNewDropdownRef.current && !mobileNewDropdownRef.current.contains(e.target as Node)) setShowNewDropdown(false)
+      
+      const desktopContains = newDropdownRef.current?.contains(e.target as Node)
+      const mobileContains = mobileNewDropdownRef.current?.contains(e.target as Node)
+      console.log('[v0] Click outside check:', { desktopContains, mobileContains, target: (e.target as HTMLElement)?.className })
+      
+      if (!desktopContains && !mobileContains) {
+        console.log('[v0] Closing dropdown from click outside')
+        setShowNewDropdown(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -81,7 +88,12 @@ export function Navbar() {
 
   function handleNewInvoiceClick(e: React.MouseEvent) {
     e.preventDefault()
-    setShowNewDropdown(!showNewDropdown)
+    e.stopPropagation()
+    console.log('[v0] handleNewInvoiceClick called, current showNewDropdown:', showNewDropdown)
+    setShowNewDropdown((prev) => {
+      console.log('[v0] Setting showNewDropdown from', prev, 'to', !prev)
+      return !prev
+    })
   }
 
   function handleSelectMode(mode: string) {
@@ -240,7 +252,7 @@ export function Navbar() {
             
             if (isNova) {
               return (
-                <div key={href} ref={mobileNewDropdownRef} className="flex-1">
+                <div key={href} ref={mobileNewDropdownRef} className="flex-1 relative">
                   <button
                     onClick={handleNewInvoiceClick}
                     className={cn(
@@ -256,6 +268,28 @@ export function Navbar() {
                     </div>
                     <span className="text-[10px] font-medium leading-none">{label}</span>
                   </button>
+                  {/* Mobile dropdown popup */}
+                  {showNewDropdown && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">
+                      <div className="p-1.5">
+                        {invoiceModes.map(({ mode, label: mLabel, icon: MIcon, desc }) => (
+                          <button
+                            key={mode}
+                            onClick={() => handleSelectMode(mode)}
+                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 text-foreground hover:bg-secondary"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <MIcon className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium">{mLabel}</div>
+                              <div className="text-xs text-muted-foreground">{desc}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             }
