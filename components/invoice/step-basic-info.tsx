@@ -29,9 +29,18 @@ interface Props {
   formData: InvoiceFormData
   updateForm: (u: Partial<InvoiceFormData>) => void
   invoiceMode?: string
+  validationErrors?: Set<string>
+  shakeFields?: boolean
 }
 
-export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }: Props) {
+function fieldClass(fieldId: string, validationErrors?: Set<string>, shakeFields?: boolean) {
+  const hasError = validationErrors?.has(fieldId)
+  return hasError 
+    ? `validation-error ${shakeFields ? 'animate-shake' : ''}` 
+    : ''
+}
+
+export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard', validationErrors, shakeFields }: Props) {
   const needsIban = bankTransferCodes.includes(formData.payment_means_code)
   const [ibanTouched, setIbanTouched] = useState(false)
   const [selectedDays, setSelectedDays] = useState<number>(14)
@@ -87,7 +96,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
               type="text"
               value={formData.invoice_number}
               onChange={(e) => updateForm({ invoice_number: e.target.value })}
-              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${fieldClass('invoice_number', validationErrors, shakeFields)}`}
               placeholder="FV-2026-0001"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -184,8 +193,8 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
                   className={`glass-input w-full px-4 py-2.5 rounded-xl font-mono text-sm tracking-wider ${
                     ibanResult.valid && ibanResult.cleaned.length > 0
                       ? 'text-emerald-400 ring-1 ring-emerald-500/30'
-                      : ibanHasError
-                        ? 'text-destructive ring-2 ring-destructive'
+                      : ibanHasError || validationErrors?.has('iban')
+                        ? `text-destructive ring-2 ring-destructive ${shakeFields && validationErrors?.has('iban') ? 'animate-shake' : ''}`
                         : 'text-foreground'
                   }`}
                   placeholder="SK89 7500 0000 0001 2345 671"
@@ -236,7 +245,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
               type="date"
               value={formData.issue_date}
               onChange={(e) => updateForm({ issue_date: e.target.value })}
-              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${fieldClass('issue_date', validationErrors, shakeFields)}`}
             />
           </div>
           <div>
@@ -256,7 +265,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
                   setSelectedDays(match ?? 0)
                 }
               }}
-              className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground"
+              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${fieldClass('due_date', validationErrors, shakeFields)}`}
             />
             {/* Day preset slider */}
             <div className="flex items-center gap-1 mt-2">
@@ -289,7 +298,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard' }
               type="date"
               value={formData.delivery_date || ''}
               onChange={(e) => updateForm({ delivery_date: e.target.value || null })}
-              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${!formData.delivery_date ? 'ring-2 ring-destructive/50' : ''}`}
+              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${!formData.delivery_date || validationErrors?.has('delivery_date') ? `ring-2 ring-destructive/50 ${shakeFields && validationErrors?.has('delivery_date') ? 'animate-shake' : ''}` : ''}`}
             />
             {!formData.delivery_date && (
               <p className="text-xs text-destructive mt-1">Povinné podľa §74 zákona o DPH</p>

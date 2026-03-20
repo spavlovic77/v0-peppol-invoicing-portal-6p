@@ -158,6 +158,23 @@
   outline: none;
 }
 
+/* Validation error state */
+.validation-error {
+  border-color: var(--destructive) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--destructive) 25%, transparent) !important;
+}
+
+/* Shake animation for validation errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
 /* Select dropdown styling */
 select.glass-input option,
 .glass-input option {

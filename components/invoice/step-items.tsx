@@ -14,6 +14,15 @@ interface Props {
   isVatPayer?: boolean
   invoiceMode?: string
   isCorrectionMode?: boolean
+  validationErrors?: Set<string>
+  shakeFields?: boolean
+}
+
+function fieldClass(fieldId: string, validationErrors?: Set<string>, shakeFields?: boolean) {
+  const hasError = validationErrors?.has(fieldId)
+  return hasError 
+    ? `validation-error ${shakeFields ? 'animate-shake' : ''}` 
+    : ''
 }
 
 const unitOptions = [
@@ -52,7 +61,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false }: Props) {
+export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false, validationErrors, shakeFields }: Props) {
   const isReverseCharge = invoiceMode === 'reversecharge'
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
@@ -225,7 +234,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                   type="text"
                   value={item.description}
                   onChange={(e) => updateItem(i, { description: e.target.value })}
-                  className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.description ? 'ring-1 ring-destructive/50' : ''}`}
+                  className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.description || validationErrors?.has(`item_desc_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_desc_${i}`) ? 'animate-shake' : ''}` : ''}`}
                   placeholder="Popis položky"
                 />
               </div>
@@ -239,7 +248,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     value={item.quantity}
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.quantity ? 'ring-1 ring-destructive/50' : ''}`}
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.quantity || validationErrors?.has(`item_qty_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_qty_${i}`) ? 'animate-shake' : ''}` : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.001"
                   />
@@ -264,7 +273,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     value={item.unit_price}
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.unit_price ? 'ring-1 ring-destructive/50' : ''}`}
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.unit_price || validationErrors?.has(`item_price_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_price_${i}`) ? 'animate-shake' : ''}` : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.01"
                   />
