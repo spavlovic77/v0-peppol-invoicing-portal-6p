@@ -74,6 +74,8 @@ export default function NewInvoicePage() {
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
   const [directCreating, setDirectCreating] = useState(false)
   const [directCreationErrors, setDirectCreationErrors] = useState<string[]>([])
+  const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set())
+  const [shakeFields, setShakeFields] = useState(false)
 
   const [originalInvoice, setOriginalInvoice] = useState<{
     id: string; invoice_number: string; issue_date: string; buyer_name: string;
@@ -373,6 +375,40 @@ export default function NewInvoicePage() {
   }, [searchParams])
 
   function updateForm(updates: Partial<InvoiceFormData>) {
+    // Clear validation errors for fields being updated
+    if (validationErrors.size > 0) {
+      const newErrors = new Set(validationErrors)
+      Object.keys(updates).forEach(key => {
+        // Map form data keys to validation field IDs
+        const fieldMappings: Record<string, string> = {
+          invoice_number: 'invoice_number',
+          issue_date: 'issue_date',
+          due_date: 'due_date',
+          delivery_date: 'delivery_date',
+          iban: 'iban',
+          buyer_name: 'buyer_name',
+          buyer_street: 'buyer_street',
+          buyer_city: 'buyer_city',
+          buyer_postal_code: 'buyer_postal_code',
+          buyer_country_code: 'buyer_country_code',
+        }
+        if (fieldMappings[key]) {
+          newErrors.delete(fieldMappings[key])
+        }
+      })
+      // Handle items array updates
+      if (updates.items) {
+        updates.items.forEach((_, i) => {
+          newErrors.delete(`item_desc_${i}`)
+          newErrors.delete(`item_qty_${i}`)
+          newErrors.delete(`item_price_${i}`)
+        })
+      }
+      if (newErrors.size !== validationErrors.size) {
+        setValidationErrors(newErrors)
+      }
+    }
+    
     setFormData((prev) => {
       const next = { ...prev, ...updates }
       // Reverse charge: force all items to AE/0%
@@ -442,6 +478,61 @@ export default function NewInvoicePage() {
 
     return { withoutVat: totalTaxBase, vat: totalVat, withVat }
   })()
+
+  // Step validation functions
+  function validateStep0(): Set<string> {
+    const errors = new Set<string>()
+    if (!formData.invoice_number) errors.add('invoice_number')
+    if (!formData.issue_date) errors.add('issue_date')
+    if (!formData.due_date) errors.add('due_date')
+    if (!formData.delivery_date) errors.add('delivery_date')
+    // IBAN required for bank transfer (payment code 30)
+    if (formData.payment_means_code === '30' && !formData.iban) errors.add('iban')
+    return errors
+  }
+
+  function validateStep1(): Set<string> {
+    const errors = new Set<string>()
+    if (!formData.buyer_name) errors.add('buyer_name')
+    if (!formData.buyer_street) errors.add('buyer_street')
+    if (!formData.buyer_city) errors.add('buyer_city')
+    if (!formData.buyer_postal_code) errors.add('buyer_postal_code')
+    if (!formData.buyer_country_code) errors.add('buyer_country_code')
+    return errors
+  }
+
+  function validateStep2(): Set<string> {
+    const errors = new Set<string>()
+    formData.items.forEach((item, i) => {
+      if (!item.description) errors.add(`item_desc_${i}`)
+      if (!item.quantity) errors.add(`item_qty_${i}`)
+      if (!item.unit_price) errors.add(`item_price_${i}`)
+    })
+    return errors
+  }
+
+  function validateCurrentStep(): boolean {
+    let errors = new Set<string>()
+    if (step === 0) errors = validateStep0()
+    else if (step === 1) errors = validateStep1()
+    else if (step === 2) errors = validateStep2()
+    // Step 3 (Summary) has no required fields to validate before proceeding
+    
+    if (errors.size > 0) {
+      setValidationErrors(errors)
+      setShakeFields(true)
+      setTimeout(() => setShakeFields(false), 500)
+      return false
+    }
+    setValidationErrors(new Set())
+    return true
+  }
+
+  function handleNextStep() {
+    if (validateCurrentStep()) {
+      setStep((s) => Math.min(steps.length - 1, s + 1))
+    }
+  }
 
   async function handleCreate() {
     if (!activeSupplier) return
@@ -865,9 +956,9 @@ export default function NewInvoicePage() {
 
   const buyerStepLabel = isSelfBilling ? 'Dodávateľ' : 'Odberateľ'
   const steps = [
-    { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} invoiceMode={invoiceMode} /> },
-    { label: buyerStepLabel, component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} invoiceMode={invoiceMode} /> },
-    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} isCorrectionMode={isCorrectionMode} /> },
+    { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} invoiceMode={invoiceMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
+    { label: buyerStepLabel, component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} invoiceMode={invoiceMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
+    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} isCorrectionMode={isCorrectionMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
     { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
   ]
 
@@ -897,7 +988,7 @@ export default function NewInvoicePage() {
 
         {step < steps.length - 1 ? (
           <button
-            onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
+            onClick={handleNextStep}
             className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
             Ďalej
