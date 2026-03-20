@@ -437,15 +437,15 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         </View>
 
-        {/* BG-3: Billing reference for credit notes and re-issued invoices */}
+        {/* Billing reference for credit notes and re-issued invoices */}
         {(isCreditNote || isReissuedInvoice) && (invoice.billing_reference_number || invoice.correction_of) && (
           <View style={styles.noteBox}>
-            <Text style={styles.noteLabel}>Odkaz na pôvodnú faktúru (BG-3)</Text>
+            <Text style={styles.noteLabel}>Odkaz na pôvodnú faktúru</Text>
             {invoice.billing_reference_number && (
-              <Text style={styles.noteText}>Číslo pôvodnej faktúry (BT-25): {String(invoice.billing_reference_number)}</Text>
+              <Text style={styles.noteText}>Číslo pôvodnej faktúry: {String(invoice.billing_reference_number)}</Text>
             )}
             {invoice.billing_reference_date && (
-              <Text style={styles.noteText}>Dátum pôvodnej faktúry (BT-26): {fmtDateEu(String(invoice.billing_reference_date))}</Text>
+              <Text style={styles.noteText}>Dátum pôvodnej faktúry: {fmtDateEu(String(invoice.billing_reference_date))}</Text>
             )}
             {invoice.correction_reason && (
               <Text style={styles.noteText}>Dôvod opravy: {String(invoice.correction_reason)}</Text>
@@ -636,15 +636,6 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
           </View>
         )}
 
-        {/* Footer */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            Vystavené v systéme Peppol Faktúra | Peppol BIS 3.0
-          </Text>
-          <Text style={styles.footerText}>
-            {String(profile.company_name)} | IČO: {String(profile.ico)}
-          </Text>
-        </View>
       </Page>
     </Document>
   )
