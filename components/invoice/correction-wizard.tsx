@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag, Info, Loader2, AlertCircle } from 'lucide-react'
+import { Ban, Hash, DollarSign, PenLine, Percent, FileText, ChevronRight, Tag, Info, Loader2, AlertCircle, RotateCcw } from 'lucide-react'
 import type { InvoiceFormData } from '@/lib/schemas'
 import { fmtDate } from '@/lib/utils'
 
@@ -555,7 +555,19 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       {/* Quantity adjustment UI */}
       {selected === 'quantity' && (
         <GlassCard>
-          <h3 className="text-sm font-medium text-foreground mb-3">Upravte množstvá (nový stav po korekcii)</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-foreground">Upravte množstvá (nový stav po korekcii)</h3>
+            {Object.keys(qtyOverrides).length > 0 && (
+              <button
+                type="button"
+                onClick={() => setQtyOverrides({})}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Obnoviť pôvodné
+              </button>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mb-3">Znížte množstvo aspoň pri jednej položke. Ostatné môžete ponechať bez zmeny.</p>
           <div className="space-y-2">
             {original.items.map((it, idx) => {
@@ -596,7 +608,19 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
       {/* Price adjustment UI */}
       {selected === 'price' && (
         <GlassCard>
-          <h3 className="text-sm font-medium text-foreground mb-3">Upravte ceny (nová správna cena)</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-foreground">Upravte ceny (nová správna cena)</h3>
+            {Object.keys(priceOverrides).length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPriceOverrides({})}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Obnoviť pôvodné
+              </button>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mb-3">Znížte cenu aspoň pri jednej položke. Ostatné môžete ponechať bez zmeny.</p>
           <div className="space-y-2">
             {original.items.map((it, idx) => {
