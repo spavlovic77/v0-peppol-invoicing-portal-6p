@@ -61,7 +61,7 @@ export function SupplierProvider({ children }: { children: ReactNode }) {
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
-
+    
     const list = (data ?? []) as Supplier[]
     setSuppliers(list)
 
