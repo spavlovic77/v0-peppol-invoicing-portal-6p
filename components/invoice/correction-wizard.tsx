@@ -543,13 +543,13 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
                 {s.id === 'vat_rate' && isDisabled && (
                   <div className="flex items-start gap-1.5 mt-1.5 px-1">
                     <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
-                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Pouzite Uplne storno a vytvorte novu fakturu so spravnou sadzbou'}</span>
+                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Použite Úplné storno a vytvorte novú faktúru so správnou sadzbou'}</span>
                   </div>
                 )}
                 {s.id === 'freeform' && isDisabled && (
                   <div className="flex items-start gap-1.5 mt-1.5 px-1">
                     <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
-                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Funkcia docasne nedostupna'}</span>
+                    <span className="text-[10px] text-muted-foreground/60 leading-tight">{'Funkcia je dočasne nedostupná'}</span>
                   </div>
                 )}
               </div>
@@ -581,25 +581,25 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               const isDecreased = currentQty < it.quantity
               const isIncreased = currentQty > it.quantity
               return (
-              <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground truncate">{it.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Pôvodne: {it.quantity} {unitLabel(it.unit)}
-                    {isDecreased && <span className="text-emerald-400 ml-1"> → {currentQty} (zníženie o {it.quantity - currentQty})</span>}
-                    {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
-                  </p>
+                <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{it.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pôvodne: {it.quantity} {unitLabel(it.unit)}
+                      {isDecreased && <span className="text-emerald-400 ml-1"> → {currentQty} (zníženie o {it.quantity - currentQty})</span>}
+                      {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
+                    </p>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={it.quantity}
+                    step="any"
+                    value={currentQty}
+                    onChange={(e) => setQtyOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
+                    className={`w-20 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-center ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
+                  />
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  max={it.quantity}
-                  step="any"
-                  value={currentQty}
-                  onChange={(e) => setQtyOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
-                  className={`w-20 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-center ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
-                />
-              </div>
               )
             })}
           </div>
@@ -634,25 +634,25 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               const isDecreased = currentPrice < it.unit_price
               const isIncreased = currentPrice > it.unit_price
               return (
-              <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground truncate">{it.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Pôvodná cena: {it.unit_price.toFixed(2)} EUR
-                    {isDecreased && <span className="text-emerald-400 ml-1"> → {currentPrice.toFixed(2)} EUR (zníženie o {(it.unit_price - currentPrice).toFixed(2)})</span>}
-                    {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
-                  </p>
+                <div key={idx} className={`flex items-center gap-3 p-2 rounded-lg ${isDecreased ? 'bg-emerald-500/10 border border-emerald-500/20' : isIncreased ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/30'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{it.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Pôvodná cena: {it.unit_price.toFixed(2)} EUR
+                      {isDecreased && <span className="text-emerald-400 ml-1"> → {currentPrice.toFixed(2)} EUR (zníženie o {(it.unit_price - currentPrice).toFixed(2)})</span>}
+                      {isIncreased && <span className="text-destructive ml-1"> (zvýšenie nie je povolené)</span>}
+                    </p>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={it.unit_price}
+                    step={0.01}
+                    value={currentPrice}
+                    onChange={(e) => setPriceOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
+                    className={`w-24 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-right ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
+                  />
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  max={it.unit_price}
-                  step={0.01}
-                  value={currentPrice}
-                  onChange={(e) => setPriceOverrides((prev) => ({ ...prev, [idx]: Number(e.target.value) }))}
-                  className={`w-24 px-3 py-2 rounded-lg bg-background border text-foreground text-sm text-right ${isDecreased ? 'border-emerald-500' : isIncreased ? 'border-destructive' : 'border-border'}`}
-                />
-              </div>
               )
             })}
           </div>
