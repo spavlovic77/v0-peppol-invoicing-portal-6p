@@ -54,16 +54,13 @@ export function SupplierProvider({ children }: { children: ReactNode }) {
 
   const refreshSuppliers = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    console.log('[v0] refreshSuppliers - user:', user?.id, 'provider:', user?.app_metadata?.provider)
     if (!user) { setLoading(false); return }
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('suppliers')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
-
-    console.log('[v0] refreshSuppliers - query result:', { count: data?.length, error, userId: user.id })
     
     const list = (data ?? []) as Supplier[]
     setSuppliers(list)

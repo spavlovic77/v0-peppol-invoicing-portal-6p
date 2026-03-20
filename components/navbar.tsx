@@ -65,10 +65,8 @@ export function Navbar() {
       
       const desktopContains = newDropdownRef.current?.contains(e.target as Node)
       const mobileContains = mobileNewDropdownRef.current?.contains(e.target as Node)
-      console.log('[v0] Click outside check:', { desktopContains, mobileContains, target: (e.target as HTMLElement)?.className })
       
       if (!desktopContains && !mobileContains) {
-        console.log('[v0] Closing dropdown from click outside')
         setShowNewDropdown(false)
       }
     }
@@ -90,29 +88,19 @@ export function Navbar() {
   function handleNewInvoiceClick(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    console.log('[v0] handleNewInvoiceClick called, current showNewDropdown:', showNewDropdown)
-    setShowNewDropdown((prev) => {
-      console.log('[v0] Setting showNewDropdown from', prev, 'to', !prev)
-      return !prev
-    })
+    setShowNewDropdown((prev) => !prev)
   }
 
   function handleSelectMode(mode: string, e?: React.MouseEvent) {
     e?.preventDefault()
     e?.stopPropagation()
     
-    console.log('[v0] handleSelectMode called with mode:', mode)
-    console.log('[v0] suppliers.length:', suppliers.length, 'suppliers:', suppliers)
-    console.log('[v0] activeSupplier:', activeSupplier)
-    
     setShowNewDropdown(false)
     setPendingMode(mode)
     if (suppliers.length <= 1) {
-      console.log('[v0] Only 1 or 0 suppliers, navigating directly')
       router.push(`/invoices/new?mode=${mode}`)
       return
     }
-    console.log('[v0] Multiple suppliers, showing modal')
     setModalSupplier(activeSupplier)
     // Set flag to prevent immediate backdrop click from closing the modal on mobile
     modalJustOpenedRef.current = true
@@ -120,7 +108,6 @@ export function Navbar() {
     // Reset flag after a short delay (enough for touch events to finish)
     setTimeout(() => {
       modalJustOpenedRef.current = false
-      console.log('[v0] Modal ready for backdrop clicks')
     }, 300)
   }
 
@@ -434,7 +421,6 @@ export function Navbar() {
           <div
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => {
-              console.log('[v0] Backdrop clicked, modalJustOpened:', modalJustOpenedRef.current)
               if (!modalJustOpenedRef.current) {
                 setShowNewInvoiceModal(false)
               }
