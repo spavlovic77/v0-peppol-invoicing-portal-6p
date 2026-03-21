@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
+import { InvoiceCounterGauge } from '@/components/invoice-counter-gauge'
 
 declare global {
   interface Window {
@@ -135,7 +136,10 @@ export function LandingContent() {
           </div>
           <span className="text-2xl font-bold"><span className="text-red-500">zrob</span><span className="text-blue-500">efakturu</span><span className="text-foreground">.sk</span></span>
         </div>
-        <p className="text-sm text-muted-foreground mb-10 text-balance">{'Tvorba e-faktúr pre drobných podnikateľov'}</p>
+        <p className="text-sm text-muted-foreground mb-8 text-balance">{'Tvorba e-faktúr pre drobných podnikateľov'}</p>
+
+        {/* Invoice Counter Gauge */}
+        <InvoiceCounterGauge className="mb-10" />
 
         {/* Google Sign In - server-side route to avoid localhost redirect */}
         <a
