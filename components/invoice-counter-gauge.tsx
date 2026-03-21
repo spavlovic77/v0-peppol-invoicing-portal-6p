@@ -82,7 +82,7 @@ export function InvoiceCounterGauge({ className = '' }: InvoiceCounterGaugeProps
 
       {/* Label */}
       <p className="text-xs text-muted-foreground mt-3">
-        vygenerovanych faktur
+        ste už vytvorili. Trénujte viac! :)
       </p>
     </div>
   )
