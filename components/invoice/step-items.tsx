@@ -339,7 +339,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                 />
               </div>
 
-              <div className={`grid grid-cols-2 ${isVatPayer ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
+              <div className={`grid grid-cols-2 ${isVatPayer ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-3`}>
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Množstvo *</label>
                   <input
@@ -398,7 +398,10 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     )}
                   </div>
                 )}
-                <div className="md:min-w-[150px]">
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
                   <label className="block text-xs text-muted-foreground mb-1">Zľava</label>
                   <AdjustmentInput
                     mode={getLineAllowanceMode(i, item)}
