@@ -283,18 +283,9 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
         </div>
       )}
       <GlassCard>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Package className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Položky faktúry</h2>
-          </div>
-          <button
-            onClick={addItem}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/15 text-primary text-sm font-medium hover:bg-primary/25 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Pridať položku
-          </button>
+        <div className="flex items-center gap-3 mb-6">
+          <Package className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-foreground">Položky faktúry</h2>
         </div>
 
         <div className="space-y-4">
@@ -497,6 +488,14 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
             </div>
           ))}
         </div>
+
+        <button
+          onClick={addItem}
+          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary/60 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Pridať položku
+        </button>
       </GlassCard>
 
       {/* Attachments (BG-24) */}
