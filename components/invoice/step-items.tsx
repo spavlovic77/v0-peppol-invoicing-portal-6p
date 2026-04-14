@@ -74,27 +74,19 @@ function formatFileSize(bytes: number): string {
 type AdjustmentMode = 'percent' | 'amount'
 
 function deriveLineAllowanceMode(item: InvoiceItem): AdjustmentMode {
-  if ((item.discount_amount || 0) > 0) return 'amount'
-  if ((item.discount_percent || 0) > 0) return 'percent'
-  return 'percent'
+  return (item.discount_amount || 0) > 0 ? 'amount' : 'percent'
 }
 
 function deriveLineChargeMode(item: InvoiceItem): AdjustmentMode {
-  if ((item.charge_amount || 0) > 0) return 'amount'
-  if ((item.charge_percent || 0) > 0) return 'percent'
-  return 'percent'
+  return (item.charge_amount || 0) > 0 ? 'amount' : 'percent'
 }
 
 function deriveGlobalDiscountMode(form: InvoiceFormData): AdjustmentMode {
-  if ((form.global_discount_amount || 0) > 0) return 'amount'
-  if ((form.global_discount_percent || 0) > 0) return 'percent'
-  return 'percent'
+  return (form.global_discount_amount || 0) > 0 ? 'amount' : 'percent'
 }
 
 function deriveGlobalChargeMode(form: InvoiceFormData): AdjustmentMode {
-  if ((form.global_charge_amount || 0) > 0) return 'amount'
-  if ((form.global_charge_percent || 0) > 0) return 'percent'
-  return 'percent'
+  return (form.global_charge_amount || 0) > 0 ? 'amount' : 'percent'
 }
 
 export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false, validationErrors, shakeFields }: Props) {
@@ -102,6 +94,24 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  // User's explicit mode choice for each line's allowance/charge and for the
+  // document-level allowance/charge. When no override is set, the mode is
+  // derived from whichever of (percent, amount) is non-zero in the data.
+  const [lineModes, setLineModes] = useState<Record<number, { allow?: AdjustmentMode; charge?: AdjustmentMode }>>({})
+  const [docModes, setDocModes] = useState<{ allow?: AdjustmentMode; charge?: AdjustmentMode }>({})
+
+  function getLineAllowanceMode(i: number, item: InvoiceItem): AdjustmentMode {
+    return lineModes[i]?.allow ?? deriveLineAllowanceMode(item)
+  }
+  function getLineChargeMode(i: number, item: InvoiceItem): AdjustmentMode {
+    return lineModes[i]?.charge ?? deriveLineChargeMode(item)
+  }
+  function getGlobalDiscountMode(): AdjustmentMode {
+    return docModes.allow ?? deriveGlobalDiscountMode(formData)
+  }
+  function getGlobalChargeMode(): AdjustmentMode {
+    return docModes.charge ?? deriveGlobalChargeMode(formData)
+  }
 
   function toggleExpanded(i: number) {
     setExpanded((prev) => {
@@ -237,18 +247,22 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
   }
 
   function setLineAllowanceMode(index: number, mode: AdjustmentMode) {
+    setLineModes((prev) => ({ ...prev, [index]: { ...prev[index], allow: mode } }))
     updateItem(index, mode === 'percent' ? { discount_amount: 0 } : { discount_percent: 0 })
   }
 
   function setLineChargeMode(index: number, mode: AdjustmentMode) {
+    setLineModes((prev) => ({ ...prev, [index]: { ...prev[index], charge: mode } }))
     updateItem(index, mode === 'percent' ? { charge_amount: 0 } : { charge_percent: 0 })
   }
 
   function setGlobalDiscountMode(mode: AdjustmentMode) {
+    setDocModes((prev) => ({ ...prev, allow: mode }))
     updateForm(mode === 'percent' ? { global_discount_amount: 0 } : { global_discount_percent: 0 })
   }
 
   function setGlobalChargeMode(mode: AdjustmentMode) {
+    setDocModes((prev) => ({ ...prev, charge: mode }))
     updateForm(mode === 'percent' ? { global_charge_amount: 0 } : { global_charge_percent: 0 })
   }
 
@@ -384,10 +398,10 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                     )}
                   </div>
                 )}
-                <div>
+                <div className="md:min-w-[150px]">
                   <label className="block text-xs text-muted-foreground mb-1">Zľava</label>
                   <AdjustmentInput
-                    mode={deriveLineAllowanceMode(item)}
+                    mode={getLineAllowanceMode(i, item)}
                     percentValue={item.discount_percent || 0}
                     amountValue={item.discount_amount || 0}
                     currency={formData.currency}
@@ -413,10 +427,10 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                         ))}
                       </select>
                     </div>
-                    <div>
+                    <div className="min-w-[150px]">
                       <label className="block text-xs text-muted-foreground mb-1">Prirážka (na položku)</label>
                       <AdjustmentInput
-                        mode={deriveLineChargeMode(item)}
+                        mode={getLineChargeMode(i, item)}
                         percentValue={item.charge_percent || 0}
                         amountValue={item.charge_amount || 0}
                         currency={formData.currency}
@@ -576,7 +590,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Zľava na faktúru</label>
               <AdjustmentInput
-                mode={deriveGlobalDiscountMode(formData)}
+                mode={getGlobalDiscountMode()}
                 percentValue={formData.global_discount_percent || 0}
                 amountValue={formData.global_discount_amount || 0}
                 currency={formData.currency}
@@ -616,7 +630,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                 Prirážka na faktúru
               </label>
               <AdjustmentInput
-                mode={deriveGlobalChargeMode(formData)}
+                mode={getGlobalChargeMode()}
                 percentValue={formData.global_charge_percent || 0}
                 amountValue={formData.global_charge_amount || 0}
                 currency={formData.currency}
@@ -772,7 +786,7 @@ function AdjustmentInput({
           value={percentValue || 0}
           onChange={(e) => onPercentChange(parseFloat(e.target.value) || 0)}
           onFocus={(e) => e.target.select()}
-          className="glass-input flex-1 min-w-0 px-3 py-2 rounded-lg text-foreground text-sm"
+          className="glass-input flex-1 min-w-[5ch] px-3 py-2 rounded-lg text-foreground text-sm"
           min="0"
           max="100"
           step="0.5"
@@ -783,7 +797,7 @@ function AdjustmentInput({
           value={amountValue || 0}
           onChange={(e) => onAmountChange(parseFloat(e.target.value) || 0)}
           onFocus={(e) => e.target.select()}
-          className="glass-input flex-1 min-w-0 px-3 py-2 rounded-lg text-foreground text-sm"
+          className="glass-input flex-1 min-w-[7ch] px-3 py-2 rounded-lg text-foreground text-sm"
           min="0"
           step="0.01"
         />
