@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   col1: { width: '4%' },
-  col2: { width: '32%' },
+  col2: { width: '29%' },
   col3: { width: '8%', textAlign: 'right' },
   col4: { width: '7%', textAlign: 'center' },
   col5: { width: '12%', textAlign: 'right' },
-  col6: { width: '9%', textAlign: 'right' },
+  col6: { width: '12%', textAlign: 'right' },
   col7: { width: '9%', textAlign: 'right' },
   col8: { width: '12%', textAlign: 'right' },
   totalsBox: {
@@ -316,25 +316,44 @@ function unitLabel(code: string): string {
   return map[code] || code
 }
 
+// BT-131 per Peppol BIS 3 §10.2.2 with base quantity, line charges and
+// absolute/percent allowance. Mirrors computeLineExtension in the wizard.
+function computeLineNet(it: Record<string, unknown>): number {
+  const baseQtyRaw = Number(it.base_quantity || 1)
+  const baseQty = baseQtyRaw > 0 ? baseQtyRaw : 1
+  const qty = Number(it.quantity || 0)
+  const price = Number(it.unit_price || 0)
+  const pricePart = round2((price / baseQty) * qty)
+  const discAmt = Number(it.discount_amount || 0)
+  const discPct = Number(it.discount_percent || 0)
+  const allowance = discAmt > 0 ? round2(discAmt) : round2(pricePart * discPct / 100)
+  const chAmt = Number(it.charge_amount || 0)
+  const chPct = Number(it.charge_percent || 0)
+  const charge = chAmt > 0 ? round2(chAmt) : round2(pricePart * chPct / 100)
+  return round2(pricePart + charge - allowance)
+}
+
 function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<string, unknown>): {
   rows: TaxRecapRow[]
   corrections: CorrectionRow[]
 } {
-  const lineExtTotal = items.reduce((s, it) => s + Number(it.line_total || 0), 0)
-  const globalDiscountPct = Number(invoice.global_discount_percent || 0)
-  const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
+  const lineExtTotal = round2(items.reduce((s, it) => s + computeLineNet(it), 0))
+  const docAllowAmt = Number(invoice.global_discount_amount || 0)
+  const docAllowPct = Number(invoice.global_discount_percent || 0)
+  const globalDiscountAmt = docAllowAmt > 0
+    ? round2(docAllowAmt)
+    : round2(lineExtTotal * docAllowPct / 100)
+  const docChargeAmt = Number(invoice.global_charge_amount || 0)
+  const docChargePct = Number(invoice.global_charge_percent || 0)
+  const globalChargeAmt = docChargeAmt > 0
+    ? round2(docChargeAmt)
+    : round2(lineExtTotal * docChargePct / 100)
 
   // Group by rate: collect line totals + per-line gross sums
   const groups = new Map<number, { lineTotal: number; grossSum: number }>()
   for (const it of items) {
     const rate = Number(it.vat_rate || 0)
-    const qty = Number(it.quantity || 0)
-    const price = Number(it.unit_price || 0)
-    const discAmt = Number(it.discount_amount || 0)
-    const discPct = Number(it.discount_percent || 0)
-    const gross = qty * price
-    const disc = discAmt || round2(gross * discPct / 100)
-    const lineNet = round2(gross - disc)
+    const lineNet = computeLineNet(it)
     const lineGross = round2(lineNet * (100 + rate) / 100)
     const existing = groups.get(rate)
     if (existing) {
@@ -349,21 +368,23 @@ function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<s
   const corrections: CorrectionRow[] = []
 
   for (const [rate, group] of groups) {
-    // EN base (minus proportional global discount)
     const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
     const allocDiscount = round2(globalDiscountAmt * proportion)
-    const taxBase_EN = round2(group.lineTotal - allocDiscount)
+    const allocCharge = round2(globalChargeAmt * proportion)
+    const taxBase_EN = round2(group.lineTotal - allocDiscount + allocCharge)
 
     if (rate === 0) {
       rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
       continue
     }
 
-    // SK reverse: gross up per line, then reverse
+    // SK reverse: gross up per line, then reverse, factoring in doc allowance/charge
     let grossWithVat = round2(group.grossSum)
-    if (globalDiscountAmt > 0 && lineExtTotal > 0) {
-      const discGross = round2(allocDiscount * (100 + rate) / 100)
-      grossWithVat = round2(grossWithVat - discGross)
+    if (allocDiscount > 0) {
+      grossWithVat = round2(grossWithVat - round2(allocDiscount * (100 + rate) / 100))
+    }
+    if (allocCharge > 0) {
+      grossWithVat = round2(grossWithVat + round2(allocCharge * (100 + rate) / 100))
     }
 
     const tax_SK = round2(grossWithVat * rate / (100 + rate))
@@ -377,7 +398,6 @@ function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<s
     rows.push({ rate, base: base_SK, vat: tax_SK, total: round2(base_SK + tax_SK) })
   }
 
-  // Sort by rate descending
   rows.sort((a, b) => b.rate - a.rate)
   return { rows, corrections }
 }
@@ -529,22 +549,32 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
             <Text style={[styles.tableHeaderText, styles.col3]}>Mn.</Text>
             <Text style={[styles.tableHeaderText, styles.col4]}>MJ</Text>
             <Text style={[styles.tableHeaderText, styles.col5]}>Cena/MJ</Text>
-            <Text style={[styles.tableHeaderText, styles.col6]}>Zľava</Text>
+            <Text style={[styles.tableHeaderText, styles.col6]}>Zľ./Pr.</Text>
             {isVatPayer && <Text style={[styles.tableHeaderText, styles.col7]}>DPH</Text>}
             <Text style={[styles.tableHeaderText, styles.col8]}>Celkom</Text>
           </View>
           {items.map((item, i) => {
             const discPct = Number(item.discount_percent || 0)
             const discAmt = Number(item.discount_amount || 0)
-            const hasDiscount = discPct > 0 || discAmt > 0
+            const chPct = Number(item.charge_percent || 0)
+            const chAmt = Number(item.charge_amount || 0)
+            const baseQty = Number(item.base_quantity || 1)
+            const adjustments: string[] = []
+            if (discAmt > 0) adjustments.push(`-${fmt(discAmt)}`)
+            else if (discPct > 0) adjustments.push(`-${discPct}%`)
+            if (chAmt > 0) adjustments.push(`+${fmt(chAmt)}`)
+            else if (chPct > 0) adjustments.push(`+${chPct}%`)
+            const description = baseQty !== 1
+              ? `${String(item.description)} (cena za ${baseQty} ${unitLabel(String(item.unit || 'C62'))})`
+              : String(item.description)
             return (
             <View key={i} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
               <Text style={styles.col1}>{i + 1}</Text>
-              <Text style={styles.col2}>{String(item.description)}</Text>
+              <Text style={styles.col2}>{description}</Text>
               <Text style={styles.col3}>{String(item.quantity)}</Text>
               <Text style={styles.col4}>{unitLabel(String(item.unit || 'C62'))}</Text>
               <Text style={styles.col5}>{fmt(item.unit_price as number)}</Text>
-              <Text style={styles.col6}>{hasDiscount ? (discPct > 0 ? `${discPct}%` : fmt(discAmt)) : '-'}</Text>
+              <Text style={styles.col6}>{adjustments.length > 0 ? adjustments.join(' ') : '-'}</Text>
               {isVatPayer && <Text style={styles.col7}>{String(item.vat_rate)}%</Text>}
               <Text style={styles.col8}>{fmt(item.line_total as number)}</Text>
             </View>
@@ -592,31 +622,66 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
         })()}
 
         {/* Totals */}
-        <View style={styles.totalsBox}>
-          <View style={styles.totalsInner}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Základ dane:</Text>
-              <Text style={styles.totalValue}>
-                {fmt(invoice.total_without_vat as number)} {String(invoice.currency || 'EUR')}
-              </Text>
-            </View>
-            {isVatPayer && (
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>DPH:</Text>
-                <Text style={styles.totalValue}>
-                  {fmt(invoice.total_vat as number)} {String(invoice.currency || 'EUR')}
-                </Text>
+        {(() => {
+          const currency = String(invoice.currency || 'EUR')
+          const lineSum = round2(items.reduce((s, it) => s + computeLineNet(it), 0))
+          const docAllowAmt = Number(invoice.global_discount_amount || 0)
+          const docAllowPct = Number(invoice.global_discount_percent || 0)
+          const docAllow = docAllowAmt > 0
+            ? round2(docAllowAmt)
+            : round2(lineSum * docAllowPct / 100)
+          const docChargeAmt = Number(invoice.global_charge_amount || 0)
+          const docChargePct = Number(invoice.global_charge_percent || 0)
+          const docCharge = docChargeAmt > 0
+            ? round2(docChargeAmt)
+            : round2(lineSum * docChargePct / 100)
+          const hasDocAdjustments = docAllow > 0 || docCharge > 0
+          return (
+            <View style={styles.totalsBox}>
+              <View style={styles.totalsInner}>
+                {hasDocAdjustments && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Súčet položiek:</Text>
+                    <Text style={styles.totalValue}>{fmt(lineSum)} {currency}</Text>
+                  </View>
+                )}
+                {docAllow > 0 && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Zľava na faktúru:</Text>
+                    <Text style={styles.totalValue}>-{fmt(docAllow)} {currency}</Text>
+                  </View>
+                )}
+                {docCharge > 0 && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Prirážka na faktúru:</Text>
+                    <Text style={styles.totalValue}>+{fmt(docCharge)} {currency}</Text>
+                  </View>
+                )}
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Základ dane:</Text>
+                  <Text style={styles.totalValue}>
+                    {fmt(invoice.total_without_vat as number)} {currency}
+                  </Text>
+                </View>
+                {isVatPayer && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>DPH:</Text>
+                    <Text style={styles.totalValue}>
+                      {fmt(invoice.total_vat as number)} {currency}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.totalDivider} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.grandTotalLabel}>{isCreditNote ? 'K vráteniu:' : 'Na úhradu:'}</Text>
+                  <Text style={styles.grandTotalValue}>
+                    {fmt(invoice.total_with_vat as number)} {currency}
+                  </Text>
+                </View>
               </View>
-            )}
-            <View style={styles.totalDivider} />
-            <View style={styles.totalRow}>
-              <Text style={styles.grandTotalLabel}>{isCreditNote ? 'K vráteniu:' : 'Na úhradu:'}</Text>
-              <Text style={styles.grandTotalValue}>
-                {fmt(invoice.total_with_vat as number)} {String(invoice.currency || 'EUR')}
-              </Text>
             </View>
-          </View>
-        </View>
+          )
+        })()}
 
         {/* Non-VAT payer note */}
         {!isVatPayer && (
