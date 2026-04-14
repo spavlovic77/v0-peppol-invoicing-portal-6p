@@ -32,8 +32,16 @@ export const invoiceItemSchema = z.object({
   unit_price: z.number(),
   vat_category: z.string().default('S'),
   vat_rate: z.number().min(0).max(100).default(23),
+  // Line allowance (BG-27). Either amount or percent, amount wins when both set.
   discount_percent: z.number().min(0).max(100).default(0),
   discount_amount: z.number().min(0).default(0),
+  allowance_reason_code: z.string().nullable().default(null),
+  // Line charge (BG-28). Either amount or percent, amount wins when both set.
+  charge_percent: z.number().min(0).max(100).default(0),
+  charge_amount: z.number().min(0).default(0),
+  charge_reason_code: z.string().nullable().default(null),
+  // BT-149 item price base quantity. Price applies per `base_quantity` units.
+  base_quantity: z.number().positive().default(1),
   line_total: z.number(),
   item_number: z.string().nullable(),
   buyer_item_number: z.string().nullable(),
@@ -89,8 +97,14 @@ export const invoiceSchema = z.object({
   swift: z.string().nullable(),
   variable_symbol: z.string().nullable(),
   note: z.string().nullable(),
+  // Document-level allowance (BG-20)
   global_discount_percent: z.number().min(0).max(100).default(0),
   global_discount_amount: z.number().min(0).default(0),
+  global_discount_reason_code: z.string().nullable().default(null),
+  // Document-level charge (BG-21)
+  global_charge_percent: z.number().min(0).max(100).default(0),
+  global_charge_amount: z.number().min(0).default(0),
+  global_charge_reason_code: z.string().nullable().default(null),
   invoice_mode: z.enum(['standard', 'selfbilling', 'reversecharge']).default('standard'),
   invoice_type_code: z.string().default('380'),
   correction_of: z.string().nullable().default(null),
@@ -103,20 +117,32 @@ export const invoiceSchema = z.object({
 
 export type InvoiceFormData = z.infer<typeof invoiceSchema>
 
+// Line-level allowance or charge (BG-27 / BG-28) for the XML writer.
+// When the user entered a percent, baseAmount and multiplierFactor are set so
+// the writer can emit <cbc:BaseAmount> and <cbc:MultiplierFactorNumeric>.
+const lineAllowanceChargeSchema = z.object({
+  amount: z.number(),
+  reasonCode: z.string(),
+  reason: z.string().nullable(),
+  baseAmount: z.number().nullable().default(null),
+  multiplierFactor: z.number().nullable().default(null),
+})
+
 // Peppol UBL Invoice structured output schema (for AI generation)
 export const peppolInvoiceLineSchema = z.object({
   id: z.string().describe('Line ID (sequential number)'),
   invoicedQuantity: z.number().describe('Quantity of items'),
   unitCode: z.string().describe('UN/ECE rec 20 unit code, e.g. C62 for unit, HUR for hour'),
-  lineExtensionAmount: z.number().describe('Line net amount = quantity * price'),
+  lineExtensionAmount: z.number().describe('Line net amount (BT-131)'),
   itemName: z.string().describe('Item name/description'),
   classifiedTaxCategoryId: z.string().describe('Tax category: S=standard, E=exempt/zero, AE=reverse charge'),
   taxPercent: z.number().describe('VAT percentage, e.g. 20 for 20%'),
-  priceAmount: z.number().describe('Price per unit without VAT'),
+  priceAmount: z.number().describe('Item net price BT-146'),
+  baseQuantity: z.number().default(1).describe('BT-149 item price base quantity'),
   sellersItemIdentification: z.string().nullable().describe('Seller item number'),
   buyersItemIdentification: z.string().nullable().describe('Buyer item number'),
-  allowanceChargeAmount: z.number().default(0).describe('Line-level discount amount'),
-  allowanceChargeReason: z.string().nullable().describe('Reason for discount, e.g. "Zlava"'),
+  lineAllowance: lineAllowanceChargeSchema.nullable().default(null).describe('BT-136 line-level allowance'),
+  lineCharge: lineAllowanceChargeSchema.nullable().default(null).describe('BT-141 line-level charge'),
 })
 
 export const peppolTaxSubtotalSchema = z.object({
@@ -177,6 +203,8 @@ export const peppolInvoiceSchema = z.object({
     taxCategoryId: z.string(),
     taxPercent: z.number(),
     isCharge: z.boolean().default(false),
+    baseAmount: z.number().nullable().default(null),
+    multiplierFactor: z.number().nullable().default(null),
   })).default([]).describe('Document-level allowances (BG-20) and charges (BG-21)'),
   invoiceLines: z.array(peppolInvoiceLineSchema).describe('Invoice line items'),
   invoiceNote: z.string().nullable().describe('Free-text note on invoice'),

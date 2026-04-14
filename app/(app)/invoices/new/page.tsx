@@ -47,10 +47,39 @@ function makeDefaultItem(mode: string) {
     vat_rate: mode === 'reversecharge' ? 0 : 23,
     discount_percent: 0,
     discount_amount: 0,
+    allowance_reason_code: null,
+    charge_percent: 0,
+    charge_amount: 0,
+    charge_reason_code: null,
+    base_quantity: 1,
     line_total: 0,
     item_number: null,
     buyer_item_number: null,
   }
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+function computeLineExtension(item: {
+  quantity: number
+  unit_price: number
+  discount_percent?: number
+  discount_amount?: number
+  charge_percent?: number
+  charge_amount?: number
+  base_quantity?: number
+}): number {
+  const baseQty = item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1
+  const pricePart = round2((item.unit_price / baseQty) * item.quantity)
+  const allowance = (item.discount_amount || 0) > 0
+    ? round2(item.discount_amount as number)
+    : round2(pricePart * (item.discount_percent || 0) / 100)
+  const charge = (item.charge_amount || 0) > 0
+    ? round2(item.charge_amount as number)
+    : round2(pricePart * (item.charge_percent || 0) / 100)
+  return round2(pricePart + charge - allowance)
 }
 
 export default function NewInvoicePage() {
@@ -83,7 +112,7 @@ export default function NewInvoicePage() {
     buyer_street: string; buyer_city: string; buyer_postal_code: string; buyer_country_code: string;
     buyer_email: string; buyer_peppol_id: string; buyer_reference: string; order_reference: string;
     delivery_date: string; note: string; payment_means_code: string;
-    items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; line_total: number }[]
+    items: { description: string; quantity: number; unit: string; unit_price: number; vat_rate: number; vat_category: string; item_number: string | null; buyer_item_number: string | null; discount_percent: number; discount_amount: number; allowance_reason_code: string | null; charge_percent: number; charge_amount: number; charge_reason_code: string | null; base_quantity: number; line_total: number }[]
   } | null>(null)
 
   const [formData, setFormData] = useState<InvoiceFormData>({
@@ -112,9 +141,18 @@ export default function NewInvoicePage() {
     note: isReverseCharge ? 'Prenesenie daňovej povinnosti' : null,
     global_discount_percent: 0,
     global_discount_amount: 0,
+    global_discount_reason_code: null,
+    global_charge_percent: 0,
+    global_charge_amount: 0,
+    global_charge_reason_code: null,
     invoice_mode: invoiceMode,
     invoice_type_code: isSelfBilling ? '389' : '380',
+    correction_of: null,
+    correction_reason: null,
+    billing_reference_number: null,
+    billing_reference_date: null,
     items: [makeDefaultItem(invoiceMode)],
+    attachments: [],
   })
 
   // Feed AI assistant with wizard context
@@ -176,25 +214,32 @@ export default function NewInvoicePage() {
           note: srcInv.note,
           global_discount_percent: srcInv.global_discount_percent || 0,
           global_discount_amount: srcInv.global_discount_amount || 0,
+          global_discount_reason_code: srcInv.global_discount_reason_code ?? null,
+          global_charge_percent: srcInv.global_charge_percent || 0,
+          global_charge_amount: srcInv.global_charge_amount || 0,
+          global_charge_reason_code: srcInv.global_charge_reason_code ?? null,
           items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => {
-            const qty = it.quantity as number
-            const price = it.unit_price as number
-            const dp = (it.discount_percent as number) || 0
-            const da = (it.discount_amount as number) || 0
-            return {
+            const loaded = {
               line_number: idx + 1,
               description: it.description as string,
-              quantity: qty,
+              quantity: it.quantity as number,
               unit: (it.unit as string) || 'C62',
-              unit_price: price,
+              unit_price: it.unit_price as number,
               vat_category: (it.vat_category as string) || 'S',
               vat_rate: (it.vat_rate as number) || 23,
-              discount_percent: dp,
-              discount_amount: da,
-              line_total: Math.round((qty * price - da) * 100) / 100,
+              discount_percent: (it.discount_percent as number) || 0,
+              discount_amount: (it.discount_amount as number) || 0,
+              allowance_reason_code: (it.allowance_reason_code as string) ?? null,
+              charge_percent: (it.charge_percent as number) || 0,
+              charge_amount: (it.charge_amount as number) || 0,
+              charge_reason_code: (it.charge_reason_code as string) ?? null,
+              base_quantity: (it.base_quantity as number) || 1,
+              line_total: 0,
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
+            loaded.line_total = computeLineExtension(loaded)
+            return loaded
           }) : [makeDefaultItem(invoiceMode)],
         }))
         setLoading(false)
@@ -225,24 +270,32 @@ export default function NewInvoicePage() {
           note: srcInv.note,
           global_discount_percent: srcInv.global_discount_percent || 0,
           global_discount_amount: srcInv.global_discount_amount || 0,
+          global_discount_reason_code: srcInv.global_discount_reason_code ?? null,
+          global_charge_percent: srcInv.global_charge_percent || 0,
+          global_charge_amount: srcInv.global_charge_amount || 0,
+          global_charge_reason_code: srcInv.global_charge_reason_code ?? null,
           items: srcItems?.length ? srcItems.map((it: Record<string, unknown>, idx: number) => {
-            const qty = it.quantity as number
-            const price = it.unit_price as number
-            const da = (it.discount_amount as number) || 0
-            return {
+            const loaded = {
               line_number: idx + 1,
               description: it.description as string,
-              quantity: qty,
+              quantity: it.quantity as number,
               unit: (it.unit as string) || 'C62',
-              unit_price: price,
+              unit_price: it.unit_price as number,
               vat_category: (it.vat_category as string) || 'S',
               vat_rate: (it.vat_rate as number) || 23,
               discount_percent: (it.discount_percent as number) || 0,
-              discount_amount: da,
-              line_total: Math.round((qty * price - da) * 100) / 100,
+              discount_amount: (it.discount_amount as number) || 0,
+              allowance_reason_code: (it.allowance_reason_code as string) ?? null,
+              charge_percent: (it.charge_percent as number) || 0,
+              charge_amount: (it.charge_amount as number) || 0,
+              charge_reason_code: (it.charge_reason_code as string) ?? null,
+              base_quantity: (it.base_quantity as number) || 1,
+              line_total: 0,
               item_number: (it.item_number as string) || null,
               buyer_item_number: (it.buyer_item_number as string) || null,
             }
+            loaded.line_total = computeLineExtension(loaded)
+            return loaded
           }) : [makeDefaultItem(invoiceMode)],
         }))
         toast.success('Udaje z povodnej faktury boli nacitane')
@@ -284,6 +337,11 @@ export default function NewInvoicePage() {
             buyer_item_number: (it.buyer_item_number as string) || null,
             discount_percent: (it.discount_percent as number) || 0,
             discount_amount: (it.discount_amount as number) || 0,
+            allowance_reason_code: (it.allowance_reason_code as string) ?? null,
+            charge_percent: (it.charge_percent as number) || 0,
+            charge_amount: (it.charge_amount as number) || 0,
+            charge_reason_code: (it.charge_reason_code as string) ?? null,
+            base_quantity: (it.base_quantity as number) || 1,
             line_total: it.line_total as number,
           })),
         })
@@ -428,36 +486,39 @@ export default function NewInvoicePage() {
   const totals = (() => {
     const r2 = (n: number) => Math.round(n * 100) / 100
 
-    // Sum line totals (already include per-item discounts)
-    const lineSum = formData.items.reduce((acc, item) => {
-      const gross = item.quantity * item.unit_price
-      const discount = item.discount_amount || (gross * (item.discount_percent || 0) / 100)
-      return acc + (gross - discount)
-    }, 0)
+    // Sum line net amounts (BT-131 per Peppol BIS 3 §10.2)
+    const lineSum = formData.items.reduce((acc, item) => acc + computeLineExtension(item), 0)
 
-    // Apply global discount
-    const globalDiscount = lineSum * (formData.global_discount_percent || 0) / 100
+    // Document-level allowance (BG-20) and charge (BG-21): absolute wins over percent
+    const globalDiscount = (formData.global_discount_amount || 0) > 0
+      ? r2(formData.global_discount_amount)
+      : r2(lineSum * (formData.global_discount_percent || 0) / 100)
+    const globalCharge = (formData.global_charge_amount || 0) > 0
+      ? r2(formData.global_charge_amount)
+      : r2(lineSum * (formData.global_charge_percent || 0) / 100)
 
-    // Non-VAT payer: no tax at all
     if (!isVatPayer) {
-      const total = r2(lineSum - globalDiscount)
+      const total = r2(lineSum - globalDiscount + globalCharge)
       return { withoutVat: total, vat: 0, withVat: total }
     }
 
-    // Slovak reverse method: calculate VAT per tax rate group
-    // Group items by tax rate
+    // Per (rate) group, apportion document-level allowance/charge proportionally
+    const perLine = formData.items.map((item) => ({
+      rate: item.vat_rate || 0,
+      lineNet: computeLineExtension(item),
+    }))
+
     const taxGroups = new Map<number, number>()
-    for (const item of formData.items) {
-      const gross = item.quantity * item.unit_price
-      const itemDiscount = item.discount_amount || (gross * (item.discount_percent || 0) / 100)
-      const lineNet = gross - itemDiscount
-      const lineGlobalDiscount = lineSum > 0 ? (lineNet / lineSum) * globalDiscount : 0
-      const groupTaxBase = r2(lineNet - lineGlobalDiscount)
-      const rate = item.vat_rate || 0
-      taxGroups.set(rate, (taxGroups.get(rate) || 0) + groupTaxBase)
+    for (const l of perLine) {
+      const prop = lineSum > 0 ? (l.lineNet / lineSum) : 0
+      const allocAllowance = r2(globalDiscount * prop)
+      const allocCharge = r2(globalCharge * prop)
+      const adjusted = r2(l.lineNet - allocAllowance + allocCharge)
+      taxGroups.set(l.rate, r2((taxGroups.get(l.rate) || 0) + adjusted))
     }
 
-    // SK reverse calculation per group
+    // SK reverse calculation per group so the displayed totals stay consistent
+    // with Slovak rounding practice; builder uses EN16931 forward.
     let totalVat = 0
     let totalTaxBase = 0
     for (const [rate, taxBase] of taxGroups) {
@@ -594,7 +655,11 @@ export default function NewInvoicePage() {
         total_vat: totals.vat,
         total_with_vat: totals.withVat,
         global_discount_percent: formData.global_discount_percent || 0,
-        global_discount_amount: totals.withoutVat > 0 ? Math.round((formData.items.reduce((s, i) => s + i.quantity * i.unit_price - (i.discount_amount || 0), 0)) * (formData.global_discount_percent || 0) / 100 * 100) / 100 : 0,
+        global_discount_amount: formData.global_discount_amount || 0,
+        global_discount_reason_code: formData.global_discount_reason_code || null,
+        global_charge_percent: formData.global_charge_percent || 0,
+        global_charge_amount: formData.global_charge_amount || 0,
+        global_charge_reason_code: formData.global_charge_reason_code || null,
         note: formData.note,
         status: 'draft',
         invoice_mode: formData.invoice_mode || 'standard',
@@ -638,25 +703,26 @@ export default function NewInvoicePage() {
         invoiceId = invoice.id
       }
 
-      const items = formData.items.map((item) => {
-        const gross = item.quantity * item.unit_price
-        const discountAmt = item.discount_amount || Math.round(gross * (item.discount_percent || 0) / 100 * 100) / 100
-        return {
-          invoice_id: invoiceId,
-          line_number: item.line_number,
-          description: item.description,
-          quantity: item.quantity,
-          unit: item.unit,
-          unit_price: item.unit_price,
-          vat_category: item.vat_category,
-          vat_rate: item.vat_rate,
-          discount_percent: item.discount_percent || 0,
-          discount_amount: discountAmt,
-          line_total: Math.round((gross - discountAmt) * 100) / 100,
-          item_number: item.item_number,
-          buyer_item_number: item.buyer_item_number,
-        }
-      })
+      const items = formData.items.map((item) => ({
+        invoice_id: invoiceId,
+        line_number: item.line_number,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        vat_category: item.vat_category,
+        vat_rate: item.vat_rate,
+        discount_percent: item.discount_percent || 0,
+        discount_amount: item.discount_amount || 0,
+        allowance_reason_code: item.allowance_reason_code || null,
+        charge_percent: item.charge_percent || 0,
+        charge_amount: item.charge_amount || 0,
+        charge_reason_code: item.charge_reason_code || null,
+        base_quantity: item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1,
+        line_total: computeLineExtension(item),
+        item_number: item.item_number,
+        buyer_item_number: item.buyer_item_number,
+      }))
 
       const { error: itemsError } = await supabase.from('invoice_items').insert(items)
       if (itemsError) throw itemsError
@@ -838,6 +904,10 @@ export default function NewInvoicePage() {
         total_with_vat: Math.round((itemTotals.net + itemTotals.vat) * 100) / 100,
         global_discount_percent: 0,
         global_discount_amount: 0,
+        global_discount_reason_code: null,
+        global_charge_percent: 0,
+        global_charge_amount: 0,
+        global_charge_reason_code: null,
         note: mergedData.note,
         status: 'final',
         invoice_mode: mergedData.invoice_mode || 'standard',
@@ -867,25 +937,26 @@ export default function NewInvoicePage() {
       const invoiceId = invoice.id
 
       // Insert items
-      const dbItems = items.map((item) => {
-        const gross = item.quantity * item.unit_price
-        const discountAmt = item.discount_amount || Math.round(gross * (item.discount_percent || 0) / 100 * 100) / 100
-        return {
-          invoice_id: invoiceId,
-          line_number: item.line_number,
-          description: item.description,
-          quantity: item.quantity,
-          unit: item.unit,
-          unit_price: item.unit_price,
-          vat_category: item.vat_category,
-          vat_rate: item.vat_rate,
-          discount_percent: item.discount_percent || 0,
-          discount_amount: discountAmt,
-          line_total: Math.round((gross - discountAmt) * 100) / 100,
-          item_number: item.item_number,
-          buyer_item_number: item.buyer_item_number,
-        }
-      })
+      const dbItems = items.map((item) => ({
+        invoice_id: invoiceId,
+        line_number: item.line_number,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        vat_category: item.vat_category,
+        vat_rate: item.vat_rate,
+        discount_percent: item.discount_percent || 0,
+        discount_amount: item.discount_amount || 0,
+        allowance_reason_code: item.allowance_reason_code || null,
+        charge_percent: item.charge_percent || 0,
+        charge_amount: item.charge_amount || 0,
+        charge_reason_code: item.charge_reason_code || null,
+        base_quantity: item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1,
+        line_total: computeLineExtension(item),
+        item_number: item.item_number,
+        buyer_item_number: item.buyer_item_number,
+      }))
 
       const { error: itemsError } = await supabase.from('invoice_items').insert(dbItems)
       if (itemsError) throw itemsError

@@ -20,13 +20,46 @@ function stripEndpointScheme(id: string | null | undefined): string {
   return id.replace(/^\d{4}:/, '')
 }
 
+// Render a line-level <cac:AllowanceCharge> (no <cac:TaxCategory> child per BIS 3).
+function renderLineAllowanceCharge(
+  currency: string,
+  isCharge: boolean,
+  ac: { amount: number; reasonCode: string; reason: string | null; baseAmount: number | null; multiplierFactor: number | null }
+): string {
+  const multiplierLine = ac.multiplierFactor !== null
+    ? `\n        <cbc:MultiplierFactorNumeric>${ac.multiplierFactor}</cbc:MultiplierFactorNumeric>`
+    : ''
+  const baseAmountLine = ac.baseAmount !== null
+    ? `\n        <cbc:BaseAmount currencyID="${escapeXml(currency)}">${amount(ac.baseAmount)}</cbc:BaseAmount>`
+    : ''
+  const reasonLine = ac.reason
+    ? `\n        <cbc:AllowanceChargeReason>${escapeXml(ac.reason)}</cbc:AllowanceChargeReason>`
+    : ''
+  return `
+      <cac:AllowanceCharge>
+        <cbc:ChargeIndicator>${isCharge ? 'true' : 'false'}</cbc:ChargeIndicator>
+        <cbc:AllowanceChargeReasonCode>${escapeXml(ac.reasonCode)}</cbc:AllowanceChargeReasonCode>${reasonLine}${multiplierLine}
+        <cbc:Amount currencyID="${escapeXml(currency)}">${amount(ac.amount)}</cbc:Amount>${baseAmountLine}
+      </cac:AllowanceCharge>`
+}
+
 export function buildUblXml(inv: PeppolInvoice): string {
   const lines = inv.invoiceLines
     .map(
-      (line) => `<cac:InvoiceLine>
+      (line) => {
+        const lineAllowanceXml = line.lineAllowance
+          ? renderLineAllowanceCharge(inv.documentCurrencyCode, false, line.lineAllowance)
+          : ''
+        const lineChargeXml = line.lineCharge
+          ? renderLineAllowanceCharge(inv.documentCurrencyCode, true, line.lineCharge)
+          : ''
+        const baseQuantityXml = line.baseQuantity && line.baseQuantity !== 1
+          ? `\n        <cbc:BaseQuantity unitCode="${escapeXml(line.unitCode)}">${line.baseQuantity}</cbc:BaseQuantity>`
+          : ''
+        return `<cac:InvoiceLine>
       <cbc:ID>${escapeXml(line.id)}</cbc:ID>
       <cbc:InvoicedQuantity unitCode="${escapeXml(line.unitCode)}">${line.invoicedQuantity}</cbc:InvoicedQuantity>
-      <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>
+      <cbc:LineExtensionAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.lineExtensionAmount)}</cbc:LineExtensionAmount>${lineAllowanceXml}${lineChargeXml}
       <cac:Item>
         <cbc:Name>${escapeXml(line.itemName)}</cbc:Name>${
           line.buyersItemIdentification
@@ -52,9 +85,10 @@ export function buildUblXml(inv: PeppolInvoice): string {
         </cac:ClassifiedTaxCategory>
       </cac:Item>
       <cac:Price>
-        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.priceAmount)}</cbc:PriceAmount>
+        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.priceAmount)}</cbc:PriceAmount>${baseQuantityXml}
       </cac:Price>
     </cac:InvoiceLine>`
+      }
     )
     .join('\n  ')
 
@@ -192,9 +226,11 @@ export function buildUblXml(inv: PeppolInvoice): string {
   </cac:PaymentMeans>
 ${(inv.documentAllowances || []).filter(a => a.amount > 0).map(a => `  <cac:AllowanceCharge>
     <cbc:ChargeIndicator>${a.isCharge ? 'true' : 'false'}</cbc:ChargeIndicator>
-    <cbc:AllowanceChargeReasonCode>${escapeXml(a.reasonCode || '95')}</cbc:AllowanceChargeReasonCode>${a.reason ? `
-    <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>` : ''}
-    <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>
+    <cbc:AllowanceChargeReasonCode>${escapeXml(a.reasonCode || (a.isCharge ? 'FC' : '95'))}</cbc:AllowanceChargeReasonCode>${a.reason ? `
+    <cbc:AllowanceChargeReason>${escapeXml(a.reason)}</cbc:AllowanceChargeReason>` : ''}${a.multiplierFactor !== null && a.multiplierFactor !== undefined ? `
+    <cbc:MultiplierFactorNumeric>${a.multiplierFactor}</cbc:MultiplierFactorNumeric>` : ''}
+    <cbc:Amount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.amount)}</cbc:Amount>${a.baseAmount !== null && a.baseAmount !== undefined ? `
+    <cbc:BaseAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(a.baseAmount)}</cbc:BaseAmount>` : ''}
     <cac:TaxCategory>
       <cbc:ID>${escapeXml(a.taxCategoryId)}</cbc:ID>
       <cbc:Percent>${a.taxPercent}</cbc:Percent>

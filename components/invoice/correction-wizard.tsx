@@ -53,6 +53,11 @@ interface OriginalInvoice {
     buyer_item_number: string | null
     discount_percent: number
     discount_amount: number
+    allowance_reason_code: string | null
+    charge_percent: number
+    charge_amount: number
+    charge_reason_code: string | null
+    base_quantity: number
     line_total: number
   }[]
 }
@@ -269,6 +274,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           vat_rate: it.vat_rate,
           discount_percent: it.discount_percent || 0,
           discount_amount: it.discount_amount || 0,
+          allowance_reason_code: it.allowance_reason_code ?? null,
+          charge_percent: it.charge_percent || 0,
+          charge_amount: it.charge_amount || 0,
+          charge_reason_code: it.charge_reason_code ?? null,
+          base_quantity: it.base_quantity || 1,
           line_total: it.line_total,
           item_number: it.item_number,
           buyer_item_number: it.buyer_item_number,
@@ -295,6 +305,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               vat_rate: it.vat_rate,
               discount_percent: 0,
               discount_amount: 0,
+              allowance_reason_code: null,
+              charge_percent: 0,
+              charge_amount: 0,
+              charge_reason_code: null,
+              base_quantity: 1,
               line_total: lineTotal,
               item_number: it.item_number,
               buyer_item_number: it.buyer_item_number,
@@ -329,6 +344,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               vat_rate: it.vat_rate,
               discount_percent: 0,
               discount_amount: 0,
+              allowance_reason_code: null,
+              charge_percent: 0,
+              charge_amount: 0,
+              charge_reason_code: null,
+              base_quantity: 1,
               line_total: lineTotal,
               item_number: it.item_number,
               buyer_item_number: it.buyer_item_number,
@@ -340,7 +360,12 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           correctionItems = [{
             line_number: 1, description: 'Korekcia ceny', quantity: 1,
             unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: original.items[0]?.vat_rate || 23,
-            discount_percent: 0, discount_amount: 0, line_total: 0,
+            discount_percent: 0, discount_amount: 0,
+            allowance_reason_code: null,
+            charge_percent: 0, charge_amount: 0,
+            charge_reason_code: null,
+            base_quantity: 1,
+            line_total: 0,
             item_number: null, buyer_item_number: null,
           }]
         }
@@ -373,6 +398,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
             vat_rate: oldRate,
             discount_percent: it.discount_percent || 0,
             discount_amount: it.discount_amount || 0,
+            allowance_reason_code: it.allowance_reason_code ?? null,
+            charge_percent: it.charge_percent || 0,
+            charge_amount: it.charge_amount || 0,
+            charge_reason_code: it.charge_reason_code ?? null,
+            base_quantity: it.base_quantity || 1,
             line_total: it.line_total,
             item_number: it.item_number,
             buyer_item_number: it.buyer_item_number,
@@ -389,6 +419,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
             vat_rate: newRate,
             discount_percent: it.discount_percent || 0,
             discount_amount: it.discount_amount || 0,
+            allowance_reason_code: it.allowance_reason_code ?? null,
+            charge_percent: it.charge_percent || 0,
+            charge_amount: it.charge_amount || 0,
+            charge_reason_code: it.charge_reason_code ?? null,
+            base_quantity: it.base_quantity || 1,
             line_total: -it.line_total,
             item_number: it.item_number,
             buyer_item_number: it.buyer_item_number,
@@ -400,7 +435,12 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           vatLines.push({
             line_number: 1, description: 'Korekcia DPH', quantity: 1,
             unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: 23,
-            discount_percent: 0, discount_amount: 0, line_total: 0,
+            discount_percent: 0, discount_amount: 0,
+            allowance_reason_code: null,
+            charge_percent: 0, charge_amount: 0,
+            charge_reason_code: null,
+            base_quantity: 1,
+            line_total: 0,
             item_number: null, buyer_item_number: null,
           })
         }
@@ -425,6 +465,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
               vat_rate: it.vat_rate,
               discount_percent: 0,
               discount_amount: 0,
+              allowance_reason_code: null,
+              charge_percent: 0,
+              charge_amount: 0,
+              charge_reason_code: null,
+              base_quantity: 1,
               line_total: discountAmount,
               item_number: it.item_number,
               buyer_item_number: it.buyer_item_number,
@@ -436,7 +481,12 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           correctionItems = [{
             line_number: 1, description: 'Zľava', quantity: 1,
             unit: 'C62', unit_price: 0, vat_category: 'S', vat_rate: original.items[0]?.vat_rate || 23,
-            discount_percent: 0, discount_amount: 0, line_total: 0,
+            discount_percent: 0, discount_amount: 0,
+            allowance_reason_code: null,
+            charge_percent: 0, charge_amount: 0,
+            charge_reason_code: null,
+            base_quantity: 1,
+            line_total: 0,
             item_number: null, buyer_item_number: null,
           }]
         }
@@ -461,6 +511,11 @@ export function CorrectionWizard({ original, onApply, onDirectCreate, isCreating
           vat_rate: it.vat_rate,
           discount_percent: it.discount_percent || 0,
           discount_amount: it.discount_amount || 0,
+          allowance_reason_code: it.allowance_reason_code ?? null,
+          charge_percent: it.charge_percent || 0,
+          charge_amount: it.charge_amount || 0,
+          charge_reason_code: it.charge_reason_code ?? null,
+          base_quantity: it.base_quantity || 1,
           line_total: it.line_total,
           item_number: it.item_number,
           buyer_item_number: it.buyer_item_number,

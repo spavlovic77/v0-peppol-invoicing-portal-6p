@@ -199,9 +199,13 @@ CREATE TABLE IF NOT EXISTS invoices (
   swift                   VARCHAR(11),
   variable_symbol         VARCHAR(10),
 
-  -- Discounts
-  global_discount_percent NUMERIC(5,2) DEFAULT 0,
-  global_discount_amount  NUMERIC(12,2) DEFAULT 0,
+  -- Document-level allowances (BG-20) and charges (BG-21) - Peppol BIS 3
+  global_discount_percent     NUMERIC(5,2)  DEFAULT 0,
+  global_discount_amount      NUMERIC(12,2) DEFAULT 0,
+  global_discount_reason_code VARCHAR(10),
+  global_charge_percent       NUMERIC(5,2)  NOT NULL DEFAULT 0,
+  global_charge_amount        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  global_charge_reason_code   VARCHAR(10),
 
   -- Totals
   total_without_vat       NUMERIC(12,2),
@@ -268,12 +272,18 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   unit_price        NUMERIC(12,4) NOT NULL,
   vat_category      VARCHAR(3) DEFAULT 'S',
   vat_rate          NUMERIC(5,2) NOT NULL DEFAULT 23.00,
-  discount_percent  NUMERIC(5,2) DEFAULT 0,
-  discount_amount   NUMERIC(12,2) DEFAULT 0,
-  line_total        NUMERIC(12,2) NOT NULL,
-  item_number       TEXT,
-  buyer_item_number TEXT,
-  created_at        TIMESTAMPTZ DEFAULT NOW()
+  -- Line allowance (BG-27) / charge (BG-28) - Peppol BIS 3
+  discount_percent      NUMERIC(5,2)  DEFAULT 0,                 -- BT-138 as %
+  discount_amount       NUMERIC(12,2) DEFAULT 0,                 -- BT-136 absolute
+  allowance_reason_code VARCHAR(10),                             -- BT-140 (UNTDID 5189)
+  charge_percent        NUMERIC(5,2)  NOT NULL DEFAULT 0,        -- BT-143 as %
+  charge_amount         NUMERIC(12,2) NOT NULL DEFAULT 0,        -- BT-141 absolute
+  charge_reason_code    VARCHAR(10),                             -- BT-145 (UNTDID 7161)
+  base_quantity         NUMERIC(12,3) NOT NULL DEFAULT 1,        -- BT-149 item price base quantity
+  line_total            NUMERIC(12,2) NOT NULL,
+  item_number           TEXT,
+  buyer_item_number     TEXT,
+  created_at            TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE invoice_items ENABLE ROW LEVEL SECURITY;

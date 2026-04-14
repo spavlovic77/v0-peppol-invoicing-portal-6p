@@ -21,23 +21,35 @@ interface CorrectionRow {
   isCharge: boolean
 }
 
-function buildRecap(items: InvoiceFormData['items'], globalDiscountPct: number): {
+function computeLineNet(it: InvoiceFormData['items'][number]): number {
+  const baseQty = it.base_quantity && it.base_quantity > 0 ? it.base_quantity : 1
+  const pricePart = round2((it.unit_price / baseQty) * it.quantity)
+  const allowance = (it.discount_amount || 0) > 0
+    ? round2(it.discount_amount)
+    : round2(pricePart * (it.discount_percent || 0) / 100)
+  const charge = (it.charge_amount || 0) > 0
+    ? round2(it.charge_amount)
+    : round2(pricePart * (it.charge_percent || 0) / 100)
+  return round2(pricePart + charge - allowance)
+}
+
+function buildRecap(form: InvoiceFormData): {
   rows: TaxRecapRow[]
   corrections: CorrectionRow[]
 } {
-  const lineExtTotal = items.reduce((s, it) => {
-    const gross = it.quantity * it.unit_price
-    const disc = it.discount_amount || round2(gross * (it.discount_percent || 0) / 100)
-    return s + round2(gross - disc)
-  }, 0)
-  const globalDiscountAmt = round2(lineExtTotal * globalDiscountPct / 100)
+  const items = form.items
+  const lineExtTotal = round2(items.reduce((s, it) => s + computeLineNet(it), 0))
+  const globalDiscountAmt = (form.global_discount_amount || 0) > 0
+    ? round2(form.global_discount_amount)
+    : round2(lineExtTotal * (form.global_discount_percent || 0) / 100)
+  const globalChargeAmt = (form.global_charge_amount || 0) > 0
+    ? round2(form.global_charge_amount)
+    : round2(lineExtTotal * (form.global_charge_percent || 0) / 100)
 
   const groups = new Map<number, { lineTotal: number; grossSum: number }>()
   for (const it of items) {
     const rate = it.vat_rate || 0
-    const gross = it.quantity * it.unit_price
-    const disc = it.discount_amount || round2(gross * (it.discount_percent || 0) / 100)
-    const lineNet = round2(gross - disc)
+    const lineNet = computeLineNet(it)
     const lineGross = round2(lineNet * (100 + rate) / 100)
     const existing = groups.get(rate)
     if (existing) {
@@ -54,7 +66,8 @@ function buildRecap(items: InvoiceFormData['items'], globalDiscountPct: number):
   for (const [rate, group] of groups) {
     const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
     const allocDiscount = round2(globalDiscountAmt * proportion)
-    const taxBase_EN = round2(group.lineTotal - allocDiscount)
+    const allocCharge = round2(globalChargeAmt * proportion)
+    const taxBase_EN = round2(group.lineTotal - allocDiscount + allocCharge)
 
     if (rate === 0) {
       rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
@@ -62,9 +75,11 @@ function buildRecap(items: InvoiceFormData['items'], globalDiscountPct: number):
     }
 
     let grossWithVat = round2(group.grossSum)
-    if (globalDiscountAmt > 0 && lineExtTotal > 0) {
-      const discGross = round2(allocDiscount * (100 + rate) / 100)
-      grossWithVat = round2(grossWithVat - discGross)
+    if (allocDiscount > 0) {
+      grossWithVat = round2(grossWithVat - round2(allocDiscount * (100 + rate) / 100))
+    }
+    if (allocCharge > 0) {
+      grossWithVat = round2(grossWithVat + round2(allocCharge * (100 + rate) / 100))
     }
 
     const tax_SK = round2(grossWithVat * rate / (100 + rate))
@@ -96,7 +111,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  const { rows: recapRows, corrections } = buildRecap(formData.items, formData.global_discount_percent || 0)
+  const { rows: recapRows, corrections } = buildRecap(formData)
 
   return (
     <div className="space-y-6">
@@ -209,27 +224,40 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
                 <th className="pb-2 font-medium">Popis</th>
                 <th className="pb-2 font-medium text-right">Mn.</th>
                 <th className="pb-2 font-medium text-right">Cena</th>
-                <th className="pb-2 font-medium text-right">Zľava</th>
+                <th className="pb-2 font-medium text-right">Zľ./Pr.</th>
                 {isVatPayer && <th className="pb-2 font-medium text-right">DPH</th>}
                 <th className="pb-2 font-medium text-right">Spolu</th>
               </tr>
             </thead>
             <tbody>
-              {formData.items.map((item, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="py-2 text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 text-foreground">{item.description || '-'}</td>
-                  <td className="py-2 text-right text-foreground">{item.quantity}</td>
-                  <td className="py-2 text-right text-foreground">{fmt(item.unit_price)}</td>
-                  <td className="py-2 text-right text-muted-foreground">
-                    {(item.discount_percent || 0) > 0 ? `${item.discount_percent}%` : '-'}
-                  </td>
-                  {isVatPayer && <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>}
-                  <td className="py-2 text-right text-foreground font-medium">
-                    {fmt(item.line_total || item.quantity * item.unit_price)}
-                  </td>
-                </tr>
-              ))}
+              {formData.items.map((item, i) => {
+                const baseQty = item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1
+                const parts: string[] = []
+                if ((item.discount_amount || 0) > 0) parts.push(`-${fmt(item.discount_amount)}`)
+                else if ((item.discount_percent || 0) > 0) parts.push(`-${item.discount_percent}%`)
+                if ((item.charge_amount || 0) > 0) parts.push(`+${fmt(item.charge_amount)}`)
+                else if ((item.charge_percent || 0) > 0) parts.push(`+${item.charge_percent}%`)
+                return (
+                  <tr key={i} className="border-t border-border">
+                    <td className="py-2 text-muted-foreground">{i + 1}</td>
+                    <td className="py-2 text-foreground">
+                      {item.description || '-'}
+                      {baseQty !== 1 && (
+                        <span className="ml-1 text-xs text-muted-foreground">(za {baseQty} j.)</span>
+                      )}
+                    </td>
+                    <td className="py-2 text-right text-foreground">{item.quantity}</td>
+                    <td className="py-2 text-right text-foreground">{fmt(item.unit_price)}</td>
+                    <td className="py-2 text-right text-muted-foreground">
+                      {parts.length > 0 ? parts.join(' ') : '-'}
+                    </td>
+                    {isVatPayer && <td className="py-2 text-right text-muted-foreground">{item.vat_rate}%</td>}
+                    <td className="py-2 text-right text-foreground font-medium">
+                      {fmt(item.line_total || computeLineNet(item))}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -286,10 +314,16 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <span className="text-muted-foreground">Základ dane:</span>
             <span className="text-foreground">{fmt(totals.withoutVat)} {formData.currency}</span>
           </div>
-          {(formData.global_discount_percent || 0) > 0 && (
+          {((formData.global_discount_percent || 0) > 0 || (formData.global_discount_amount || 0) > 0) && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Zľava na faktúru ({formData.global_discount_percent}%):</span>
+              <span className="text-muted-foreground">Zľava na faktúru:</span>
               <span className="text-primary">zahrnutá v základe</span>
+            </div>
+          )}
+          {((formData.global_charge_percent || 0) > 0 || (formData.global_charge_amount || 0) > 0) && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Prirážka na faktúru:</span>
+              <span className="text-amber-500">zahrnutá v základe</span>
             </div>
           )}
           {isVatPayer && (

@@ -1,12 +1,22 @@
 import type { PeppolInvoice } from './schemas'
-import { PEPPOL_IDENTIFIER_SCHEME } from './constants'
+import {
+  PEPPOL_IDENTIFIER_SCHEME,
+  DEFAULT_ALLOWANCE_REASON_CODE,
+  DEFAULT_CHARGE_REASON_CODE,
+  allowanceReasonLabel,
+  chargeReasonLabel,
+} from './constants'
 
 /**
  * Deterministic Peppol BIS 3.0 invoice builder.
  *
- * Uses EN16931 forward VAT calculation as per Peppol BIS 3.0 chapter 10.4:
- *   tax = taxBase * rate / 100
- *   taxBase = SUM(line extension amounts) - allowances + charges
+ * Implements the line- and document-level calculation rules from Peppol BIS
+ * 3.0 chapter 10:
+ *   BT-131 = round2((BT-146 / BT-149) * BT-129) + round2(BT-141) - round2(BT-136)
+ *   BT-109 = SUM(BT-131) - SUM(BT-92) + SUM(BT-99)
+ *   BT-116 per (category, rate) = SUM line amounts + matching charges - matching allowances
+ *   BT-117 = round2(BT-116 * BT-119 / 100)
+ * Every sub-expression is rounded to 2 decimals separately.
  */
 
 interface SupplierProfile {
@@ -48,6 +58,10 @@ interface InvoiceData {
   note: string | null
   global_discount_percent: number
   global_discount_amount: number
+  global_discount_reason_code?: string | null
+  global_charge_percent?: number
+  global_charge_amount?: number
+  global_charge_reason_code?: string | null
   invoice_type_code?: string
   invoice_mode?: string
   billing_reference_number?: string | null
@@ -65,6 +79,11 @@ interface InvoiceItemData {
   vat_rate: number
   discount_percent: number
   discount_amount: number
+  allowance_reason_code?: string | null
+  charge_percent?: number
+  charge_amount?: number
+  charge_reason_code?: string | null
+  base_quantity?: number
   item_number: string | null
   buyer_item_number: string | null
 }
@@ -104,62 +123,127 @@ export function buildPeppolInvoice(
   }
 
   // ================================================================
-  // 1. Build invoice lines with per-item discounts
-  // For CreditNote (381) and Corrective Invoice (384): quantities and amounts are always POSITIVE
+  // 1. Build invoice lines per Peppol BIS 3 §10.2
+  //    BT-131 = round2((BT-146 / BT-149) * BT-129)
+  //             + round2(BT-141) - round2(BT-136)
+  //    Each sub-expression rounded to 2 decimals separately.
+  // For CreditNote (381) and Corrective Invoice (384): quantities are POSITIVE.
   // ================================================================
   const invoiceLines = items.map((item) => {
     const qty = isCreditOrCorrective ? Math.abs(item.quantity) : item.quantity
-    const grossAmount = round2(qty * item.unit_price)
-    const discountAmt = round2(item.discount_amount ? Math.abs(item.discount_amount) : (Math.abs(grossAmount) * (item.discount_percent || 0)) / 100)
-    const lineExtension = round2(grossAmount - discountAmt)
+    const baseQty = item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1
+    const priceAmount = item.unit_price
 
-    // R120: LineExtensionAmount MUST equal qty * PriceAmount (exactly)
-    const netPricePerUnit = qty !== 0 ? round2(lineExtension / qty) : item.unit_price
-    const adjustedLineExtension = round2(qty * netPricePerUnit)
+    // Price portion (BT-146 / BT-149) * BT-129
+    const pricePart = round2((priceAmount / baseQty) * qty)
 
-    // Determine correct tax category based on rate and user input
-    // E (Exempt) and O (Outside scope) require 0% rate; AE (Reverse charge) also requires 0%
-    // If rate > 0, force category to S (Standard)
+    // Line allowance (BG-27 / BT-136). Absolute amount wins over percent.
+    let allowanceAmt = 0
+    let allowanceMultiplier: number | null = null
+    if (item.discount_amount && item.discount_amount > 0) {
+      allowanceAmt = round2(Math.abs(item.discount_amount))
+    } else if (item.discount_percent && item.discount_percent > 0) {
+      allowanceMultiplier = item.discount_percent
+      allowanceAmt = round2((pricePart * item.discount_percent) / 100)
+    }
+
+    // Line charge (BG-28 / BT-141). Absolute amount wins over percent.
+    let chargeAmt = 0
+    let chargeMultiplier: number | null = null
+    if (item.charge_amount && item.charge_amount > 0) {
+      chargeAmt = round2(Math.abs(item.charge_amount))
+    } else if (item.charge_percent && item.charge_percent > 0) {
+      chargeMultiplier = item.charge_percent
+      chargeAmt = round2((pricePart * item.charge_percent) / 100)
+    }
+
+    const lineExtension = round2(pricePart + chargeAmt - allowanceAmt)
+
+    // Tax category: E/O must pair with 0%; AE implies 0%; anything with rate>0
+    // falls back to S (Standard) to keep the invoice well-formed.
     const rate = item.vat_rate ?? 23
     let taxCategory = item.vat_category || 'S'
     if (rate > 0 && (taxCategory === 'E' || taxCategory === 'O')) {
-      taxCategory = 'S' // Force standard category for non-zero rates
+      taxCategory = 'S'
     }
-    
+
+    const lineAllowance = allowanceAmt > 0
+      ? {
+          amount: allowanceAmt,
+          reasonCode: item.allowance_reason_code || DEFAULT_ALLOWANCE_REASON_CODE,
+          reason: allowanceReasonLabel(item.allowance_reason_code),
+          baseAmount: allowanceMultiplier !== null ? pricePart : null,
+          multiplierFactor: allowanceMultiplier,
+        }
+      : null
+
+    const lineCharge = chargeAmt > 0
+      ? {
+          amount: chargeAmt,
+          reasonCode: item.charge_reason_code || DEFAULT_CHARGE_REASON_CODE,
+          reason: chargeReasonLabel(item.charge_reason_code),
+          baseAmount: chargeMultiplier !== null ? pricePart : null,
+          multiplierFactor: chargeMultiplier,
+        }
+      : null
+
     return {
       id: String(item.line_number),
       invoicedQuantity: qty,
       unitCode: item.unit || 'C62',
-      lineExtensionAmount: adjustedLineExtension,
+      lineExtensionAmount: lineExtension,
       itemName: item.description,
       classifiedTaxCategoryId: taxCategory,
       taxPercent: rate,
-      priceAmount: netPricePerUnit,
+      priceAmount,
+      baseQuantity: baseQty,
       sellersItemIdentification: item.item_number || null,
       buyersItemIdentification: item.buyer_item_number || null,
-      allowanceChargeAmount: discountAmt,
-      allowanceChargeReason: discountAmt > 0 ? 'Zlava' : null,
+      lineAllowance,
+      lineCharge,
     }
   })
 
   // ================================================================
-  // 2. Sum of all line extension amounts (BT-131 sum)
+  // 2. Sum of line net amounts (BT-106)
   // ================================================================
   const lineExtensionAmountTotal = round2(
     invoiceLines.reduce((sum, l) => sum + l.lineExtensionAmount, 0)
   )
 
   // ================================================================
-  // 3. Document-level user discounts (global discount)
+  // 3. Document-level allowance (BG-20) and charge (BG-21)
+  //    Both can be entered as absolute amount OR percentage; amount wins.
+  //    If percentage, the total allowance/charge is computed against the
+  //    overall BT-106, then split proportionally per (category, rate) group
+  //    so every emitted <cac:AllowanceCharge> carries a consistent tax base.
   // ================================================================
   const globalDiscountAmt = round2(
-    invoice.global_discount_amount ||
-    (lineExtensionAmountTotal * (invoice.global_discount_percent || 0)) / 100
+    invoice.global_discount_amount && invoice.global_discount_amount > 0
+      ? invoice.global_discount_amount
+      : (lineExtensionAmountTotal * (invoice.global_discount_percent || 0)) / 100
   )
+  const globalDiscountMultiplier =
+    (!invoice.global_discount_amount || invoice.global_discount_amount <= 0) &&
+    (invoice.global_discount_percent || 0) > 0
+      ? invoice.global_discount_percent || 0
+      : null
+
+  const globalChargeAmt = round2(
+    invoice.global_charge_amount && invoice.global_charge_amount > 0
+      ? invoice.global_charge_amount
+      : (lineExtensionAmountTotal * (invoice.global_charge_percent || 0)) / 100
+  )
+  const globalChargeMultiplier =
+    (!invoice.global_charge_amount || invoice.global_charge_amount <= 0) &&
+    (invoice.global_charge_percent || 0) > 0
+      ? invoice.global_charge_percent || 0
+      : null
 
   const documentAllowances: PeppolInvoice['documentAllowances'] = []
 
-  // Group lines by tax rate for EN16931 tax calculation
+  // Group lines by (category, rate) for tax calculation and for proportional
+  // splitting of document-level allowances/charges.
   const taxGroups = new Map<string, { rate: number; catId: string; lineTotal: number }>()
   for (const line of invoiceLines) {
     const key = `${line.classifiedTaxCategoryId}-${line.taxPercent}`
@@ -171,62 +255,86 @@ export function buildPeppolInvoice(
     }
   }
 
-  // Distribute global discount proportionally across tax categories
+  const discountReasonCode = invoice.global_discount_reason_code || DEFAULT_ALLOWANCE_REASON_CODE
+  const chargeReasonCode = invoice.global_charge_reason_code || DEFAULT_CHARGE_REASON_CODE
+
   if (globalDiscountAmt > 0) {
     for (const [, group] of taxGroups) {
       const proportion = lineExtensionAmountTotal > 0 ? group.lineTotal / lineExtensionAmountTotal : 1
-      const allocatedDiscount = round2(globalDiscountAmt * proportion)
-      if (allocatedDiscount > 0) {
+      const allocated = round2(globalDiscountAmt * proportion)
+      if (allocated > 0) {
         documentAllowances.push({
-          amount: allocatedDiscount,
-          reason: 'Zlava na fakturu',
-          reasonCode: '95',
+          amount: allocated,
+          reason: allowanceReasonLabel(discountReasonCode),
+          reasonCode: discountReasonCode,
           taxCategoryId: group.catId,
           taxPercent: group.rate,
           isCharge: false,
+          baseAmount: globalDiscountMultiplier !== null ? round2(group.lineTotal) : null,
+          multiplierFactor: globalDiscountMultiplier,
+        })
+      }
+    }
+  }
+
+  if (globalChargeAmt > 0) {
+    for (const [, group] of taxGroups) {
+      const proportion = lineExtensionAmountTotal > 0 ? group.lineTotal / lineExtensionAmountTotal : 1
+      const allocated = round2(globalChargeAmt * proportion)
+      if (allocated > 0) {
+        documentAllowances.push({
+          amount: allocated,
+          reason: chargeReasonLabel(chargeReasonCode),
+          reasonCode: chargeReasonCode,
+          taxCategoryId: group.catId,
+          taxPercent: group.rate,
+          isCharge: true,
+          baseAmount: globalChargeMultiplier !== null ? round2(group.lineTotal) : null,
+          multiplierFactor: globalChargeMultiplier,
         })
       }
     }
   }
 
   // ================================================================
-  // 4. Calculate tax base per EN method (forward)
+  // 4. Per-group VAT base (BT-116) per §10.4
+  //    BT-116 = SUM(line BT-131 in group) + charges in group - allowances in group
   // ================================================================
-  // taxBase_EN per group = lineTotal - userDiscount
   const enTaxGroups = new Map<string, { taxBase: number; rate: number; catId: string }>()
   for (const [key, group] of taxGroups) {
     enTaxGroups.set(key, { taxBase: group.lineTotal, rate: group.rate, catId: group.catId })
   }
-  // Subtract user discounts
-  for (const allowance of documentAllowances.filter(a => !a.isCharge && a.reasonCode !== 'ZZZ')) {
-    const key = `${allowance.taxCategoryId}-${allowance.taxPercent}`
+  for (const entry of documentAllowances) {
+    const key = `${entry.taxCategoryId}-${entry.taxPercent}`
     const group = enTaxGroups.get(key)
-    if (group) {
-      group.taxBase -= allowance.amount
+    if (!group) continue
+    if (entry.isCharge) {
+      group.taxBase += entry.amount
+    } else {
+      group.taxBase -= entry.amount
     }
   }
-
-  // Round EN tax bases
   for (const [, group] of enTaxGroups) {
     group.taxBase = round2(group.taxBase)
   }
 
-  const userAllowancesTotal = round2(documentAllowances.filter(a => !a.isCharge).reduce((s, a) => s + a.amount, 0))
-  const userChargesTotal = round2(documentAllowances.filter(a => a.isCharge).reduce((s, a) => s + a.amount, 0))
+  const userAllowancesTotal = round2(
+    documentAllowances.filter(a => !a.isCharge).reduce((s, a) => s + a.amount, 0)
+  )
+  const userChargesTotal = round2(
+    documentAllowances.filter(a => a.isCharge).reduce((s, a) => s + a.amount, 0)
+  )
 
   // ================================================================
-  // 5. EN16931 forward VAT calculation (Peppol BIS 3.0 chapter 10.4)
+  // 5. Tax subtotals (BT-117 = BT-116 * BT-119 / 100)
+  //    Category O must emit zero tax regardless.
   // ================================================================
-  // tax = taxBase * rate / 100
-  // taxBase = lineExtensionAmountTotal - allowances + charges (per tax category)
-
   const taxSubtotals: { taxableAmount: number; taxAmount: number; taxCategoryId: string; taxPercent: number; taxExemptionReasonCode: string | null; taxExemptionReason: string | null }[] = []
 
   for (const [, enGroup] of enTaxGroups) {
     const rate = enGroup.rate
     const taxBase = enGroup.taxBase
 
-    // Determine exemption reason for zero-rate categories (VATEX codes must be uppercase)
     let exemptionCode: string | null = null
     let exemptionReason: string | null = null
     if (rate === 0) {
@@ -242,8 +350,7 @@ export function buildPeppolInvoice(
       }
     }
 
-    // EN16931 forward calculation: tax = taxBase * rate / 100
-    const taxAmount = round2(taxBase * rate / 100)
+    const taxAmount = enGroup.catId === 'O' ? 0 : round2(taxBase * rate / 100)
 
     taxSubtotals.push({
       taxableAmount: taxBase,
@@ -256,15 +363,15 @@ export function buildPeppolInvoice(
   }
 
   // ================================================================
-  // 6. Final totals using EN16931 values
+  // 6. Legal monetary totals per §10.1
+  //    BT-109 = BT-106 - BT-107 + BT-108
+  //    BT-112 = BT-109 + BT-110
+  //    BT-115 = BT-112
   // ================================================================
-  // BT-116 taxExclusiveAmount = SUM(BT-131) - allowances + charges
   const taxExclusiveAmount = round2(lineExtensionAmountTotal - userAllowancesTotal + userChargesTotal)
   const taxAmountTotal = round2(taxSubtotals.reduce((s, t) => s + t.taxAmount, 0))
   const taxInclusiveAmount = round2(taxExclusiveAmount + taxAmountTotal)
   const payableAmount = taxInclusiveAmount
-
-  // Separate allowances and charges for LegalMonetaryTotal
   const allowanceTotalAmount = userAllowancesTotal
   const chargeTotalAmount = userChargesTotal
 

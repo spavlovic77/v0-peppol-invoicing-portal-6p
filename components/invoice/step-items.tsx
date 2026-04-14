@@ -2,10 +2,20 @@
 
 import { useRef, useState, useCallback } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Copy, Package, Plus, Trash2, Info, Paperclip, Upload, X, FileText } from 'lucide-react'
+import { Copy, Package, Plus, Trash2, Info, Paperclip, Upload, X, FileText, ChevronDown, ChevronUp, TrendingDown, TrendingUp } from 'lucide-react'
 import type { InvoiceFormData, InvoiceItem, InvoiceAttachment } from '@/lib/schemas'
 import { ALLOWED_MIME_TYPES, MAX_ATTACHMENT_SIZE } from '@/lib/schemas'
+import {
+  ALLOWANCE_REASON_CODES,
+  CHARGE_REASON_CODES,
+  DEFAULT_ALLOWANCE_REASON_CODE,
+  DEFAULT_CHARGE_REASON_CODE,
+} from '@/lib/constants'
 import { toast } from 'sonner'
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
 
 interface Props {
   formData: InvoiceFormData
@@ -61,10 +71,46 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+type AdjustmentMode = 'percent' | 'amount'
+
+function deriveLineAllowanceMode(item: InvoiceItem): AdjustmentMode {
+  if ((item.discount_amount || 0) > 0) return 'amount'
+  if ((item.discount_percent || 0) > 0) return 'percent'
+  return 'percent'
+}
+
+function deriveLineChargeMode(item: InvoiceItem): AdjustmentMode {
+  if ((item.charge_amount || 0) > 0) return 'amount'
+  if ((item.charge_percent || 0) > 0) return 'percent'
+  return 'percent'
+}
+
+function deriveGlobalDiscountMode(form: InvoiceFormData): AdjustmentMode {
+  if ((form.global_discount_amount || 0) > 0) return 'amount'
+  if ((form.global_discount_percent || 0) > 0) return 'percent'
+  return 'percent'
+}
+
+function deriveGlobalChargeMode(form: InvoiceFormData): AdjustmentMode {
+  if ((form.global_charge_amount || 0) > 0) return 'amount'
+  if ((form.global_charge_percent || 0) > 0) return 'percent'
+  return 'percent'
+}
+
 export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false, validationErrors, shakeFields }: Props) {
   const isReverseCharge = invoiceMode === 'reversecharge'
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+
+  function toggleExpanded(i: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
 
   const processFiles = useCallback((files: FileList | File[]) => {
     const fileArray = Array.from(files)
@@ -124,6 +170,11 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
       vat_rate: isReverseCharge ? 0 : isVatPayer ? 23 : 0,
       discount_percent: 0,
       discount_amount: 0,
+      allowance_reason_code: null,
+      charge_percent: 0,
+      charge_amount: 0,
+      charge_reason_code: null,
+      base_quantity: 1,
       line_total: 0,
       item_number: null,
       buyer_item_number: null,
@@ -146,16 +197,35 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
     updateForm({ items })
   }
 
+  function recomputeLineTotal(item: InvoiceItem): number {
+    const baseQty = item.base_quantity && item.base_quantity > 0 ? item.base_quantity : 1
+    const pricePart = round2((item.unit_price / baseQty) * item.quantity)
+    const allowance = (item.discount_amount || 0) > 0
+      ? round2(item.discount_amount)
+      : round2(pricePart * (item.discount_percent || 0) / 100)
+    const charge = (item.charge_amount || 0) > 0
+      ? round2(item.charge_amount)
+      : round2(pricePart * (item.charge_percent || 0) / 100)
+    return round2(pricePart + charge - allowance)
+  }
+
   function updateItem(index: number, updates: Partial<InvoiceItem>) {
     const items = formData.items.map((item, i) => {
       if (i !== index) return item
       const updated = { ...item, ...updates }
-      const gross = updated.quantity * updated.unit_price
-      // If discount_percent changes, recalc discount_amount
-      if (updates.discount_percent !== undefined) {
-        updated.discount_amount = Math.round(gross * updated.discount_percent / 100 * 100) / 100
+      if (updates.discount_percent !== undefined && updates.discount_percent > 0) {
+        updated.discount_amount = 0
       }
-      updated.line_total = Math.round((gross - (updated.discount_amount || 0)) * 100) / 100
+      if (updates.discount_amount !== undefined && updates.discount_amount > 0) {
+        updated.discount_percent = 0
+      }
+      if (updates.charge_percent !== undefined && updates.charge_percent > 0) {
+        updated.charge_amount = 0
+      }
+      if (updates.charge_amount !== undefined && updates.charge_amount > 0) {
+        updated.charge_percent = 0
+      }
+      updated.line_total = recomputeLineTotal(updated)
       if (isReverseCharge) {
         updated.vat_category = 'AE'
         updated.vat_rate = 0
@@ -164,6 +234,22 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
       return updated
     })
     updateForm({ items })
+  }
+
+  function setLineAllowanceMode(index: number, mode: AdjustmentMode) {
+    updateItem(index, mode === 'percent' ? { discount_amount: 0 } : { discount_percent: 0 })
+  }
+
+  function setLineChargeMode(index: number, mode: AdjustmentMode) {
+    updateItem(index, mode === 'percent' ? { charge_amount: 0 } : { charge_percent: 0 })
+  }
+
+  function setGlobalDiscountMode(mode: AdjustmentMode) {
+    updateForm(mode === 'percent' ? { global_discount_amount: 0 } : { global_discount_percent: 0 })
+  }
+
+  function setGlobalChargeMode(mode: AdjustmentMode) {
+    updateForm(mode === 'percent' ? { global_charge_amount: 0 } : { global_charge_percent: 0 })
   }
 
   const fmt = (n: number) =>
@@ -299,29 +385,97 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Zľava %</label>
-                  <input
-                    type="number"
-                    value={item.discount_percent || 0}
-                    onChange={(e) => updateItem(i, { discount_percent: parseFloat(e.target.value) || 0 })}
-                    className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                    min="0"
-                    max="100"
-                    step="0.5"
+                  <label className="block text-xs text-muted-foreground mb-1">Zľava</label>
+                  <AdjustmentInput
+                    mode={deriveLineAllowanceMode(item)}
+                    percentValue={item.discount_percent || 0}
+                    amountValue={item.discount_amount || 0}
+                    currency={formData.currency}
+                    onModeChange={(m) => setLineAllowanceMode(i, m)}
+                    onPercentChange={(v) => updateItem(i, { discount_percent: v })}
+                    onAmountChange={(v) => updateItem(i, { discount_amount: v })}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end items-center gap-3 text-sm">
-                {(item.discount_percent || 0) > 0 && (
-                  <span className="text-muted-foreground line-through text-xs">
-                    {fmt(item.quantity * item.unit_price)}
+              {expanded.has(i) && (
+                <div className="rounded-lg bg-background/40 border border-border/50 p-3 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Dôvod zľavy</label>
+                      <select
+                        value={item.allowance_reason_code || DEFAULT_ALLOWANCE_REASON_CODE}
+                        onChange={(e) => updateItem(i, { allowance_reason_code: e.target.value })}
+                        className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                      >
+                        {ALLOWANCE_REASON_CODES.map((r) => (
+                          <option key={r.code} value={r.code}>{r.code} — {r.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Prirážka (na položku)</label>
+                      <AdjustmentInput
+                        mode={deriveLineChargeMode(item)}
+                        percentValue={item.charge_percent || 0}
+                        amountValue={item.charge_amount || 0}
+                        currency={formData.currency}
+                        onModeChange={(m) => setLineChargeMode(i, m)}
+                        onPercentChange={(v) => updateItem(i, { charge_percent: v })}
+                        onAmountChange={(v) => updateItem(i, { charge_amount: v })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Dôvod prirážky</label>
+                      <select
+                        value={item.charge_reason_code || DEFAULT_CHARGE_REASON_CODE}
+                        onChange={(e) => updateItem(i, { charge_reason_code: e.target.value })}
+                        className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                      >
+                        {CHARGE_REASON_CODES.map((r) => (
+                          <option key={r.code} value={r.code}>{r.code} — {r.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">
+                        Základné množstvo
+                        <span className="text-muted-foreground/70"> (cena platí za N {unitOptions.find(u => u.value === item.unit)?.label.split(' ')[0] || 'j'})</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={item.base_quantity || 1}
+                        onChange={(e) => updateItem(i, { base_quantity: parseFloat(e.target.value) || 1 })}
+                        className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                        min="0.001"
+                        step="0.001"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center gap-3 text-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(i)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {expanded.has(i)
+                    ? <><ChevronUp className="w-3 h-3" />Menej</>
+                    : <><ChevronDown className="w-3 h-3" />Prirážka / Pokročilé</>}
+                </button>
+                <div className="flex items-center gap-3">
+                  {((item.discount_percent || 0) > 0 || (item.discount_amount || 0) > 0) && (
+                    <span className="text-muted-foreground line-through text-xs">
+                      {fmt(item.quantity * item.unit_price / (item.base_quantity || 1))}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">Spolu: </span>
+                  <span className="text-foreground font-medium">
+                    {fmt(item.line_total || item.quantity * item.unit_price)} {formData.currency}
                   </span>
-                )}
-                <span className="text-muted-foreground">Spolu: </span>
-                <span className="text-foreground font-medium">
-                  {fmt(item.line_total || item.quantity * item.unit_price)} {formData.currency}
-                </span>
+                </div>
               </div>
             </div>
           ))}
@@ -409,49 +563,141 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
         )}
       </GlassCard>
 
-      {/* Global Discount */}
+      {/* Document-level allowance (BG-20) and charge (BG-21) */}
       <GlassCard>
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground">Zľava na faktúru (%)</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              value={formData.global_discount_percent || 0}
-              onChange={(e) => updateForm({ global_discount_percent: parseFloat(e.target.value) || 0 })}
-              className="glass-input w-24 px-3 py-2 rounded-lg text-foreground text-sm text-right"
-              min="0"
-              max="100"
-              step="0.5"
-            />
-            <span className="text-sm text-muted-foreground">%</span>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <TrendingDown className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-foreground">Zľavy a prirážky na faktúru</h2>
+          </div>
+
+          {/* Document allowance */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-end">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Zľava na faktúru</label>
+              <AdjustmentInput
+                mode={deriveGlobalDiscountMode(formData)}
+                percentValue={formData.global_discount_percent || 0}
+                amountValue={formData.global_discount_amount || 0}
+                currency={formData.currency}
+                onModeChange={setGlobalDiscountMode}
+                onPercentChange={(v) => updateForm({ global_discount_percent: v })}
+                onAmountChange={(v) => updateForm({ global_discount_amount: v })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Dôvod</label>
+              <select
+                value={formData.global_discount_reason_code || DEFAULT_ALLOWANCE_REASON_CODE}
+                onChange={(e) => updateForm({ global_discount_reason_code: e.target.value })}
+                className="glass-input w-48 px-3 py-2 rounded-lg text-foreground text-sm"
+              >
+                {ALLOWANCE_REASON_CODES.map((r) => (
+                  <option key={r.code} value={r.code}>{r.code} — {r.label}</option>
+                ))}
+              </select>
+            </div>
+            {((formData.global_discount_percent || 0) > 0 || (formData.global_discount_amount || 0) > 0) && (
+              <div className="text-right text-sm text-primary whitespace-nowrap pb-2">
+                -{fmt(
+                  (formData.global_discount_amount || 0) > 0
+                    ? (formData.global_discount_amount || 0)
+                    : totals.withoutVat * (formData.global_discount_percent || 0) / 100
+                )} {formData.currency}
+              </div>
+            )}
+          </div>
+
+          {/* Document charge */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-end pt-3 border-t border-border/50">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
+                Prirážka na faktúru
+              </label>
+              <AdjustmentInput
+                mode={deriveGlobalChargeMode(formData)}
+                percentValue={formData.global_charge_percent || 0}
+                amountValue={formData.global_charge_amount || 0}
+                currency={formData.currency}
+                onModeChange={setGlobalChargeMode}
+                onPercentChange={(v) => updateForm({ global_charge_percent: v })}
+                onAmountChange={(v) => updateForm({ global_charge_amount: v })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Dôvod</label>
+              <select
+                value={formData.global_charge_reason_code || DEFAULT_CHARGE_REASON_CODE}
+                onChange={(e) => updateForm({ global_charge_reason_code: e.target.value })}
+                className="glass-input w-48 px-3 py-2 rounded-lg text-foreground text-sm"
+              >
+                {CHARGE_REASON_CODES.map((r) => (
+                  <option key={r.code} value={r.code}>{r.code} — {r.label}</option>
+                ))}
+              </select>
+            </div>
+            {((formData.global_charge_percent || 0) > 0 || (formData.global_charge_amount || 0) > 0) && (
+              <div className="text-right text-sm text-amber-500 whitespace-nowrap pb-2">
+                +{fmt(
+                  (formData.global_charge_amount || 0) > 0
+                    ? (formData.global_charge_amount || 0)
+                    : totals.withoutVat * (formData.global_charge_percent || 0) / 100
+                )} {formData.currency}
+              </div>
+            )}
           </div>
         </div>
-        {(formData.global_discount_percent || 0) > 0 && (
-          <div className="flex justify-end text-sm mt-2 text-primary">
-            -{fmt(totals.withoutVat * (formData.global_discount_percent || 0) / 100)} {formData.currency}
-          </div>
-        )}
       </GlassCard>
 
       {/* Totals */}
       <GlassCard heavy>
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Súčet položiek (po zľavách):</span>
-            <span className="text-foreground">{fmt(totals.withoutVat)} {formData.currency}</span>
-          </div>
-          {(formData.global_discount_percent || 0) > 0 && (
-            <>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Zľava na faktúru ({formData.global_discount_percent}%):</span>
-                <span className="text-primary">-{fmt(totals.withoutVat * (formData.global_discount_percent || 0) / 100)} {formData.currency}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Základ dane po zľave:</span>
-                <span className="text-foreground">{fmt(totals.withoutVat - totals.withoutVat * (formData.global_discount_percent || 0) / 100)} {formData.currency}</span>
-              </div>
-            </>
-          )}
+          {(() => {
+            const lineSum = formData.items.reduce((s, it) => {
+              const bq = (it.base_quantity && it.base_quantity > 0) ? it.base_quantity : 1
+              const price = round2((it.unit_price / bq) * it.quantity)
+              const allow = (it.discount_amount || 0) > 0
+                ? round2(it.discount_amount)
+                : round2(price * (it.discount_percent || 0) / 100)
+              const charge = (it.charge_amount || 0) > 0
+                ? round2(it.charge_amount)
+                : round2(price * (it.charge_percent || 0) / 100)
+              return s + round2(price + charge - allow)
+            }, 0)
+            const docAllow = (formData.global_discount_amount || 0) > 0
+              ? round2(formData.global_discount_amount)
+              : round2(lineSum * (formData.global_discount_percent || 0) / 100)
+            const docCharge = (formData.global_charge_amount || 0) > 0
+              ? round2(formData.global_charge_amount)
+              : round2(lineSum * (formData.global_charge_percent || 0) / 100)
+            return (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Súčet položiek:</span>
+                  <span className="text-foreground">{fmt(lineSum)} {formData.currency}</span>
+                </div>
+                {docAllow > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Zľava na faktúru:</span>
+                    <span className="text-primary">-{fmt(docAllow)} {formData.currency}</span>
+                  </div>
+                )}
+                {docCharge > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Prirážka na faktúru:</span>
+                    <span className="text-amber-500">+{fmt(docCharge)} {formData.currency}</span>
+                  </div>
+                )}
+                {(docAllow > 0 || docCharge > 0) && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Základ dane:</span>
+                    <span className="text-foreground">{fmt(round2(lineSum - docAllow + docCharge))} {formData.currency}</span>
+                  </div>
+                )}
+              </>
+            )
+          })()}
           {isVatPayer && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">DPH celkom:</span>
@@ -473,6 +719,75 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
           )}
         </div>
       </GlassCard>
+    </div>
+  )
+}
+
+interface AdjustmentInputProps {
+  mode: AdjustmentMode
+  percentValue: number
+  amountValue: number
+  currency: string
+  onModeChange: (mode: AdjustmentMode) => void
+  onPercentChange: (value: number) => void
+  onAmountChange: (value: number) => void
+}
+
+function AdjustmentInput({
+  mode,
+  percentValue,
+  amountValue,
+  currency,
+  onModeChange,
+  onPercentChange,
+  onAmountChange,
+}: AdjustmentInputProps) {
+  return (
+    <div className="flex items-stretch gap-1">
+      <div className="flex rounded-lg overflow-hidden border border-border/60 bg-background/30">
+        <button
+          type="button"
+          onClick={() => onModeChange('percent')}
+          className={`px-2 text-xs font-medium transition-colors ${
+            mode === 'percent'
+              ? 'bg-primary/20 text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          title="Percento"
+        >%</button>
+        <button
+          type="button"
+          onClick={() => onModeChange('amount')}
+          className={`px-2 text-xs font-medium transition-colors border-l border-border/60 ${
+            mode === 'amount'
+              ? 'bg-primary/20 text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          title={currency}
+        >{currency === 'EUR' ? '€' : currency}</button>
+      </div>
+      {mode === 'percent' ? (
+        <input
+          type="number"
+          value={percentValue || 0}
+          onChange={(e) => onPercentChange(parseFloat(e.target.value) || 0)}
+          onFocus={(e) => e.target.select()}
+          className="glass-input flex-1 min-w-0 px-3 py-2 rounded-lg text-foreground text-sm"
+          min="0"
+          max="100"
+          step="0.5"
+        />
+      ) : (
+        <input
+          type="number"
+          value={amountValue || 0}
+          onChange={(e) => onAmountChange(parseFloat(e.target.value) || 0)}
+          onFocus={(e) => e.target.select()}
+          className="glass-input flex-1 min-w-0 px-3 py-2 rounded-lg text-foreground text-sm"
+          min="0"
+          step="0.01"
+        />
+      )}
     </div>
   )
 }
