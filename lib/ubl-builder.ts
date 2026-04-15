@@ -157,7 +157,8 @@ export function buildUblXml(inv: PeppolInvoice): string {
       </cac:PartyTaxScheme>` : ''}
       <cac:PartyLegalEntity>
         <cbc:RegistrationName>${escapeXml(inv.supplierPartyName)}</cbc:RegistrationName>${inv.supplierCompanyId ? `
-        <cbc:CompanyID>${escapeXml(inv.supplierCompanyId)}</cbc:CompanyID>` : ''}
+        <cbc:CompanyID>${escapeXml(inv.supplierCompanyId)}</cbc:CompanyID>` : ''}${inv.supplierLegalForm ? `
+        <cbc:CompanyLegalForm>${escapeXml(inv.supplierLegalForm)}</cbc:CompanyLegalForm>` : ''}
       </cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingSupplierParty>

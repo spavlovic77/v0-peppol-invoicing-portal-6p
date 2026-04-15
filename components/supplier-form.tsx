@@ -28,6 +28,7 @@ export interface SupplierFormData {
   web: string
   registration_court: string
   registration_number: string
+  legal_form: string
   ap_api_key: string
   is_vat_payer: boolean
 }
@@ -36,7 +37,7 @@ const emptyForm: SupplierFormData = {
   ico: '', dic: '', ic_dph: '', company_name: '', street: '', city: '',
   postal_code: '', country_code: 'SK', bank_name: '', iban: '', swift: '',
   email: '', phone: '', web: '', registration_court: '', registration_number: '',
-  ap_api_key: '', is_vat_payer: true,
+  legal_form: '', ap_api_key: '', is_vat_payer: true,
 }
 
 interface SupplierFormProps {
@@ -100,6 +101,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       toast.error('Názov firmy a IČO sú povinné')
       return
     }
+    if (!form.legal_form.trim()) {
+      toast.error('Spoločnosť zapísaná (BT-33) je povinné — napr. "Obchodný register Okresného súdu Bratislava I, oddiel: sro, vložka č. 123/B"')
+      return
+    }
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -123,6 +128,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         web: form.web || null,
         registration_court: form.registration_court || null,
         registration_number: form.registration_number || null,
+        legal_form: form.legal_form.trim() || null,
         ap_api_key: form.ap_api_key || null,
         is_vat_payer: form.is_vat_payer,
       }
@@ -215,6 +221,19 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="Mesto" value={form.city} onChange={(v) => updateField('city', v)} />
           <Field label="PSČ" value={form.postal_code} onChange={(v) => updateField('postal_code', v)} />
           <Field label="Krajina" value={form.country_code} onChange={(v) => updateField('country_code', v)} />
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm text-muted-foreground mb-1.5">
+            Spoločnosť zapísaná *
+            <span className="text-muted-foreground/70 ml-1 text-xs">(BT-33, napr. &quot;Obchodný register Okresného súdu Bratislava I, oddiel: sro, vložka č. 123/B&quot;)</span>
+          </label>
+          <textarea
+            value={form.legal_form}
+            onChange={(e) => updateField('legal_form', e.target.value)}
+            className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground text-sm resize-none ${!form.legal_form.trim() ? 'ring-1 ring-destructive/50' : ''}`}
+            rows={2}
+            placeholder="Obchodný register Okresného súdu ..."
+          />
         </div>
         <div className="mt-5 pt-5 border-t border-border">
           <label className="flex items-center gap-3 cursor-pointer select-none">

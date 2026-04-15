@@ -175,6 +175,7 @@ export const peppolInvoiceSchema = z.object({
   supplierCompanyId: z.string().describe('Supplier IČO'),
   supplierTaxId: z.string().describe('Supplier IČ DPH with prefix, e.g. SK2020123456'),
   supplierVatId: z.string().nullable().describe('Supplier DIČ'),
+  supplierLegalForm: z.string().nullable().default(null).describe('BT-33 Seller additional legal information (e.g. Obchodný register Okresného súdu...)'),
   customerEndpointId: z.string().describe('Customer Peppol ID'),
   customerEndpointSchemeId: z.string().describe('Customer endpoint EAS scheme (e.g. 0245)'),
   customerPartyName: z.string().describe('Customer company name'),

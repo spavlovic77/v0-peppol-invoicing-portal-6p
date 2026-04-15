@@ -22,6 +22,7 @@ export interface Supplier {
   web: string | null
   registration_court: string | null
   registration_number: string | null
+  legal_form: string | null
   is_vat_payer: boolean
   is_billing_entity: boolean
 }

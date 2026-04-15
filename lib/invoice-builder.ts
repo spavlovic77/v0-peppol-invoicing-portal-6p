@@ -30,6 +30,7 @@ interface SupplierProfile {
   country_code: string
   iban: string | null
   swift: string | null
+  legal_form?: string | null
   is_vat_payer?: boolean
 }
 
@@ -406,6 +407,7 @@ export function buildPeppolInvoice(
     companyId: invoice.buyer_ico || '',
     taxId: invoice.buyer_ic_dph || null,
     vatId: invoice.buyer_dic || null,
+    legalForm: null as string | null,
   } : {
     name: profile.company_name,
     street: profile.street || '',
@@ -415,6 +417,7 @@ export function buildPeppolInvoice(
     companyId: profile.ico,
     taxId: isVatPayer ? (profile.ic_dph || (profile.dic ? `SK${profile.dic}` : profile.ico)) : (profile.dic || profile.ico),
     vatId: isVatPayer ? (profile.dic || null) : null,
+    legalForm: profile.legal_form || null,
   }
 
   const customerParty = isSelfBilling ? {
@@ -456,6 +459,7 @@ export function buildPeppolInvoice(
     supplierCompanyId: supplierParty.companyId,
     supplierTaxId: supplierParty.taxId || supplierParty.companyId,
     supplierVatId: supplierParty.vatId || null,
+    supplierLegalForm: supplierParty.legalForm,
     customerEndpointId: buyerEndpointId,
     customerEndpointSchemeId: PEPPOL_IDENTIFIER_SCHEME,
     customerPartyName: customerParty.name,

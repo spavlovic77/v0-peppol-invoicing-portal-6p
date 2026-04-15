@@ -489,6 +489,11 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
                 {String(profile.registration_court)}, vl. č. {String(profile.registration_number || '')}
               </Text>
             )}
+            {profile.legal_form && (
+              <Text style={styles.partyLine}>
+                Spoločnosť zapísaná: {String(profile.legal_form)}
+              </Text>
+            )}
           </View>
           <View style={styles.partyBox}>
             <Text style={styles.partyTitle}>{isSelfBilling ? 'Dodávateľ' : 'Odberateľ'}</Text>

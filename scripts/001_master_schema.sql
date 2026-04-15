@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
   web             TEXT,
   registration_court  TEXT,
   registration_number TEXT,
+  legal_form          TEXT,                                        -- BT-33 Seller additional legal information
   ap_api_key      TEXT,
   is_vat_payer    BOOLEAN DEFAULT TRUE,
   is_billing_entity BOOLEAN NOT NULL DEFAULT FALSE,
