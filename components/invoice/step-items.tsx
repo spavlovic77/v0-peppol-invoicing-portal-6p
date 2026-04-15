@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react'
 import { GlassCard } from '@/components/glass-card'
-import { Copy, Package, Plus, Trash2, Info, Paperclip, Upload, X, FileText, ChevronDown, ChevronUp, TrendingDown, TrendingUp } from 'lucide-react'
+import { Copy, Package, Plus, Trash2, Paperclip, Upload, X, FileText, ChevronDown, ChevronUp, TrendingDown, TrendingUp } from 'lucide-react'
 import type { InvoiceFormData, InvoiceItem, InvoiceAttachment } from '@/lib/schemas'
 import { ALLOWED_MIME_TYPES, MAX_ATTACHMENT_SIZE } from '@/lib/schemas'
 import {
@@ -22,7 +22,6 @@ interface Props {
   updateForm: (u: Partial<InvoiceFormData>) => void
   totals: { withoutVat: number; vat: number; withVat: number }
   isVatPayer?: boolean
-  invoiceMode?: string
   isCorrectionMode?: boolean
   validationErrors?: Set<string>
   shakeFields?: boolean
@@ -46,12 +45,15 @@ const unitOptions = [
   { value: 'MTK', label: 'm2' },
 ]
 
-const vatRates = [
-  { value: 23, label: '23% (základná od 2025)' },
-  { value: 19, label: '19% (znížená od 2025)' },
-  { value: 10, label: '10% (znížená)' },
-  { value: 5, label: '5% (znížená)' },
-  { value: 0, label: '0% (oslobodené)' },
+// Picklist option. key is a compound "rate-category" so the two
+// zero-rate entries (exempt vs. reverse charge) stay distinguishable.
+const vatRates: { key: string; rate: number; category: string; label: string }[] = [
+  { key: '23-S', rate: 23, category: 'S', label: '23% (základná)' },
+  { key: '19-S', rate: 19, category: 'S', label: '19% (znížená)' },
+  { key: '10-S', rate: 10, category: 'S', label: '10% (znížená)' },
+  { key: '5-S',  rate: 5,  category: 'S', label: '5% (znížená)' },
+  { key: '0-E',  rate: 0,  category: 'E', label: '0% (oslobodené)' },
+  { key: '0-AE', rate: 0,  category: 'AE', label: '0% (AE — prenesenie)' },
 ]
 
 const ACCEPT_TYPES = ALLOWED_MIME_TYPES.join(',')
@@ -89,8 +91,7 @@ function deriveGlobalChargeMode(form: InvoiceFormData): AdjustmentMode {
   return (form.global_charge_amount || 0) > 0 ? 'amount' : 'percent'
 }
 
-export function StepItems({ formData, updateForm, totals, isVatPayer = true, invoiceMode = 'standard', isCorrectionMode = false, validationErrors, shakeFields }: Props) {
-  const isReverseCharge = invoiceMode === 'reversecharge'
+export function StepItems({ formData, updateForm, totals, isVatPayer = true, isCorrectionMode = false, validationErrors, shakeFields }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -176,8 +177,8 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
       quantity: 1,
       unit: 'C62',
       unit_price: 0,
-      vat_category: isReverseCharge ? 'AE' : isVatPayer ? 'S' : 'O',
-      vat_rate: isReverseCharge ? 0 : isVatPayer ? 23 : 0,
+      vat_category: isVatPayer ? 'S' : 'O',
+      vat_rate: isVatPayer ? 23 : 0,
       discount_percent: 0,
       discount_amount: 0,
       allowance_reason_code: null,
@@ -236,11 +237,12 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
         updated.charge_percent = 0
       }
       updated.line_total = recomputeLineTotal(updated)
-      if (isReverseCharge) {
-        updated.vat_category = 'AE'
-        updated.vat_rate = 0
-      } else if (updates.vat_rate === 0) updated.vat_category = 'E'
-      else if (updates.vat_rate !== undefined && updates.vat_rate > 0) updated.vat_category = 'S'
+      // When vat_rate changes and the caller didn't also set vat_category
+      // explicitly, derive the category: rate>0 → S, rate=0 → E (exempt).
+      // Callers that want AE must pass vat_category='AE' themselves.
+      if (updates.vat_rate !== undefined && updates.vat_category === undefined) {
+        updated.vat_category = updates.vat_rate > 0 ? 'S' : 'E'
+      }
       return updated
     })
     updateForm({ items })
@@ -271,17 +273,6 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
 
   return (
     <div className="space-y-6">
-      {isReverseCharge && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-foreground">Vsetky polozky maju prenesenu dan. povinnost (DPH = 0%)</p>
-            <p className="text-muted-foreground mt-0.5">
-              Podla EN16931 (BR-AE-05) nie je mozne kombinovat standardnu a prenesenu DPH na jednej fakture. Ak potrebujete polozky so standardnou DPH, vytvorte pre ne samostatnu fakturu.
-            </p>
-          </div>
-        </div>
-      )}
       <GlassCard>
         <div className="flex items-center gap-3 mb-6">
           <Package className="w-5 h-5 text-primary" />
@@ -372,21 +363,19 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
                 {isVatPayer && (
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1">DPH</label>
-                    {isReverseCharge ? (
-                      <div className="glass-input w-full px-3 py-2 rounded-lg text-muted-foreground text-sm bg-muted/30 cursor-not-allowed">
-                        0% (AE)
-                      </div>
-                    ) : (
-                      <select
-                        value={item.vat_rate}
-                        onChange={(e) => updateItem(i, { vat_rate: parseFloat(e.target.value) })}
-                        className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
-                      >
-                        {vatRates.map((r) => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={`${item.vat_rate}-${item.vat_category || 'S'}`}
+                      onChange={(e) => {
+                        const picked = vatRates.find((r) => r.key === e.target.value)
+                        if (!picked) return
+                        updateItem(i, { vat_rate: picked.rate, vat_category: picked.category })
+                      }}
+                      className="glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm"
+                    >
+                      {vatRates.map((r) => (
+                        <option key={r.key} value={r.key}>{r.label}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>
@@ -727,11 +716,11 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, inv
               {fmt(totals.withVat)} {formData.currency}
             </span>
           </div>
-          {!isVatPayer && !isReverseCharge && (
+          {!isVatPayer && (
             <p className="text-xs text-muted-foreground mt-2">Dodávateľ nie je platcom DPH</p>
           )}
-          {isReverseCharge && (
-            <p className="text-xs text-amber-500 mt-2">Prenesenie daňovej povinnosti -- DPH = 0% na všetkých položkách</p>
+          {formData.items.some((it) => it.vat_category === 'AE') && (
+            <p className="text-xs text-amber-500 mt-2">Aspoň jedna položka s prenesením DPH (AE) — poznámka &quot;Prenesenie daňovej povinnosti&quot; bude doplnená pri uložení ak necháte pole prázdne.</p>
           )}
         </div>
       </GlassCard>

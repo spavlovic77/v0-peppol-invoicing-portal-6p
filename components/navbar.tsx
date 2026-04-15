@@ -8,7 +8,7 @@ import { useTheme } from '@/lib/theme-provider'
 import {
   FileText, Plus, LogOut, Building2,
   ChevronDown, Contact, Sun, Moon, ReceiptText, X, Check,
-  ArrowLeftRight, RefreshCw, Sparkles,
+  ArrowLeftRight, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
@@ -82,7 +82,6 @@ export function Navbar() {
   const invoiceModes = [
     { mode: 'standard', label: 'Faktúra', icon: FileText, desc: 'Štandardná faktúra (380)' },
     { mode: 'selfbilling', label: 'Samofakturácia', icon: ArrowLeftRight, desc: 'Odberateľ vystavuje faktúru (389)' },
-    { mode: 'reversecharge', label: 'Prenesenie DPH', icon: RefreshCw, desc: 'Reverse charge — §69 ods. 12' },
   ]
 
   function handleNewInvoiceClick(e: React.MouseEvent) {

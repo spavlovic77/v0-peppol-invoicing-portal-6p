@@ -36,15 +36,15 @@ function mapRuleToField(ruleId: string): { step: number; field: string } {
   return { step: 0, field: 'invoice_number' }
 }
 
-function makeDefaultItem(mode: string) {
+function makeDefaultItem(_mode: string) {
   return {
     line_number: 1,
     description: '',
     quantity: 1,
     unit: 'C62',
     unit_price: 0,
-    vat_category: mode === 'reversecharge' ? 'AE' : 'S',
-    vat_rate: mode === 'reversecharge' ? 0 : 23,
+    vat_category: 'S',
+    vat_rate: 23,
     discount_percent: 0,
     discount_amount: 0,
     allowance_reason_code: null,
@@ -94,10 +94,9 @@ export default function NewInvoicePage() {
   const duplicateId = searchParams.get('duplicate')
   const editId = searchParams.get('edit')
   const correctId = searchParams.get('correct')
-  const modeParam = searchParams.get('mode') as 'standard' | 'selfbilling' | 'reversecharge' | null
+  const modeParam = searchParams.get('mode') as 'standard' | 'selfbilling' | null
   const invoiceMode = modeParam || 'standard'
   const isSelfBilling = invoiceMode === 'selfbilling'
-  const isReverseCharge = invoiceMode === 'reversecharge'
   const isEditMode = !!editId
   const isCorrectionMode = !!correctId
   const [correctionStep, setCorrectionStep] = useState<'wizard' | 'form'>(correctId ? 'wizard' : 'form')
@@ -138,7 +137,7 @@ export default function NewInvoicePage() {
     iban: null,
     swift: null,
     variable_symbol: null,
-    note: isReverseCharge ? 'Prenesenie daňovej povinnosti' : null,
+    note: null,
     global_discount_percent: 0,
     global_discount_amount: 0,
     global_discount_reason_code: null,
@@ -467,18 +466,7 @@ export default function NewInvoicePage() {
       }
     }
     
-    setFormData((prev) => {
-      const next = { ...prev, ...updates }
-      // Reverse charge: force all items to AE/0%
-      if (invoiceMode === 'reversecharge' && next.items) {
-        next.items = next.items.map((item) => ({
-          ...item,
-          vat_category: 'AE',
-          vat_rate: 0,
-        }))
-      }
-      return next
-    })
+    setFormData((prev) => ({ ...prev, ...updates }))
   }
 
   const isVatPayer = activeSupplier?.is_vat_payer ?? true
@@ -626,6 +614,14 @@ export default function NewInvoicePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // BR-AE: when any line uses category AE, the invoice must carry a
+      // human-readable note. Fill it with the Slovak §69 ods. 12 text if
+      // the user hasn't written anything else.
+      const hasAeLine = formData.items.some((it) => it.vat_category === 'AE')
+      const resolvedNote = hasAeLine && !formData.note?.trim()
+        ? 'Prenesenie daňovej povinnosti'
+        : formData.note
+
       const invoicePayload = {
         user_id: user.id,
         supplier_id: activeSupplier.id,
@@ -660,7 +656,7 @@ export default function NewInvoicePage() {
         global_charge_percent: formData.global_charge_percent || 0,
         global_charge_amount: formData.global_charge_amount || 0,
         global_charge_reason_code: formData.global_charge_reason_code || null,
-        note: formData.note,
+        note: resolvedNote,
         status: 'draft',
         invoice_mode: formData.invoice_mode || 'standard',
         invoice_type_code: formData.invoice_type_code || '380',
@@ -1029,7 +1025,7 @@ export default function NewInvoicePage() {
   const steps = [
     { label: 'Základné údaje', component: <StepBasicInfo formData={formData} updateForm={updateForm} invoiceMode={invoiceMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
     { label: buyerStepLabel, component: <StepBuyer formData={formData} updateForm={updateForm} supplierId={activeSupplier.id} supplierIco={activeSupplier.ico} invoiceMode={invoiceMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
-    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} isCorrectionMode={isCorrectionMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
+    { label: 'Položky', component: <StepItems formData={formData} updateForm={updateForm} totals={totals} isVatPayer={isVatPayer} isCorrectionMode={isCorrectionMode} validationErrors={validationErrors} shakeFields={shakeFields} /> },
     { label: 'Súhrn', component: <StepSummary formData={formData} profile={supplierAsProfile} totals={totals} isVatPayer={isVatPayer} invoiceMode={invoiceMode} /> },
   ]
 
@@ -1037,7 +1033,7 @@ export default function NewInvoicePage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-lg font-bold text-foreground">
-          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravná faktúra' : isSelfBilling ? 'Samofakturácia' : isReverseCharge ? 'Prenesenie daň. povinnosti' : 'Nová faktúra'}
+          {isEditMode ? 'Upraviť faktúru' : isCorrectionMode ? 'Opravná faktúra' : isSelfBilling ? 'Samofakturácia' : 'Nová faktúra'}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {isSelfBilling ? `Odberateľ: ${activeSupplier.company_name}` : activeSupplier.company_name}
@@ -1071,7 +1067,7 @@ export default function NewInvoicePage() {
             className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravnú faktúru' : isSelfBilling ? 'Vytvoriť samofaktúru' : isReverseCharge ? 'Vytvoriť faktúru (prenesenie DPH)' : 'Vytvoriť a validovať'}
+            {creating ? 'Vytváram a validujem...' : isEditMode ? 'Uložiť zmeny' : isCorrectionMode ? 'Vytvoriť opravnú faktúru' : isSelfBilling ? 'Vytvoriť samofaktúru' : 'Vytvoriť a validovať'}
           </button>
         )}
       </div>

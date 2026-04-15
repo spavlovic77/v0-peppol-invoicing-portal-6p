@@ -415,7 +415,6 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
 
   const invoiceMode = String(invoice.invoice_mode || 'standard')
   const isSelfBilling = invoiceMode === 'selfbilling'
-  const isReverseCharge = invoiceMode === 'reversecharge'
 
   const typeCode = String(invoice.invoice_type_code || '')
   const isCreditNote = typeCode === '381' || String(invoice.invoice_number || '').startsWith('CN-')

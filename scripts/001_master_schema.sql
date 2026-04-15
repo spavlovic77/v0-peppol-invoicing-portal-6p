@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   -- Document identity
   invoice_number          VARCHAR(50) NOT NULL,
   invoice_type_code       TEXT DEFAULT '380',        -- 380=Invoice, 381=CreditNote
-  invoice_mode            TEXT DEFAULT 'standard',   -- standard, selfbilling, reversecharge
+  invoice_mode            TEXT DEFAULT 'standard',   -- standard, selfbilling (legacy rows may still hold 'reversecharge'; reverse charge is now modeled per-line via vat_category='AE')
   issue_date              DATE NOT NULL,
   due_date                DATE NOT NULL,
   delivery_date           DATE,

@@ -245,7 +245,6 @@ export default function InvoiceDetailPage() {
   const isValid = invoice.status === 'valid' || invoice.status === 'sent'
   const isCreditNote = invoice.invoice_number.startsWith('CN-')
   const isSelfBilling = invoice.invoice_mode === 'selfbilling'
-  const isReverseCharge = invoice.invoice_mode === 'reversecharge'
   const allPassed = Array.isArray(validation) && (validation as Array<{ passed: boolean }>).every((p) => p.passed)
   const hasFailures = Array.isArray(validation) && !allPassed
 
@@ -263,9 +262,6 @@ export default function InvoiceDetailPage() {
           <h1 className="text-lg font-bold text-foreground font-mono">{invoice.invoice_number}</h1>
           {isSelfBilling && (
             <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary">Samofakturácia</span>
-          )}
-          {isReverseCharge && (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-500">Rev. charge</span>
           )}
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
             {statusLabel}

@@ -105,7 +105,6 @@ export function buildPeppolInvoice(
   const currency = invoice.currency || 'EUR'
   const invoiceMode = invoice.invoice_mode || 'standard'
   const isSelfBilling = invoiceMode === 'selfbilling'
-  const isReverseCharge = invoiceMode === 'reversecharge'
   // Self-billing MUST use 389, regardless of what is stored
   const typeCode = isSelfBilling ? '389' : (invoice.invoice_type_code || '380')
   // 381 = Credit Note, 384 = Corrective Invoice -- both reference original and use positive values
@@ -115,11 +114,6 @@ export function buildPeppolInvoice(
   // Non-VAT payer: force all items to category O (outside scope), 0% rate
   if (!isVatPayer) {
     items = items.map((it) => ({ ...it, vat_category: 'O', vat_rate: 0 }))
-  }
-
-  // Reverse charge: force all items to category AE, 0% rate
-  if (isReverseCharge) {
-    items = items.map((it) => ({ ...it, vat_category: 'AE', vat_rate: 0 }))
   }
 
   // ================================================================

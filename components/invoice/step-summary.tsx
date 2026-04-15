@@ -107,7 +107,7 @@ interface Props {
 
 export function StepSummary({ formData, profile, totals, isVatPayer = true, invoiceMode = 'standard' }: Props) {
   const isSelfBilling = invoiceMode === 'selfbilling'
-  const isReverseCharge = invoiceMode === 'reversecharge'
+  const hasAeLine = formData.items.some((it) => it.vat_category === 'AE')
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -337,11 +337,11 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
             <span className="font-semibold text-foreground">Na úhradu:</span>
             <span className="text-2xl font-bold text-primary">{fmt(totals.withVat)} {formData.currency}</span>
           </div>
-          {!isVatPayer && !isReverseCharge && (
+          {!isVatPayer && (
             <p className="text-xs text-muted-foreground mt-2">Dodávateľ nie je platcom DPH</p>
           )}
-          {isReverseCharge && (
-            <p className="text-xs text-amber-500 mt-2">Prenesenie daňovej povinnosti podľa §69 ods. 12 -- DPH = 0%</p>
+          {hasAeLine && (
+            <p className="text-xs text-amber-500 mt-2">Obsahuje položky s prenesením daňovej povinnosti (AE, §69 ods. 12)</p>
           )}
           {isSelfBilling && (
             <p className="text-xs text-primary mt-2">Samofakturácia (InvoiceTypeCode 389) -- faktúru vystavuje odberateľ</p>

@@ -105,7 +105,7 @@ export const invoiceSchema = z.object({
   global_charge_percent: z.number().min(0).max(100).default(0),
   global_charge_amount: z.number().min(0).default(0),
   global_charge_reason_code: z.string().nullable().default(null),
-  invoice_mode: z.enum(['standard', 'selfbilling', 'reversecharge']).default('standard'),
+  invoice_mode: z.enum(['standard', 'selfbilling']).default('standard'),
   invoice_type_code: z.string().default('380'),
   correction_of: z.string().nullable().default(null),
   correction_reason: z.string().nullable().default(null),

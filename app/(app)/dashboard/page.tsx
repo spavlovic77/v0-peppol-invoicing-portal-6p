@@ -301,9 +301,6 @@ export default function DashboardPage() {
                             {inv.invoice_mode === 'selfbilling' && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Samofakt.</span>
                             )}
-                            {inv.invoice_mode === 'reversecharge' && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">Prenes. DPH</span>
-                            )}
                             <StatusBadge status={inv.status} />
                             {inv.peppol_sent_at && (
                               <span

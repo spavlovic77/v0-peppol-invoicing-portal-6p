@@ -1,7 +1,7 @@
 'use client'
 
 import { GlassCard } from '@/components/glass-card'
-import { CalendarDays, FileText, CreditCard, AlertTriangle, CheckCircle2, ArrowLeftRight, RefreshCw, Info } from 'lucide-react'
+import { CalendarDays, FileText, CreditCard, AlertTriangle, CheckCircle2, ArrowLeftRight, Info } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 
@@ -66,17 +66,6 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard', 
             <p className="font-medium text-foreground">Samofakturacia (InvoiceTypeCode 389)</p>
             <p className="text-muted-foreground mt-0.5">
               Vy ako odberatel vystavujete fakturu v mene dodavatela. Role su prehodene: dodavatel = AccountingSupplierParty, vy = AccountingCustomerParty.
-            </p>
-          </div>
-        </div>
-      )}
-      {invoiceMode === 'reversecharge' && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <RefreshCw className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-foreground">Prenesenie danovej povinnosti (Reverse charge)</p>
-            <p className="text-muted-foreground mt-0.5">
-              DPH = 0% na vsetkych polozkach, kategoria AE. Podla §69 ods. 12 zakona o DPH a EN16931 pravidla BR-AE-05.
             </p>
           </div>
         </div>
@@ -337,27 +326,13 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard', 
           <div className="md:col-span-2">
             <label className="block text-sm text-muted-foreground mb-1.5">
               Poznámka na faktúre
-              {invoiceMode === 'reversecharge' && <span className="text-amber-500 ml-1">(povinné pri prenesení DPH)</span>}
             </label>
             <textarea
               value={formData.note || ''}
-              onChange={(e) => {
-                if (invoiceMode === 'reversecharge') {
-                  // Keep mandatory text, allow appending
-                  const mandatory = 'Prenesenie daňovej povinnosti'
-                  const val = e.target.value
-                  if (!val.startsWith(mandatory)) {
-                    updateForm({ note: mandatory })
-                    return
-                  }
-                  updateForm({ note: val || mandatory })
-                } else {
-                  updateForm({ note: e.target.value || null })
-                }
-              }}
+              onChange={(e) => updateForm({ note: e.target.value || null })}
               className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground resize-none"
               rows={2}
-              placeholder={invoiceMode === 'reversecharge' ? 'Prenesenie daňovej povinnosti' : 'Voliteľná poznámka...'}
+              placeholder="Voliteľná poznámka..."
             />
           </div>
         </div>
