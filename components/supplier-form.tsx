@@ -45,8 +45,24 @@ interface SupplierFormProps {
   supplierId?: string // if editing
 }
 
+// Supabase returns NULL for unset text columns. The form state needs every
+// text field to be a string so controlled inputs don't flip between null and
+// value and so `.trim()` is safe on mandatory fields. Coerce any incoming
+// null/undefined to the empty-form defaults.
+function normalizeInitial(initial?: Partial<SupplierFormData>): SupplierFormData {
+  const merged = { ...emptyForm, ...(initial ?? {}) }
+  for (const key of Object.keys(emptyForm) as (keyof SupplierFormData)[]) {
+    const val = merged[key]
+    if (val === null || val === undefined) {
+      // Re-apply the default; types are narrowed per-key by emptyForm.
+      ;(merged as Record<string, unknown>)[key] = emptyForm[key]
+    }
+  }
+  return merged
+}
+
 export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
-  const [form, setForm] = useState<SupplierFormData>({ ...emptyForm, ...initial })
+  const [form, setForm] = useState<SupplierFormData>(() => normalizeInitial(initial))
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
@@ -101,7 +117,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       toast.error('Názov firmy a IČO sú povinné')
       return
     }
-    if (!form.legal_form.trim()) {
+    if (!(form.legal_form || '').trim()) {
       toast.error('Spoločnosť zapísaná (BT-33) je povinné — napr. "Obchodný register Okresného súdu Bratislava I, oddiel: sro, vložka č. 123/B"')
       return
     }
@@ -128,7 +144,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         web: form.web || null,
         registration_court: form.registration_court || null,
         registration_number: form.registration_number || null,
-        legal_form: form.legal_form.trim() || null,
+        legal_form: (form.legal_form || '').trim() || null,
         ap_api_key: form.ap_api_key || null,
         is_vat_payer: form.is_vat_payer,
       }
@@ -228,9 +244,9 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
             <span className="text-muted-foreground/70 ml-1 text-xs">(BT-33, napr. &quot;Obchodný register Okresného súdu Bratislava I, oddiel: sro, vložka č. 123/B&quot;)</span>
           </label>
           <textarea
-            value={form.legal_form}
+            value={form.legal_form || ''}
             onChange={(e) => updateField('legal_form', e.target.value)}
-            className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground text-sm resize-none ${!form.legal_form.trim() ? 'ring-1 ring-destructive/50' : ''}`}
+            className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground text-sm resize-none ${!(form.legal_form || '').trim() ? 'ring-1 ring-destructive/50' : ''}`}
             rows={2}
             placeholder="Obchodný register Okresného súdu ..."
           />
