@@ -570,7 +570,7 @@ export default function NewInvoicePage() {
   function handleNextStep() {
     if (validateCurrentStep()) {
       setStep((s) => Math.min(steps.length - 1, s + 1))
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -1037,7 +1037,7 @@ export default function NewInvoicePage() {
 
       <div className="flex justify-between">
         <button
-          onClick={() => { setStep((s) => Math.max(0, s - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          onClick={() => { setStep((s) => Math.max(0, s - 1)); document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
           disabled={step === 0}
           className="px-6 py-2.5 rounded-xl glass-card text-foreground font-medium hover:bg-secondary transition-colors disabled:opacity-30"
         >
