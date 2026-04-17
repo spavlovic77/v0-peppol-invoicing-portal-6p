@@ -490,35 +490,25 @@ export default function NewInvoicePage() {
       return { withoutVat: total, vat: 0, withVat: total }
     }
 
-    // Per (rate) group, apportion document-level allowance/charge proportionally
-    const perLine = formData.items.map((item) => ({
-      rate: item.vat_rate || 0,
-      lineNet: computeLineExtension(item),
-    }))
-
+    // EN16931 forward VAT calculation per (rate) group
     const taxGroups = new Map<number, number>()
-    for (const l of perLine) {
-      const prop = lineSum > 0 ? (l.lineNet / lineSum) : 0
+    for (const item of formData.items) {
+      const rate = item.vat_rate || 0
+      const lineNet = computeLineExtension(item)
+      const prop = lineSum > 0 ? (lineNet / lineSum) : 0
       const allocAllowance = r2(globalDiscount * prop)
       const allocCharge = r2(globalCharge * prop)
-      const adjusted = r2(l.lineNet - allocAllowance + allocCharge)
-      taxGroups.set(l.rate, r2((taxGroups.get(l.rate) || 0) + adjusted))
+      const adjusted = r2(lineNet - allocAllowance + allocCharge)
+      taxGroups.set(rate, r2((taxGroups.get(rate) || 0) + adjusted))
     }
 
-    // SK reverse calculation per group so the displayed totals stay consistent
-    // with Slovak rounding practice; builder uses EN16931 forward.
     let totalVat = 0
     let totalTaxBase = 0
     for (const [rate, taxBase] of taxGroups) {
-      if (rate === 0) {
-        totalTaxBase += r2(taxBase)
-        continue
-      }
-      const grossWithVat = r2(taxBase * (100 + rate) / 100)
-      const tax_SK = r2(grossWithVat * rate / (100 + rate))
-      const base_SK = r2(grossWithVat - tax_SK)
-      totalVat += tax_SK
-      totalTaxBase += base_SK
+      const groupBase = r2(taxBase)
+      const groupVat = rate > 0 ? r2(groupBase * rate / 100) : 0
+      totalTaxBase += groupBase
+      totalVat += groupVat
     }
 
     totalVat = r2(totalVat)

@@ -246,13 +246,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#eee',
   },
-  recapCorrRow: {
-    flexDirection: 'row',
-    padding: 5,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fffbeb',
-  },
   recapCol1: { width: '25%' },
   recapCol2: { width: '25%', textAlign: 'right' },
   recapCol3: { width: '25%', textAlign: 'right' },
@@ -264,11 +257,6 @@ const styles = StyleSheet.create({
   recapText: {
     fontSize: 9,
     color: '#444',
-  },
-  recapCorrText: {
-    fontSize: 8,
-    color: '#92400e',
-    fontStyle: 'italic',
   },
 })
 
@@ -300,12 +288,6 @@ interface TaxRecapRow {
   total: number
 }
 
-interface CorrectionRow {
-  rate: number
-  amount: number
-  isCharge: boolean
-}
-
 function unitLabel(code: string): string {
   const map: Record<string, string> = {
     C62: 'ks', HUR: 'hod', DAY: 'den', MON: 'mes', KGM: 'kg',
@@ -332,10 +314,7 @@ function computeLineNet(it: Record<string, unknown>): number {
   return round2(pricePart + charge - allowance)
 }
 
-function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<string, unknown>): {
-  rows: TaxRecapRow[]
-  corrections: CorrectionRow[]
-} {
+function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<string, unknown>): TaxRecapRow[] {
   const lineExtTotal = round2(items.reduce((s, it) => s + computeLineNet(it), 0))
   const docAllowAmt = Number(invoice.global_discount_amount || 0)
   const docAllowPct = Number(invoice.global_discount_percent || 0)
@@ -348,57 +327,26 @@ function buildRecapitulation(items: Record<string, unknown>[], invoice: Record<s
     ? round2(docChargeAmt)
     : round2(lineExtTotal * docChargePct / 100)
 
-  // Group by rate: collect line totals + per-line gross sums
-  const groups = new Map<number, { lineTotal: number; grossSum: number }>()
+  // EN16931 forward: group by rate, apportion doc allowance/charge proportionally
+  const groups = new Map<number, number>()
   for (const it of items) {
     const rate = Number(it.vat_rate || 0)
     const lineNet = computeLineNet(it)
-    const lineGross = round2(lineNet * (100 + rate) / 100)
-    const existing = groups.get(rate)
-    if (existing) {
-      existing.lineTotal += lineNet
-      existing.grossSum += lineGross
-    } else {
-      groups.set(rate, { lineTotal: lineNet, grossSum: lineGross })
-    }
+    const prop = lineExtTotal > 0 ? lineNet / lineExtTotal : 0
+    const allocDiscount = round2(globalDiscountAmt * prop)
+    const allocCharge = round2(globalChargeAmt * prop)
+    const adjusted = round2(lineNet - allocDiscount + allocCharge)
+    groups.set(rate, round2((groups.get(rate) || 0) + adjusted))
   }
 
   const rows: TaxRecapRow[] = []
-  const corrections: CorrectionRow[] = []
-
-  for (const [rate, group] of groups) {
-    const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
-    const allocDiscount = round2(globalDiscountAmt * proportion)
-    const allocCharge = round2(globalChargeAmt * proportion)
-    const taxBase_EN = round2(group.lineTotal - allocDiscount + allocCharge)
-
-    if (rate === 0) {
-      rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
-      continue
-    }
-
-    // SK reverse: gross up per line, then reverse, factoring in doc allowance/charge
-    let grossWithVat = round2(group.grossSum)
-    if (allocDiscount > 0) {
-      grossWithVat = round2(grossWithVat - round2(allocDiscount * (100 + rate) / 100))
-    }
-    if (allocCharge > 0) {
-      grossWithVat = round2(grossWithVat + round2(allocCharge * (100 + rate) / 100))
-    }
-
-    const tax_SK = round2(grossWithVat * rate / (100 + rate))
-    const base_SK = round2(grossWithVat - tax_SK)
-    const correction = round2(base_SK - taxBase_EN)
-
-    if (correction !== 0) {
-      corrections.push({ rate, amount: correction, isCharge: correction > 0 })
-    }
-
-    rows.push({ rate, base: base_SK, vat: tax_SK, total: round2(base_SK + tax_SK) })
+  for (const [rate, taxBase] of groups) {
+    const vat = rate > 0 ? round2(taxBase * rate / 100) : 0
+    rows.push({ rate, base: taxBase, vat, total: round2(taxBase + vat) })
   }
 
   rows.sort((a, b) => b.rate - a.rate)
-  return { rows, corrections }
+  return rows
 }
 
 interface InvoicePdfProps {
@@ -587,7 +535,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
 
         {/* VAT Recapitulation */}
         {isVatPayer && (() => {
-          const { rows, corrections } = buildRecapitulation(items, invoice)
+          const rows = buildRecapitulation(items, invoice)
           const currency = String(invoice.currency || 'EUR')
           return (
             <View style={styles.recapSection}>
@@ -604,20 +552,6 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
                   <Text style={[styles.recapText, styles.recapCol2]}>{fmt(row.base)} {currency}</Text>
                   <Text style={[styles.recapText, styles.recapCol3]}>{fmt(row.vat)} {currency}</Text>
                   <Text style={[styles.recapBold, styles.recapCol4]}>{fmt(row.total)} {currency}</Text>
-                </View>
-              ))}
-              {corrections.map((c, i) => (
-                <View key={`c${i}`} style={styles.recapCorrRow}>
-                  <Text style={[styles.recapCorrText, styles.recapCol1]}>
-                    Korekcia {c.rate}%
-                  </Text>
-                  <Text style={[styles.recapCorrText, styles.recapCol2]}>
-                    {c.isCharge ? '+' : '-'}{fmt(Math.abs(c.amount))} {currency}
-                  </Text>
-                  <Text style={[styles.recapCorrText, styles.recapCol3]}></Text>
-                  <Text style={[styles.recapCorrText, styles.recapCol4]}>
-                    Zaokrúhlovacia korekcia
-                  </Text>
                 </View>
               ))}
             </View>

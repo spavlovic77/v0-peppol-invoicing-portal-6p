@@ -15,12 +15,6 @@ interface TaxRecapRow {
   total: number
 }
 
-interface CorrectionRow {
-  rate: number
-  amount: number
-  isCharge: boolean
-}
-
 function computeLineNet(it: InvoiceFormData['items'][number]): number {
   const baseQty = it.base_quantity && it.base_quantity > 0 ? it.base_quantity : 1
   const pricePart = round2((it.unit_price / baseQty) * it.quantity)
@@ -33,10 +27,7 @@ function computeLineNet(it: InvoiceFormData['items'][number]): number {
   return round2(pricePart + charge - allowance)
 }
 
-function buildRecap(form: InvoiceFormData): {
-  rows: TaxRecapRow[]
-  corrections: CorrectionRow[]
-} {
+function buildRecap(form: InvoiceFormData): TaxRecapRow[] {
   const items = form.items
   const lineExtTotal = round2(items.reduce((s, it) => s + computeLineNet(it), 0))
   const globalDiscountAmt = (form.global_discount_amount || 0) > 0
@@ -46,55 +37,25 @@ function buildRecap(form: InvoiceFormData): {
     ? round2(form.global_charge_amount)
     : round2(lineExtTotal * (form.global_charge_percent || 0) / 100)
 
-  const groups = new Map<number, { lineTotal: number; grossSum: number }>()
+  const groups = new Map<number, number>()
   for (const it of items) {
     const rate = it.vat_rate || 0
     const lineNet = computeLineNet(it)
-    const lineGross = round2(lineNet * (100 + rate) / 100)
-    const existing = groups.get(rate)
-    if (existing) {
-      existing.lineTotal += lineNet
-      existing.grossSum += lineGross
-    } else {
-      groups.set(rate, { lineTotal: lineNet, grossSum: lineGross })
-    }
+    const prop = lineExtTotal > 0 ? lineNet / lineExtTotal : 0
+    const allocDiscount = round2(globalDiscountAmt * prop)
+    const allocCharge = round2(globalChargeAmt * prop)
+    const adjusted = round2(lineNet - allocDiscount + allocCharge)
+    groups.set(rate, round2((groups.get(rate) || 0) + adjusted))
   }
 
   const rows: TaxRecapRow[] = []
-  const corrections: CorrectionRow[] = []
-
-  for (const [rate, group] of groups) {
-    const proportion = lineExtTotal > 0 ? group.lineTotal / lineExtTotal : 1
-    const allocDiscount = round2(globalDiscountAmt * proportion)
-    const allocCharge = round2(globalChargeAmt * proportion)
-    const taxBase_EN = round2(group.lineTotal - allocDiscount + allocCharge)
-
-    if (rate === 0) {
-      rows.push({ rate, base: taxBase_EN, vat: 0, total: taxBase_EN })
-      continue
-    }
-
-    let grossWithVat = round2(group.grossSum)
-    if (allocDiscount > 0) {
-      grossWithVat = round2(grossWithVat - round2(allocDiscount * (100 + rate) / 100))
-    }
-    if (allocCharge > 0) {
-      grossWithVat = round2(grossWithVat + round2(allocCharge * (100 + rate) / 100))
-    }
-
-    const tax_SK = round2(grossWithVat * rate / (100 + rate))
-    const base_SK = round2(grossWithVat - tax_SK)
-    const correction = round2(base_SK - taxBase_EN)
-
-    if (correction !== 0) {
-      corrections.push({ rate, amount: correction, isCharge: correction > 0 })
-    }
-
-    rows.push({ rate, base: base_SK, vat: tax_SK, total: round2(base_SK + tax_SK) })
+  for (const [rate, taxBase] of groups) {
+    const vat = rate > 0 ? round2(taxBase * rate / 100) : 0
+    rows.push({ rate, base: taxBase, vat, total: round2(taxBase + vat) })
   }
 
   rows.sort((a, b) => b.rate - a.rate)
-  return { rows, corrections }
+  return rows
 }
 
 interface Props {
@@ -111,7 +72,7 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
   const fmt = (n: number) =>
     n.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  const { rows: recapRows, corrections } = buildRecap(formData)
+  const recapRows = buildRecap(formData)
 
   return (
     <div className="space-y-6">
@@ -286,20 +247,6 @@ export function StepSummary({ formData, profile, totals, isVatPayer = true, invo
                   <td className="py-2 text-right text-foreground">{fmt(row.base)} {formData.currency}</td>
                   <td className="py-2 text-right text-foreground">{fmt(row.vat)} {formData.currency}</td>
                   <td className="py-2 text-right text-foreground font-medium">{fmt(row.total)} {formData.currency}</td>
-                </tr>
-              ))}
-              {corrections.map((c, i) => (
-                <tr key={`c${i}`} className="border-t border-border bg-amber-500/5">
-                  <td className="py-2 text-amber-700 dark:text-amber-400 text-xs italic">
-                    Korekcia {c.rate}%
-                  </td>
-                  <td className="py-2 text-right text-amber-700 dark:text-amber-400 text-xs italic">
-                    {c.isCharge ? '+' : '-'}{fmt(Math.abs(c.amount))} {formData.currency}
-                  </td>
-                  <td className="py-2"></td>
-                  <td className="py-2 text-right text-amber-700 dark:text-amber-400 text-xs italic">
-                    Zaokrúhlovacia korekcia
-                  </td>
                 </tr>
               ))}
             </tbody>
