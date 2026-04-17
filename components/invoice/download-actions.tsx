@@ -101,8 +101,7 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
         {/* XML Download */}
         <button
           onClick={downloadXml}
-          disabled={!isValid}
-          className="group relative overflow-hidden rounded-2xl glass-card p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-center"
+          className="group relative overflow-hidden rounded-2xl glass-card p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 text-center"
         >
           <div className="w-16 h-16 rounded-2xl bg-chart-2/10 flex items-center justify-center group-hover:bg-chart-2/20 transition-colors">
             <FileCode className="w-8 h-8 text-chart-2" />
@@ -120,7 +119,7 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
         {/* PDF Download */}
         <button
           onClick={downloadPdf}
-          disabled={!isValid || downloadingPdf}
+          disabled={downloadingPdf}
           className="group relative overflow-hidden rounded-2xl glass-card p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-destructive/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-center"
         >
           <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/20 transition-colors">
@@ -143,7 +142,7 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
         {/* Both Download */}
         <button
           onClick={downloadBoth}
-          disabled={!isValid || downloadingBoth}
+          disabled={downloadingBoth}
           className="group relative overflow-hidden rounded-2xl glass-card-heavy p-6 flex flex-col items-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-center"
         >
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
