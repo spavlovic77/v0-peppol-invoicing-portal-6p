@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   description       TEXT NOT NULL,
   quantity          NUMERIC(12,3) NOT NULL,
   unit              VARCHAR(10) DEFAULT 'C62',
-  unit_price        NUMERIC(12,4) NOT NULL,
+  unit_price        NUMERIC(12,5) NOT NULL,
   vat_category      VARCHAR(3) DEFAULT 'S',
   vat_rate          NUMERIC(5,2) NOT NULL DEFAULT 23.00,
   -- Line allowance (BG-27) / charge (BG-28) - Peppol BIS 3

@@ -357,7 +357,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, isC
                     onFocus={(e) => e.target.select()}
                     className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.unit_price || validationErrors?.has(`item_price_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_price_${i}`) ? 'animate-shake' : ''}` : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
-                    step="0.01"
+                    step="0.00001"
                   />
                 </div>
                 {isVatPayer && (

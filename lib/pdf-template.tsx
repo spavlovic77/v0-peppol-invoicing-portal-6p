@@ -283,14 +283,13 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-function fmt(n: number | null | undefined): string {
+function fmt(n: number | null | undefined, maxDecimals = 2): string {
   if (n == null || isNaN(Number(n))) return '0,00'
   const num = Number(n)
   try {
-    return num.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return num.toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: maxDecimals })
   } catch {
-    // Fallback if sk-SK locale not available on server
-    return num.toFixed(2).replace('.', ',')
+    return num.toFixed(maxDecimals).replace('.', ',')
   }
 }
 
@@ -577,7 +576,7 @@ export function InvoicePdfDocument({ invoice, items, profile }: InvoicePdfProps)
               <Text style={styles.col2}>{description}</Text>
               <Text style={styles.col3}>{String(item.quantity)}</Text>
               <Text style={styles.col4}>{unitLabel(String(item.unit || 'C62'))}</Text>
-              <Text style={styles.col5}>{fmt(item.unit_price as number)}</Text>
+              <Text style={styles.col5}>{fmt(item.unit_price as number, 5)}</Text>
               <Text style={styles.col6}>{adjustments.length > 0 ? adjustments.join(' ') : '-'}</Text>
               {isVatPayer && <Text style={styles.col7}>{String(item.vat_rate)}%</Text>}
               <Text style={styles.col8}>{fmt(item.line_total as number)}</Text>

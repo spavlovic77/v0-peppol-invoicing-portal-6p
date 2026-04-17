@@ -14,6 +14,10 @@ function amount(n: number): string {
   return Math.abs(n).toFixed(2)
 }
 
+function priceAmt(n: number): string {
+  return parseFloat(Math.abs(n).toFixed(5)).toString()
+}
+
 function stripEndpointScheme(id: string | null | undefined): string {
   if (!id) return ''
   return id.replace(/^\d{4}:/, '')
@@ -89,7 +93,7 @@ export function buildCreditNoteXml(inv: PeppolInvoice): string {
         </cac:ClassifiedTaxCategory>
       </cac:Item>
       <cac:Price>
-        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.priceAmount)}</cbc:PriceAmount>${baseQuantityXml}
+        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${priceAmt(line.priceAmount)}</cbc:PriceAmount>${baseQuantityXml}
       </cac:Price>
     </cac:CreditNoteLine>`
       }

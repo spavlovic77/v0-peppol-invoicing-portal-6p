@@ -14,6 +14,12 @@ function amount(n: number): string {
   return n.toFixed(2)
 }
 
+// BT-146 Item net price: allow up to 5 decimal places so prices like
+// 0.12345 survive the round-trip. Strip unnecessary trailing zeros.
+function priceAmt(n: number): string {
+  return parseFloat(n.toFixed(5)).toString()
+}
+
 // Strip scheme prefix (e.g. "0245:") from endpoint IDs to avoid duplication with schemeID attr
 function stripEndpointScheme(id: string | null | undefined): string {
   if (!id) return ''
@@ -85,7 +91,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
         </cac:ClassifiedTaxCategory>
       </cac:Item>
       <cac:Price>
-        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${amount(line.priceAmount)}</cbc:PriceAmount>${baseQuantityXml}
+        <cbc:PriceAmount currencyID="${escapeXml(inv.documentCurrencyCode)}">${priceAmt(line.priceAmount)}</cbc:PriceAmount>${baseQuantityXml}
       </cac:Price>
     </cac:InvoiceLine>`
       }
