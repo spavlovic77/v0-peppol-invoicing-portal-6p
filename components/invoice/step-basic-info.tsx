@@ -287,7 +287,7 @@ export function StepBasicInfo({ formData, updateForm, invoiceMode = 'standard', 
               type="date"
               value={formData.delivery_date || ''}
               onChange={(e) => updateForm({ delivery_date: e.target.value || null })}
-              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${!formData.delivery_date || validationErrors?.has('delivery_date') ? `ring-2 ring-destructive/50 ${shakeFields && validationErrors?.has('delivery_date') ? 'animate-shake' : ''}` : ''}`}
+              className={`glass-input w-full px-4 py-2.5 rounded-xl text-foreground ${fieldClass('delivery_date', validationErrors, shakeFields)}`}
             />
             {!formData.delivery_date && (
               <p className="text-xs text-destructive mt-1">Povinné podľa §74 zákona o DPH</p>

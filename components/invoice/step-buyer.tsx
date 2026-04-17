@@ -411,25 +411,25 @@ export function StepBuyer({ formData, updateForm, supplierId, supplierIco, invoi
             <label className="block text-xs text-muted-foreground mb-1">Ulica *</label>
             <input type="text" value={formData.buyer_street || ''}
               onChange={(e) => updateForm({ buyer_street: e.target.value })}
-              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_street || validationErrors?.has('buyer_street') ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has('buyer_street') ? 'animate-shake' : ''}` : ''}`} />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${validationErrors?.has('buyer_street') ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`} />
           </div>
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Mesto *</label>
             <input type="text" value={formData.buyer_city || ''}
               onChange={(e) => updateForm({ buyer_city: e.target.value })}
-              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_city || validationErrors?.has('buyer_city') ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has('buyer_city') ? 'animate-shake' : ''}` : ''}`} />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${validationErrors?.has('buyer_city') ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`} />
           </div>
           <div>
             <label className="block text-xs text-muted-foreground mb-1">PSČ *</label>
             <input type="text" value={formData.buyer_postal_code || ''}
               onChange={(e) => updateForm({ buyer_postal_code: e.target.value })}
-              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_postal_code || validationErrors?.has('buyer_postal_code') ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has('buyer_postal_code') ? 'animate-shake' : ''}` : ''}`} />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${validationErrors?.has('buyer_postal_code') ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`} />
           </div>
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Krajina *</label>
             <input id="buyer_country_code" type="text" value={formData.buyer_country_code}
               onChange={(e) => updateForm({ buyer_country_code: e.target.value })}
-              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${!formData.buyer_country_code || validationErrors?.has('buyer_country_code') ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has('buyer_country_code') ? 'animate-shake' : ''}` : ''}`} maxLength={2} />
+              className={`glass-input w-full px-3.5 py-2.5 rounded-xl text-foreground text-sm ${validationErrors?.has('buyer_country_code') ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`} maxLength={2} />
           </div>
         </div>
       </GlassCard>

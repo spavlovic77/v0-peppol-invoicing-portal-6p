@@ -316,7 +316,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, isC
                   type="text"
                   value={item.description}
                   onChange={(e) => updateItem(i, { description: e.target.value })}
-                  className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.description || validationErrors?.has(`item_desc_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_desc_${i}`) ? 'animate-shake' : ''}` : ''}`}
+                  className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${validationErrors?.has(`item_desc_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`}
                   placeholder="Popis položky"
                 />
               </div>
@@ -330,7 +330,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, isC
                     value={item.quantity}
                     onChange={(e) => updateItem(i, { quantity: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.quantity || validationErrors?.has(`item_qty_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_qty_${i}`) ? 'animate-shake' : ''}` : ''}`}
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${validationErrors?.has(`item_qty_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.001"
                   />
@@ -355,7 +355,7 @@ export function StepItems({ formData, updateForm, totals, isVatPayer = true, isC
                     value={item.unit_price}
                     onChange={(e) => updateItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
                     onFocus={(e) => e.target.select()}
-                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${!item.unit_price || validationErrors?.has(`item_price_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields && validationErrors?.has(`item_price_${i}`) ? 'animate-shake' : ''}` : ''}`}
+                    className={`glass-input w-full px-3 py-2 rounded-lg text-foreground text-sm ${validationErrors?.has(`item_price_${i}`) ? `ring-1 ring-destructive/50 ${shakeFields ? 'animate-shake' : ''}` : ''}`}
                     {...(!isCorrectionMode && { min: '0' })}
                     step="0.00001"
                   />
