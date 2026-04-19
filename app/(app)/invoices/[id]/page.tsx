@@ -66,9 +66,11 @@ export default function InvoiceDetailPage() {
   const [sending, setSending] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showPeppolConfirm, setShowPeppolConfirm] = useState(false)
+  const [alsoEmailAccountant, setAlsoEmailAccountant] = useState(true)
   const [showAccountantConfirm, setShowAccountantConfirm] = useState(false)
   const [sendingToAccountant, setSendingToAccountant] = useState(false)
   const [accountantEmail, setAccountantEmail] = useState<string | null>(null)
+  const [accountantOverrideEmail, setAccountantOverrideEmail] = useState('')
   const [polling, setPolling] = useState(false)
   const [supplierPeppolReady, setSupplierPeppolReady] = useState(false)
   const [buyerPeppolChecking, setBuyerPeppolChecking] = useState(false)
@@ -194,27 +196,38 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  async function handleSendToAccountant() {
-    if (!invoice) return
-    setSendingToAccountant(true)
+  async function sendToAccountantRequest(email?: string): Promise<{ ok: boolean; error?: string; email?: string }> {
+    if (!invoice) return { ok: false, error: 'no invoice' }
+    const body: Record<string, unknown> = { invoiceId: invoice.id }
+    if (email && email.trim()) body.email = email.trim()
     try {
       const res = await fetch('/api/invoice/send-to-accountant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoice.id }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-      toast.success(`Odoslané na ${data.email}`)
-      await loadInvoice()
+      if (!res.ok) return { ok: false, error: data.error || `HTTP ${res.status}` }
+      return { ok: true, email: data.email }
     } catch (err) {
-      toast.error((err as Error).message)
-    } finally {
-      setSendingToAccountant(false)
+      return { ok: false, error: (err as Error).message }
     }
   }
 
-  async function handleSendPeppol() {
+  async function handleSendToAccountant(overrideEmail?: string) {
+    if (!invoice) return
+    setSendingToAccountant(true)
+    const result = await sendToAccountantRequest(overrideEmail)
+    if (result.ok) {
+      toast.success(`Odoslané na ${result.email}`)
+      await loadInvoice()
+    } else {
+      toast.error(result.error || 'Chyba pri odosielaní')
+    }
+    setSendingToAccountant(false)
+  }
+
+  async function handleSendPeppol(opts: { alsoEmail?: boolean } = {}) {
     if (!invoice) return
     setSending(true)
     try {
@@ -228,6 +241,17 @@ export default function InvoiceDetailPage() {
       toast.success('Faktúra odoslaná na Peppol siet')
       await loadInvoice()
       if (data.transactionId) pollDeliveryStatus(data.transactionId, invoice.id)
+      // Peppol succeeded — if the user opted in, also email the accountant.
+      // Failures here are surfaced as a toast only; Peppol is already sent.
+      if (opts.alsoEmail && accountantEmail) {
+        const emailResult = await sendToAccountantRequest()
+        if (emailResult.ok) {
+          toast.success(`Kópia odoslaná na ${emailResult.email}`)
+          await loadInvoice()
+        } else {
+          toast.error(`Peppol odoslaný, e-mail účtovníčke zlyhal: ${emailResult.error}`)
+        }
+      }
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -414,7 +438,10 @@ export default function InvoiceDetailPage() {
           onSendPeppol={() => setShowPeppolConfirm(true)}
           sending={sending}
           accountantEmail={accountantEmail}
-          onSendToAccountant={() => setShowAccountantConfirm(true)}
+          onSendToAccountant={() => {
+            setAccountantOverrideEmail(accountantEmail ?? '')
+            setShowAccountantConfirm(true)
+          }}
           sendingToAccountant={sendingToAccountant}
         />
       )}
@@ -571,28 +598,142 @@ export default function InvoiceDetailPage() {
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
-      <ConfirmModal
-        open={showPeppolConfirm}
-        title="Odoslať cez Peppol"
-        description="Odoslať túto faktúru cez Peppol sieť? Po odoslaní ju nie je možné upraviť."
-        confirmLabel="Odoslať"
-        variant="warning"
-        onConfirm={() => { setShowPeppolConfirm(false); handleSendPeppol() }}
-        onCancel={() => setShowPeppolConfirm(false)}
-      />
-      <ConfirmModal
-        open={showAccountantConfirm}
-        title={invoice?.sent_to_accountant_at ? 'Odoslať znova účtovníčke' : 'Odoslať účtovníčke'}
-        description={
-          accountantEmail
-            ? `Faktúra bude zazipovaná (XML + PDF) a odoslaná na ${accountantEmail}.`
-            : 'E-mail účtovníčky nie je nastavený.'
-        }
-        confirmLabel="Odoslať"
-        variant="warning"
-        onConfirm={() => { setShowAccountantConfirm(false); handleSendToAccountant() }}
-        onCancel={() => setShowAccountantConfirm(false)}
-      />
+      {/* Peppol send — custom modal with optional "also email accountant" checkbox */}
+      {showPeppolConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowPeppolConfirm(false)}
+          />
+          <div className="relative w-full max-w-md bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-warning/15 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                </div>
+                <h3 className="text-base font-semibold">Odoslať cez Peppol</h3>
+              </div>
+              <button
+                onClick={() => setShowPeppolConfirm(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-sm text-foreground leading-relaxed">
+                Odoslať túto faktúru cez Peppol sieť? Po odoslaní ju nie je možné upraviť.
+              </p>
+              <label
+                className={`flex items-start gap-3 p-3 rounded-xl border border-border ${
+                  accountantEmail ? 'bg-secondary/40 cursor-pointer hover:bg-secondary/60' : 'bg-muted/30 cursor-not-allowed'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!accountantEmail && alsoEmailAccountant}
+                  disabled={!accountantEmail}
+                  onChange={(e) => setAlsoEmailAccountant(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-primary shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-foreground">
+                    Tiež odoslať kópiu účtovníčke
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {accountantEmail
+                      ? `Zazipované XML + PDF na ${accountantEmail}`
+                      : 'E-mail účtovníčky nie je nastavený na dodávateľovi'}
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t border-border">
+              <button
+                onClick={() => setShowPeppolConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                Zrušiť
+              </button>
+              <button
+                onClick={() => {
+                  setShowPeppolConfirm(false)
+                  handleSendPeppol({ alsoEmail: !!accountantEmail && alsoEmailAccountant })
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-warning text-warning-foreground text-sm font-medium hover:bg-warning/90 transition-colors"
+              >
+                Odoslať
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send to accountant — custom modal with editable (one-shot) email */}
+      {showAccountantConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowAccountantConfirm(false)}
+          />
+          <div className="relative w-full max-w-md bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-base font-semibold">
+                  {invoice?.sent_to_accountant_at ? 'Odoslať znova účtovníčke' : 'Odoslať účtovníčke'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAccountantConfirm(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Faktúra bude zazipovaná (XML + PDF) a odoslaná na zadanú adresu.
+              </p>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1.5">E-mail</label>
+                <input
+                  type="email"
+                  value={accountantOverrideEmail}
+                  onChange={(e) => setAccountantOverrideEmail(e.target.value)}
+                  placeholder="uctovnicka@firma.sk"
+                  className="glass-input w-full px-4 py-2.5 rounded-xl text-foreground placeholder:text-muted-foreground"
+                  autoFocus
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Zmena sa použije len pre toto odoslanie. Predvolený e-mail v nastaveniach dodávateľa ostane nezmenený.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t border-border">
+              <button
+                onClick={() => setShowAccountantConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                Zrušiť
+              </button>
+              <button
+                onClick={() => {
+                  const email = accountantOverrideEmail.trim()
+                  setShowAccountantConfirm(false)
+                  handleSendToAccountant(email || undefined)
+                }}
+                disabled={!accountantOverrideEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(accountantOverrideEmail.trim())}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                Odoslať
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

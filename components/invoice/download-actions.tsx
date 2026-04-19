@@ -182,9 +182,8 @@ export function DownloadActions({
         <GlassCard heavy className="border-primary/20">
           <button
             onClick={onSendToAccountant}
-            disabled={sendingToAccountant || !accountantEmail}
+            disabled={sendingToAccountant}
             className="w-full flex items-center justify-center gap-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={!accountantEmail ? 'Najprv doplňte e-mail účtovníčky na dodávateľovi' : undefined}
           >
             <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
               {sendingToAccountant ? (
@@ -204,11 +203,11 @@ export function DownloadActions({
                     : 'Odoslať účtovníčke'}
               </div>
               <div className="text-xs text-muted-foreground">
-                {!accountantEmail
-                  ? 'Najprv doplňte e-mail účtovníčky v nastaveniach dodávateľa'
-                  : invoice.sent_to_accountant_at && invoice.sent_to_accountant_email
-                    ? `Naposledy odoslané na ${invoice.sent_to_accountant_email} — ${new Date(invoice.sent_to_accountant_at).toLocaleString('sk-SK')}`
-                    : `ZIP (XML + PDF) na ${accountantEmail}`}
+                {invoice.sent_to_accountant_at && invoice.sent_to_accountant_email
+                  ? `Naposledy odoslané na ${invoice.sent_to_accountant_email} — ${new Date(invoice.sent_to_accountant_at).toLocaleString('sk-SK')}`
+                  : accountantEmail
+                    ? `ZIP (XML + PDF) na ${accountantEmail}`
+                    : 'E-mail zadáte v ďalšom kroku'}
               </div>
             </div>
           </button>
