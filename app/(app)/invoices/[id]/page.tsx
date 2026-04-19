@@ -51,6 +51,8 @@ interface InvoiceData {
   peppol_sent_at: string | null
   invoice_mode: string | null
   invoice_type_code: string | null
+  sent_to_accountant_at: string | null
+  sent_to_accountant_email: string | null
 }
 
 export default function InvoiceDetailPage() {
@@ -64,6 +66,9 @@ export default function InvoiceDetailPage() {
   const [sending, setSending] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showPeppolConfirm, setShowPeppolConfirm] = useState(false)
+  const [showAccountantConfirm, setShowAccountantConfirm] = useState(false)
+  const [sendingToAccountant, setSendingToAccountant] = useState(false)
+  const [accountantEmail, setAccountantEmail] = useState<string | null>(null)
   const [polling, setPolling] = useState(false)
   const [supplierPeppolReady, setSupplierPeppolReady] = useState(false)
   const [buyerPeppolChecking, setBuyerPeppolChecking] = useState(false)
@@ -115,10 +120,13 @@ export default function InvoiceDetailPage() {
     if (inv.supplier_id) {
       const { data: supplier } = await supabase
         .from('suppliers')
-        .select('peppol_organization_id')
+        .select('peppol_organization_id, accountant_email')
         .eq('id', inv.supplier_id)
         .single()
       setSupplierPeppolReady(!!supplier?.peppol_organization_id)
+      setAccountantEmail(supplier?.accountant_email ?? null)
+    } else {
+      setAccountantEmail(null)
     }
 
     setLoading(false)
@@ -183,6 +191,26 @@ export default function InvoiceDetailPage() {
     } else {
       toast.success('Faktúra bola zmazaná')
       router.push('/dashboard')
+    }
+  }
+
+  async function handleSendToAccountant() {
+    if (!invoice) return
+    setSendingToAccountant(true)
+    try {
+      const res = await fetch('/api/invoice/send-to-accountant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+      toast.success(`Odoslané na ${data.email}`)
+      await loadInvoice()
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSendingToAccountant(false)
     }
   }
 
@@ -385,6 +413,9 @@ export default function InvoiceDetailPage() {
           peppolStatus={invoice.peppol_send_status}
           onSendPeppol={() => setShowPeppolConfirm(true)}
           sending={sending}
+          accountantEmail={accountantEmail}
+          onSendToAccountant={() => setShowAccountantConfirm(true)}
+          sendingToAccountant={sendingToAccountant}
         />
       )}
 
@@ -548,6 +579,19 @@ export default function InvoiceDetailPage() {
         variant="warning"
         onConfirm={() => { setShowPeppolConfirm(false); handleSendPeppol() }}
         onCancel={() => setShowPeppolConfirm(false)}
+      />
+      <ConfirmModal
+        open={showAccountantConfirm}
+        title={invoice?.sent_to_accountant_at ? 'Odoslať znova účtovníčke' : 'Odoslať účtovníčke'}
+        description={
+          accountantEmail
+            ? `Faktúra bude zazipovaná (XML + PDF) a odoslaná na ${accountantEmail}.`
+            : 'E-mail účtovníčky nie je nastavený.'
+        }
+        confirmLabel="Odoslať"
+        variant="warning"
+        onConfirm={() => { setShowAccountantConfirm(false); handleSendToAccountant() }}
+        onCancel={() => setShowAccountantConfirm(false)}
       />
     </div>
   )

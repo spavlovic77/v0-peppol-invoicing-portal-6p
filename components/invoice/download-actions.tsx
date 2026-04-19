@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileCode, FileText, Download, Loader2, Send } from 'lucide-react'
+import { FileCode, FileText, Download, Loader2, Send, Mail, CheckCircle2 } from 'lucide-react'
 import { GlassCard } from '@/components/glass-card'
 import { toast } from 'sonner'
 
@@ -11,14 +11,28 @@ interface Props {
     invoice_number: string
     xml_content: string | null
     status: string
+    sent_to_accountant_at?: string | null
+    sent_to_accountant_email?: string | null
   }
   canSendPeppol: boolean
   peppolStatus: string | null
   onSendPeppol: () => void
   sending: boolean
+  accountantEmail: string | null
+  onSendToAccountant: () => void
+  sendingToAccountant: boolean
 }
 
-export function DownloadActions({ invoice, canSendPeppol, peppolStatus, onSendPeppol, sending }: Props) {
+export function DownloadActions({
+  invoice,
+  canSendPeppol,
+  peppolStatus,
+  onSendPeppol,
+  sending,
+  accountantEmail,
+  onSendToAccountant,
+  sendingToAccountant,
+}: Props) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [downloadingBoth, setDownloadingBoth] = useState(false)
   const isValid = invoice.status === 'valid'
@@ -162,6 +176,44 @@ export function DownloadActions({ invoice, canSendPeppol, peppolStatus, onSendPe
           </div>
         </button>
       </div>
+
+      {/* Send to accountant - full width */}
+      {isValid && (
+        <GlassCard heavy className="border-primary/20">
+          <button
+            onClick={onSendToAccountant}
+            disabled={sendingToAccountant || !accountantEmail}
+            className="w-full flex items-center justify-center gap-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!accountantEmail ? 'Najprv doplňte e-mail účtovníčky na dodávateľovi' : undefined}
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+              {sendingToAccountant ? (
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              ) : invoice.sent_to_accountant_at ? (
+                <CheckCircle2 className="w-6 h-6 text-primary" />
+              ) : (
+                <Mail className="w-6 h-6 text-primary" />
+              )}
+            </div>
+            <div className="text-left">
+              <div className="font-bold text-foreground text-base">
+                {sendingToAccountant
+                  ? 'Odosielam účtovníčke...'
+                  : invoice.sent_to_accountant_at
+                    ? 'Odoslať znova účtovníčke'
+                    : 'Odoslať účtovníčke'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {!accountantEmail
+                  ? 'Najprv doplňte e-mail účtovníčky v nastaveniach dodávateľa'
+                  : invoice.sent_to_accountant_at && invoice.sent_to_accountant_email
+                    ? `Naposledy odoslané na ${invoice.sent_to_accountant_email} — ${new Date(invoice.sent_to_accountant_at).toLocaleString('sk-SK')}`
+                    : `ZIP (XML + PDF) na ${accountantEmail}`}
+              </div>
+            </div>
+          </button>
+        </GlassCard>
+      )}
 
       {/* Peppol send - full width */}
       {canSendPeppol && isValid && !peppolStatus && (

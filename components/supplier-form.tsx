@@ -30,6 +30,7 @@ export interface SupplierFormData {
   registration_court: string
   registration_number: string
   legal_form: string
+  accountant_email: string
   is_vat_payer: boolean
 }
 
@@ -37,7 +38,7 @@ const emptyForm: SupplierFormData = {
   ico: '', dic: '', ic_dph: '', company_name: '', street: '', city: '',
   postal_code: '', country_code: 'SK', bank_name: '', iban: '', swift: '',
   email: '', phone: '', web: '', registration_court: '', registration_number: '',
-  legal_form: '', is_vat_payer: true,
+  legal_form: '', accountant_email: '', is_vat_payer: true,
 }
 
 interface SupplierFormProps {
@@ -148,6 +149,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         registration_court: form.registration_court || null,
         registration_number: form.registration_number || null,
         legal_form: (form.legal_form || '').trim() || null,
+        accountant_email: (form.accountant_email || '').trim() || null,
         is_vat_payer: form.is_vat_payer,
       }
 
@@ -308,6 +310,13 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
           <Field label="E-mail" value={form.email} onChange={(v) => updateField('email', v)} type="email" />
           <Field label="Telefon" value={form.phone} onChange={(v) => updateField('phone', v)} type="tel" />
           <Field label="Web stránka" value={form.web} onChange={(v) => updateField('web', v)} className="md:col-span-2" />
+          <Field
+            label="E-mail účtovníčky"
+            value={form.accountant_email}
+            onChange={(v) => updateField('accountant_email', v)}
+            type="email"
+            className="md:col-span-2"
+          />
         </div>
       </GlassCard>
 
