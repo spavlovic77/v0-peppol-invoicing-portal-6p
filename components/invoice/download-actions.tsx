@@ -12,13 +12,13 @@ interface Props {
     xml_content: string | null
     status: string
   }
-  hasApKey: boolean
+  canSendPeppol: boolean
   peppolStatus: string | null
   onSendPeppol: () => void
   sending: boolean
 }
 
-export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol, sending }: Props) {
+export function DownloadActions({ invoice, canSendPeppol, peppolStatus, onSendPeppol, sending }: Props) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [downloadingBoth, setDownloadingBoth] = useState(false)
   const isValid = invoice.status === 'valid'
@@ -164,7 +164,7 @@ export function DownloadActions({ invoice, hasApKey, peppolStatus, onSendPeppol,
       </div>
 
       {/* Peppol send - full width */}
-      {hasApKey && isValid && !peppolStatus && (
+      {canSendPeppol && isValid && !peppolStatus && (
         <GlassCard heavy className="border-success/20">
           <button
             onClick={onSendPeppol}

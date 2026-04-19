@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateInvoiceXml } from '@/lib/real-validation'
 import { buildPeppolInvoice } from '@/lib/invoice-builder'
-
-const ION_AP_BASE = 'https://test.ion-ap.net'
+import { sendDocument, IonApError } from '@/lib/ion-ap'
 
 export async function POST(request: Request) {
   const { invoiceId } = await request.json()
@@ -17,7 +16,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Fetch the invoice with its XML
   const { data: invoice } = await supabase
     .from('invoices')
     .select('id, xml_content, status, supplier_id, peppol_send_status')
@@ -38,24 +36,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Faktura uz bola odoslana' }, { status: 400 })
   }
 
-  // Fetch supplier's AP API key
   if (!invoice.supplier_id) {
     return NextResponse.json({ error: 'Faktura nema priradeneho dodavatela' }, { status: 400 })
   }
   const { data: supplier } = await supabase
     .from('suppliers')
-    .select('ap_api_key')
+    .select('peppol_organization_id')
     .eq('id', invoice.supplier_id)
     .eq('user_id', user.id)
     .single()
 
-  if (!supplier?.ap_api_key) {
-    return NextResponse.json({ error: 'AP API kluc nie je nastaveny' }, { status: 400 })
+  if (!supplier?.peppol_organization_id) {
+    return NextResponse.json(
+      { error: 'Dodavatel nie je registrovany v Peppol sieti' },
+      { status: 400 }
+    )
   }
 
   // Pre-send validation gate -- re-validate before sending
   try {
-    // Fetch items + supplier for building PeppolInvoice object
     const { data: items } = await supabase
       .from('invoice_items')
       .select('*')
@@ -84,7 +83,6 @@ export async function POST(request: Request) {
       const hasErrors = validationResults.some((phase) => !phase.passed)
 
       if (hasErrors) {
-        // Save validation errors to DB
         await supabase
           .from('invoices')
           .update({ validation_errors: validationResults, status: 'invalid' })
@@ -105,30 +103,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Send document to ION AP
-    const res = await fetch(`${ION_AP_BASE}/api/v2/send-document`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${supplier.ap_api_key}`,
-        'Content-Type': 'application/xml',
-      },
-      body: invoice.xml_content,
-    })
+    const data = await sendDocument(invoice.xml_content)
+    const transactionId =
+      (data.id != null ? String(data.id) : null) ||
+      data.transaction_id ||
+      (data as { uuid?: string }).uuid ||
+      null
 
-    if (!res.ok) {
-      const text = await res.text()
-      console.error('[v0] ION AP send error:', res.status, text)
-      return NextResponse.json(
-        { error: `ION AP chyba: ${res.status} - ${text.substring(0, 200)}` },
-        { status: res.status }
-      )
-    }
-
-    const data = await res.json()
-    // The response should contain a transaction ID
-    const transactionId = data.id || data.transaction_id || data.uuid || null
-
-    // Update invoice with send status
     await supabase
       .from('invoices')
       .update({
@@ -144,7 +125,14 @@ export async function POST(request: Request) {
       message: 'Faktura bola odoslana cez Peppol',
     })
   } catch (err) {
-    console.error('[v0] ION AP send fetch error:', err)
+    if (err instanceof IonApError) {
+      console.error('[peppol/send] ion-AP error:', err.status, err.body)
+      return NextResponse.json(
+        { error: `ION AP chyba: ${err.status} - ${err.body.substring(0, 200)}` },
+        { status: err.status }
+      )
+    }
+    console.error('[peppol/send] fetch error:', err)
     return NextResponse.json(
       { error: 'Nepodarilo sa pripojit k ION AP' },
       { status: 502 }

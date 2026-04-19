@@ -13,6 +13,7 @@ import { ValidationPipeline } from '@/components/invoice/validation-pipeline'
 import { ValidationDisplay } from '@/components/invoice/validation-display'
 import { DownloadActions } from '@/components/invoice/download-actions'
 import { InvoiceDetailSkeleton } from '@/components/skeleton'
+import { PeppolBadge } from '@/components/peppol-badge'
 import Link from 'next/link'
 import { fmtDate } from '@/lib/utils'
 import { ConfirmModal } from '@/components/confirm-modal'
@@ -64,7 +65,9 @@ export default function InvoiceDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showPeppolConfirm, setShowPeppolConfirm] = useState(false)
   const [polling, setPolling] = useState(false)
-  const [hasApKey, setHasApKey] = useState(false)
+  const [supplierPeppolReady, setSupplierPeppolReady] = useState(false)
+  const [buyerPeppolChecking, setBuyerPeppolChecking] = useState(false)
+  const [buyerPeppolReady, setBuyerPeppolReady] = useState<boolean | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const { setPageContext } = useAiPanel()
 
@@ -112,16 +115,40 @@ export default function InvoiceDetailPage() {
     if (inv.supplier_id) {
       const { data: supplier } = await supabase
         .from('suppliers')
-        .select('ap_api_key')
+        .select('peppol_organization_id')
         .eq('id', inv.supplier_id)
         .single()
-      setHasApKey(!!supplier?.ap_api_key)
+      setSupplierPeppolReady(!!supplier?.peppol_organization_id)
     }
 
     setLoading(false)
   }, [supabase, params.id, router])
 
   useEffect(() => { loadInvoice() }, [loadInvoice])
+
+  // Lazy buyer Peppol discovery: runs once when invoice loads, no caching.
+  useEffect(() => {
+    if (!invoice?.buyer_dic) {
+      setBuyerPeppolReady(null)
+      return
+    }
+    let cancelled = false
+    setBuyerPeppolChecking(true)
+    const identifier = `0245:${invoice.buyer_dic.trim()}`
+    fetch(`/api/peppol/discover?identifier=${encodeURIComponent(identifier)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        setBuyerPeppolReady(!!data.found)
+      })
+      .catch(() => {
+        if (!cancelled) setBuyerPeppolReady(false)
+      })
+      .finally(() => {
+        if (!cancelled) setBuyerPeppolChecking(false)
+      })
+    return () => { cancelled = true }
+  }, [invoice?.buyer_dic])
 
   async function handleGenerate() {
     if (!invoice) return
@@ -273,7 +300,16 @@ export default function InvoiceDetailPage() {
       <GlassCard>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{invoice.buyer_name}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium text-foreground truncate">{invoice.buyer_name}</p>
+              {buyerPeppolReady && <PeppolBadge />}
+              {buyerPeppolChecking && (
+                <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Overujem Peppol...
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {fmtDate(invoice.issue_date)} {'>'} {fmtDate(invoice.due_date)}
             </p>
@@ -345,7 +381,7 @@ export default function InvoiceDetailPage() {
       {invoice.xml_content && (
         <DownloadActions
           invoice={invoice}
-          hasApKey={hasApKey}
+          canSendPeppol={supplierPeppolReady && buyerPeppolReady === true}
           peppolStatus={invoice.peppol_send_status}
           onSendPeppol={() => setShowPeppolConfirm(true)}
           sending={sending}
@@ -482,7 +518,7 @@ export default function InvoiceDetailPage() {
                 </p>
               )}
             </div>
-            {invoice.peppol_send_status === 'failed' && hasApKey && (
+            {invoice.peppol_send_status === 'failed' && supplierPeppolReady && (
               <button
                 onClick={() => setShowPeppolConfirm(true)}
                 disabled={sending}

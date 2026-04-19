@@ -25,6 +25,8 @@ export interface Supplier {
   legal_form: string | null
   is_vat_payer: boolean
   is_billing_entity: boolean
+  peppol_organization_id: number | null
+  peppol_registered_at: string | null
 }
 
 interface SupplierContextType {

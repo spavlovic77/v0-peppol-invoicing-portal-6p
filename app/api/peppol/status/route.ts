@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-const ION_AP_BASE = 'https://test.ion-ap.net'
+import { getSendTransaction, IonApError } from '@/lib/ion-ap'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -17,7 +16,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Fetch invoice
   const { data: invoice } = await supabase
     .from('invoices')
     .select('id, supplier_id, peppol_transaction_id, peppol_send_status')
@@ -32,49 +30,37 @@ export async function GET(request: Request) {
     return NextResponse.json({ status: invoice.peppol_send_status || 'not_sent' })
   }
 
-  // Fetch supplier's AP API key
-  const { data: supplier } = await supabase
-    .from('suppliers')
-    .select('ap_api_key')
-    .eq('id', invoice.supplier_id)
-    .eq('user_id', user.id)
-    .single()
-
-  if (!supplier?.ap_api_key) {
-    return NextResponse.json({ status: invoice.peppol_send_status || 'unknown' })
-  }
-
   try {
-    const res = await fetch(
-      `${ION_AP_BASE}/api/v2/send-transactions/${invoice.peppol_transaction_id}`,
-      {
-        headers: {
-          'Authorization': `Token ${supplier.ap_api_key}`,
-          'Accept': 'application/json',
-        },
-      }
-    )
-
-    if (!res.ok) {
-      return NextResponse.json({ status: invoice.peppol_send_status || 'unknown' })
-    }
-
-    const data = await res.json()
-    // Map ION AP state to our internal status
-    // ION AP uses "state" field with values like: SENT, FAILED, PENDING, etc.
-    // "SENT" = final success (document transmitted to recipient AP)
-    const apState = (data.state || data.status || '').toUpperCase()
+    const data = await getSendTransaction(invoice.peppol_transaction_id)
+    const apState = ((data.state || data.status || '') as string).toUpperCase()
     let newStatus = invoice.peppol_send_status
 
-    if (apState === 'SENT' || apState === 'DELIVERED' || apState === 'ACCEPTED' || apState === 'COMPLETED' || apState === 'DONE') {
+    if (
+      apState === 'SENT' ||
+      apState === 'DELIVERED' ||
+      apState === 'ACCEPTED' ||
+      apState === 'COMPLETED' ||
+      apState === 'DONE'
+    ) {
       newStatus = 'delivered'
-    } else if (apState === 'FAILED' || apState === 'REJECTED' || apState === 'ERROR' || apState === 'INVALID') {
+    } else if (
+      apState === 'FAILED' ||
+      apState === 'REJECTED' ||
+      apState === 'ERROR' ||
+      apState === 'INVALID'
+    ) {
       newStatus = 'failed'
-    } else if (apState === 'PENDING' || apState === 'PROCESSING' || apState === 'QUEUED' || apState === 'IN_PROGRESS') {
-      newStatus = 'sent' // still in transit
+    } else if (
+      apState === 'PENDING' ||
+      apState === 'PROCESSING' ||
+      apState === 'QUEUED' ||
+      apState === 'SENDING' ||
+      apState === 'DEFERRED' ||
+      apState === 'IN_PROGRESS'
+    ) {
+      newStatus = 'sent'
     }
 
-    // Update status if changed
     if (newStatus !== invoice.peppol_send_status) {
       await supabase
         .from('invoices')
@@ -82,12 +68,13 @@ export async function GET(request: Request) {
         .eq('id', invoiceId)
     }
 
-    return NextResponse.json({
-      status: newStatus,
-      raw: data,
-    })
+    return NextResponse.json({ status: newStatus, raw: data })
   } catch (err) {
-    console.error('[v0] ION AP status poll error:', err)
+    if (err instanceof IonApError) {
+      console.error('[peppol/status] ion-AP error:', err.status, err.body)
+      return NextResponse.json({ status: invoice.peppol_send_status || 'unknown' })
+    }
+    console.error('[peppol/status] fetch error:', err)
     return NextResponse.json({ status: invoice.peppol_send_status || 'unknown' })
   }
 }

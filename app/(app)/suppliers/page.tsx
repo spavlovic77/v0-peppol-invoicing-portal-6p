@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { SupplierCardSkeleton } from '@/components/skeleton'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { PeppolBadge } from '@/components/peppol-badge'
+import { PeppolRegisterButton } from '@/components/peppol-register-button'
 import { useState } from 'react'
 
 export default function SuppliersPage() {
@@ -135,6 +137,7 @@ export default function SuppliersPage() {
                             Fakturačný subjekt
                           </span>
                         )}
+                        {s.peppol_organization_id && <PeppolBadge />}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                         <span>{'IČO: '}{s.ico}</span>
@@ -154,7 +157,7 @@ export default function SuppliersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pl-12" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2 pl-12 flex-wrap" onClick={(e) => e.stopPropagation()}>
                     {!s.is_billing_entity && (
                       <button
                         onClick={() => handleSetBilling(s.id, s.company_name)}
@@ -164,6 +167,13 @@ export default function SuppliersPage() {
                         <Receipt className="w-3.5 h-3.5" />
                         Majiteľ profilu
                       </button>
+                    )}
+                    {!s.peppol_organization_id && (
+                      <PeppolRegisterButton
+                        supplierId={s.id}
+                        supplierDic={s.dic}
+                        onRegistered={() => refreshSuppliers()}
+                      />
                     )}
                     <Link
                       href={`/suppliers/${s.id}/edit`}

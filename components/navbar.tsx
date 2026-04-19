@@ -13,6 +13,8 @@ import {
 import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
 import type { Supplier } from '@/lib/supplier-context'
+import { PeppolBadge } from '@/components/peppol-badge'
+import { PeppolRegisterButton } from '@/components/peppol-register-button'
 
 const tabs = [
   { href: '/dashboard', label: 'Faktúry', icon: ReceiptText },
@@ -25,7 +27,7 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
-  const { suppliers, activeSupplier, setActiveSupplier } = useActiveSupplier()
+  const { suppliers, activeSupplier, setActiveSupplier, refreshSuppliers } = useActiveSupplier()
   const [aiOpen, setAiOpen] = useState(false)
 
   // Listen for AI panel state broadcasts (from AiAssistantPanel)
@@ -130,10 +132,10 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-3 flex items-center justify-between h-12">
           {/* Left: supplier name (prominent) */}
           {suppliers.length > 0 ? (
-            <div className="relative flex-1 min-w-0" ref={dropdownRef}>
+            <div className="relative flex-1 min-w-0 flex items-center gap-2" ref={dropdownRef}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 min-w-0 max-w-full"
+                className="flex items-center gap-2 min-w-0"
               >
                 <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                   <Building2 className="w-3.5 h-3.5 text-primary" />
@@ -141,8 +143,19 @@ export function Navbar() {
                 <span className="text-sm font-semibold text-foreground truncate">
                   {activeSupplier?.company_name ?? 'Vybrať dodávateľa'}
                 </span>
+                {activeSupplier?.peppol_organization_id && <PeppolBadge />}
                 <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform', showDropdown && 'rotate-180')} />
               </button>
+
+              {activeSupplier && !activeSupplier.peppol_organization_id && (
+                <div className="hidden sm:block ml-2" onClick={(e) => e.stopPropagation()}>
+                  <PeppolRegisterButton
+                    supplierId={activeSupplier.id}
+                    supplierDic={activeSupplier.dic}
+                    onRegistered={() => refreshSuppliers()}
+                  />
+                </div>
+              )}
 
               {showDropdown && (
                 <div className="absolute top-full left-0 mt-1.5 w-72 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">
@@ -159,8 +172,11 @@ export function Navbar() {
                         )}
                       >
                         <Building2 className="w-4 h-4 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="truncate font-medium">{s.company_name}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate font-medium">{s.company_name}</span>
+                            {s.peppol_organization_id && <PeppolBadge />}
+                          </div>
                           <div className="text-xs text-muted-foreground">{'IČO: '}{s.ico}</div>
                         </div>
                       </button>
