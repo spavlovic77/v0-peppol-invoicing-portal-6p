@@ -76,12 +76,20 @@ export default function EditSupplierPage() {
         <p className="text-muted-foreground mt-1">
           {initial?.company_name}
         </p>
-        {!peppolOrgId && (
-          <div className="mt-3">
+        {!peppolOrgId && !dic && (
+          <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/15 text-warning text-xs">
+            Doplňte DIČ pre automatickú registráciu do Peppol
+          </div>
+        )}
+        {!peppolOrgId && dic && (
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-muted-foreground">
+              Registrácia prebehne automaticky. Ak sa neuskutočnila, skúste ručne:
+            </span>
             <PeppolRegisterButton
               supplierId={id}
               supplierDic={dic}
-              size="md"
+              size="sm"
               onRegistered={(orgId) => setPeppolOrgId(orgId)}
             />
           </div>

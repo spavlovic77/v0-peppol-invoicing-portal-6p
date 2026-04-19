@@ -131,6 +131,28 @@ export async function discoverParticipant(
   throw new IonApError(res.status, text)
 }
 
+export async function findOrganizationByIdentifier(
+  identifier: string
+): Promise<number | null> {
+  try {
+    const res = await ionApFetch(
+      `/api/v2/organizations?filter_identifier=${encodeURIComponent(identifier)}&limit=5`
+    )
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      results?: Array<{ id: number; identifiers?: Array<{ identifier: string }> }>
+    }
+    const match = (data.results ?? []).find((org) =>
+      (org.identifiers ?? []).some(
+        (i) => i.identifier.toLowerCase() === identifier.toLowerCase()
+      )
+    )
+    return match?.id ?? data.results?.[0]?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function sendDocument(xml: string): Promise<{ id?: number; transaction_id?: string; [k: string]: unknown }> {
   return ionApJson('/api/v2/send-document', {
     method: 'POST',

@@ -9,7 +9,6 @@ import { toast } from 'sonner'
 import { SupplierCardSkeleton } from '@/components/skeleton'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { PeppolBadge } from '@/components/peppol-badge'
-import { PeppolRegisterButton } from '@/components/peppol-register-button'
 import { useState } from 'react'
 
 export default function SuppliersPage() {
@@ -138,6 +137,11 @@ export default function SuppliersPage() {
                           </span>
                         )}
                         {s.peppol_organization_id && <PeppolBadge />}
+                        {!s.peppol_organization_id && !s.dic && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/15 text-warning shrink-0">
+                            Doplňte DIČ pre Peppol
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                         <span>{'IČO: '}{s.ico}</span>
@@ -167,13 +171,6 @@ export default function SuppliersPage() {
                         <Receipt className="w-3.5 h-3.5" />
                         Majiteľ profilu
                       </button>
-                    )}
-                    {!s.peppol_organization_id && (
-                      <PeppolRegisterButton
-                        supplierId={s.id}
-                        supplierDic={s.dic}
-                        onRegistered={() => refreshSuppliers()}
-                      />
                     )}
                     <Link
                       href={`/suppliers/${s.id}/edit`}

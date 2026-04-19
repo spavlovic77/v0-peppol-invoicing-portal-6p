@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils'
 import { useState, useRef, useEffect } from 'react'
 import type { Supplier } from '@/lib/supplier-context'
 import { PeppolBadge } from '@/components/peppol-badge'
-import { PeppolRegisterButton } from '@/components/peppol-register-button'
 
 const tabs = [
   { href: '/dashboard', label: 'Faktúry', icon: ReceiptText },
@@ -27,7 +26,7 @@ export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
-  const { suppliers, activeSupplier, setActiveSupplier, refreshSuppliers } = useActiveSupplier()
+  const { suppliers, activeSupplier, setActiveSupplier } = useActiveSupplier()
   const [aiOpen, setAiOpen] = useState(false)
 
   // Listen for AI panel state broadcasts (from AiAssistantPanel)
@@ -144,18 +143,13 @@ export function Navbar() {
                   {activeSupplier?.company_name ?? 'Vybrať dodávateľa'}
                 </span>
                 {activeSupplier?.peppol_organization_id && <PeppolBadge />}
+                {activeSupplier && !activeSupplier.peppol_organization_id && !activeSupplier.dic && (
+                  <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-warning/15 text-warning shrink-0">
+                    Doplňte DIČ pre Peppol
+                  </span>
+                )}
                 <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform', showDropdown && 'rotate-180')} />
               </button>
-
-              {activeSupplier && !activeSupplier.peppol_organization_id && (
-                <div className="hidden sm:block ml-2" onClick={(e) => e.stopPropagation()}>
-                  <PeppolRegisterButton
-                    supplierId={activeSupplier.id}
-                    supplierDic={activeSupplier.dic}
-                    onRegistered={() => refreshSuppliers()}
-                  />
-                </div>
-              )}
 
               {showDropdown && (
                 <div className="absolute top-full left-0 mt-1.5 w-72 bg-popover text-popover-foreground rounded-xl overflow-hidden shadow-xl border border-border z-50">

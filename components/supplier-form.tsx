@@ -10,6 +10,7 @@ import { Search, Save, Building2, CreditCard, Globe, Loader2, Trash2, AlertTrian
 import { cleanIban, formatIban, validateIban } from '@/lib/iban'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { PEPPOL_IDENTIFIER_SCHEME } from '@/lib/constants'
+import { autoRegisterSupplier, resetAutoRegisterDedupe } from '@/lib/peppol-auto-register'
 
 export interface SupplierFormData {
   ico: string
@@ -115,6 +116,10 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       toast.error('Názov firmy a IČO sú povinné')
       return
     }
+    if (!(form.dic || '').trim()) {
+      toast.error('DIČ je povinné (potrebné pre Peppol registráciu)')
+      return
+    }
     if (!(form.legal_form || '').trim()) {
       toast.error('Spoločnosť zapísaná (BT-33) je povinné — napr. "Obchodný register Okresného súdu Bratislava I, oddiel: sro, vložka č. 123/B"')
       return
@@ -128,7 +133,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         user_id: user.id,
         ico: form.ico || icoInput,
         company_name: form.company_name,
-        dic: form.dic || null,
+        dic: form.dic.trim(),
         ic_dph: form.ic_dph || null,
         street: form.street || null,
         city: form.city || null,
@@ -147,16 +152,27 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
       }
 
       let error
+      let savedId: string | undefined = supplierId
       if (isEdit) {
         ; ({ error } = await supabase.from('suppliers').update(payload).eq('id', supplierId))
       } else {
-        ; ({ error } = await supabase.from('suppliers').insert(payload))
+        const insertRes = await supabase
+          .from('suppliers')
+          .insert(payload)
+          .select('id')
+          .single()
+        error = insertRes.error
+        savedId = insertRes.data?.id
       }
 
       if (error) {
         toast.error('Chyba pri ukladani: ' + error.message)
       } else {
         toast.success(isEdit ? 'Dodavatel bol aktualizovany' : 'Dodavatel bol vytvoreny')
+        // DIC may have been added/changed — let auto-register try again.
+        if (savedId) resetAutoRegisterDedupe(savedId)
+        // Fire-and-forget Peppol auto-registration. Silent on failure.
+        if (savedId) autoRegisterSupplier(savedId).then(() => refreshSuppliers())
         await refreshSuppliers()
         router.push('/suppliers')
       }
@@ -226,7 +242,7 @@ export function SupplierForm({ initial, supplierId }: SupplierFormProps) {
         <div className="grid md:grid-cols-2 gap-4">
           <Field label="Názov firmy *" value={form.company_name} onChange={(v) => updateField('company_name', v)} />
           <Field label="IČO" value={form.ico} onChange={(v) => updateField('ico', v)} />
-          <Field label="DIČ" value={form.dic} onChange={(v) => updateField('dic', v)} />
+          <Field label="DIČ *" value={form.dic} onChange={(v) => updateField('dic', v)} />
           {form.is_vat_payer && (
             <Field label="IČ DPH" value={form.ic_dph} onChange={(v) => updateField('ic_dph', v)} />
           )}

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Loader2, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { resetAutoRegisterDedupe } from '@/lib/peppol-auto-register'
 
 interface Props {
   supplierId: string
@@ -30,6 +31,9 @@ export function PeppolRegisterButton({
       return
     }
     setLoading(true)
+    // Manual retry should always hit the server, even if a prior silent attempt
+    // in this session already failed and marked the id as attempted.
+    resetAutoRegisterDedupe(supplierId)
     try {
       const res = await fetch('/api/peppol/register', {
         method: 'POST',

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { autoRegisterSupplier } from '@/lib/peppol-auto-register'
 
 export interface Supplier {
   id: string
@@ -82,6 +83,20 @@ export function SupplierProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshSuppliers()
   }, [refreshSuppliers])
+
+  // Silent auto-registration: whenever the active supplier changes and it has
+  // a DIC but no peppol_organization_id, try once (per session) to register
+  // it in the background. Result is reflected via refreshSuppliers() on success.
+  useEffect(() => {
+    if (!activeSupplier) return
+    if (activeSupplier.peppol_organization_id) return
+    if (!activeSupplier.dic) return
+    let cancelled = false
+    autoRegisterSupplier(activeSupplier.id).then((res) => {
+      if (!cancelled && res.registered) refreshSuppliers()
+    })
+    return () => { cancelled = true }
+  }, [activeSupplier, refreshSuppliers])
 
   const setActiveSupplier = (supplier: Supplier) => {
     setActiveSupplierState(supplier)
