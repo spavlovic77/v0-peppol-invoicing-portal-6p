@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GlassCard } from '@/components/glass-card'
-import { FileText, Search, Loader2, CheckCircle2, ArrowRight, Building2 } from 'lucide-react'
+import { FileText, Search, Loader2, CheckCircle2, ArrowRight, Building2, Info } from 'lucide-react'
 
 type Phase = 'idle' | 'searching' | 'found' | 'saving' | 'done' | 'error'
 
@@ -28,10 +28,11 @@ export default function OnboardingPage() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [company, setCompany] = useState<CompanyData | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [showDisclaimer, setShowDisclaimer] = useState(true)
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (!showDisclaimer) inputRef.current?.focus()
+  }, [showDisclaimer])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -145,6 +146,48 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="disclaimer-title"
+            className="relative w-full max-w-md bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border overflow-hidden"
+          >
+            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
+              <div className="w-9 h-9 rounded-lg bg-warning/15 flex items-center justify-center shrink-0">
+                <Info className="w-4.5 h-4.5 text-warning" />
+              </div>
+              <h2 id="disclaimer-title" className="text-base font-semibold">
+                Testovacie prostredie
+              </h2>
+            </div>
+            <div className="px-5 py-5 space-y-3 text-sm leading-relaxed">
+              <p className="text-foreground">
+                Toto je <strong>testovacia verzia aplikácie</strong>. Môžete vytvárať akékoľvek firmy
+                a faktúry — <strong>nie sú skutočné</strong> a nebudú odoslané žiadnemu reálnemu
+                odberateľovi.
+              </p>
+              <p className="text-muted-foreground">
+                Aplikácia slúži výhradne na <strong>vzdelávacie a demonštračné účely</strong>.
+                Faktúry odoslané cez Peppol smerujú do testovacej siete ion-AP a nemajú právne účinky.
+              </p>
+            </div>
+            <div className="px-5 py-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowDisclaimer(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                autoFocus
+              >
+                Rozumiem, pokračovať
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="w-full max-w-md space-y-6">
         {/* Logo / branding */}
         <div className="text-center space-y-2">
