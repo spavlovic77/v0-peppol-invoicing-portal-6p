@@ -7,6 +7,8 @@ import { GlassCard } from '@/components/glass-card'
 import { toast } from 'sonner'
 import { Contact, Plus, Pencil, Trash2, Search, Save, Loader2, X, Building2 } from 'lucide-react'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { PeppolBadge } from '@/components/peppol-badge'
+import { discoverBuyer, resetBuyerDiscoveryDedupe } from '@/lib/peppol-buyer-discover'
 
 interface BuyerContact {
   id: string
@@ -21,11 +23,13 @@ interface BuyerContact {
   country_code: string
   email: string | null
   peppol_id: string | null
+  peppol_checked_at: string | null
 }
 
 const emptyBuyer: Omit<BuyerContact, 'id' | 'supplier_id'> = {
   ico: '', dic: '', ic_dph: '', company_name: '', street: '', city: '',
   postal_code: '', country_code: 'SK', email: '', peppol_id: '',
+  peppol_checked_at: null,
 }
 
 export default function BuyersPage() {
@@ -52,6 +56,29 @@ export default function BuyersPage() {
   }, [activeSupplier, supabase])
 
   useEffect(() => { loadBuyers() }, [loadBuyers])
+
+  // Background sweep: whenever the buyer list changes, silently discover any
+  // SK buyer with a DIC that has never been checked yet. Per-session dedupe
+  // keeps this cheap even on rapid re-renders. Reloads on change to show badges.
+  useEffect(() => {
+    if (buyers.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const pending = buyers.filter(
+        (b) => b.dic && !b.peppol_checked_at && (b.country_code || 'SK').toUpperCase() === 'SK'
+      )
+      if (pending.length === 0) return
+      const results = await Promise.all(
+        pending.map((b) =>
+          discoverBuyer({ buyerId: b.id, dic: b.dic, countryCode: b.country_code })
+        )
+      )
+      if (!cancelled && results.some(Boolean)) {
+        loadBuyers()
+      }
+    })()
+    return () => { cancelled = true }
+  }, [buyers, loadBuyers])
 
   async function lookupICO() {
     const sanitized = (form.ico || '').replace(/\s/g, '')
@@ -109,10 +136,17 @@ export default function BuyersPage() {
       }
 
       let error
+      let savedId: string | undefined = editingId ?? undefined
       if (editingId) {
         ; ({ error } = await supabase.from('buyer_contacts').update(payload).eq('id', editingId))
       } else {
-        ; ({ error } = await supabase.from('buyer_contacts').insert(payload))
+        const insertRes = await supabase
+          .from('buyer_contacts')
+          .insert(payload)
+          .select('id')
+          .single()
+        error = insertRes.error
+        savedId = insertRes.data?.id
       }
 
       if (error) {
@@ -122,6 +156,19 @@ export default function BuyersPage() {
         setShowForm(false)
         setEditingId(null)
         setForm(emptyBuyer)
+        // DIC may have changed — allow a fresh discovery attempt this session.
+        if (savedId) resetBuyerDiscoveryDedupe(savedId)
+        // Fire-and-forget Peppol discovery; silently updates peppol_id + timestamp.
+        if (savedId && form.dic && (form.country_code || 'SK').toUpperCase() === 'SK') {
+          discoverBuyer({
+            buyerId: savedId,
+            dic: form.dic,
+            countryCode: form.country_code,
+          }).then((found) => {
+            if (found) toast.success('Odberateľ je Peppol Ready')
+            loadBuyers()
+          })
+        }
         await loadBuyers()
       }
     } finally {
@@ -144,6 +191,7 @@ export default function BuyersPage() {
       city: buyer.city || '', postal_code: buyer.postal_code || '',
       country_code: buyer.country_code || 'SK', email: buyer.email || '',
       peppol_id: buyer.peppol_id || '',
+      peppol_checked_at: buyer.peppol_checked_at,
     })
     setEditingId(buyer.id)
     setShowForm(true)
@@ -264,7 +312,10 @@ export default function BuyersPage() {
             <GlassCard key={b.id}>
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <h3 className="font-medium text-foreground truncate">{b.company_name}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-medium text-foreground truncate">{b.company_name}</h3>
+                    {b.peppol_id && <PeppolBadge />}
+                  </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                     {b.ico && <span>{'IČO: '}{b.ico}</span>}
                     {b.dic && <span>{'DIČ: '}{b.dic}</span>}
