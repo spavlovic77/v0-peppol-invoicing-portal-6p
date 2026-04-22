@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { FileCode, FileText, Download, Loader2, Send, Mail, CheckCircle2 } from 'lucide-react'
-import { GlassCard } from '@/components/glass-card'
 import { toast } from 'sonner'
 
 interface Props {
@@ -179,66 +178,62 @@ export function DownloadActions({
 
       {/* Send to accountant - full width */}
       {isValid && (
-        <GlassCard heavy className="border-primary/20">
-          <button
-            onClick={onSendToAccountant}
-            disabled={sendingToAccountant}
-            className="w-full flex items-center justify-center gap-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
-              {sendingToAccountant ? (
-                <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              ) : invoice.sent_to_accountant_at ? (
-                <CheckCircle2 className="w-6 h-6 text-primary" />
-              ) : (
-                <Mail className="w-6 h-6 text-primary" />
-              )}
+        <button
+          onClick={onSendToAccountant}
+          disabled={sendingToAccountant}
+          className="group relative overflow-hidden w-full rounded-2xl glass-card-heavy p-6 flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 border border-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors">
+            {sendingToAccountant ? (
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            ) : invoice.sent_to_accountant_at ? (
+              <CheckCircle2 className="w-6 h-6 text-primary" />
+            ) : (
+              <Mail className="w-6 h-6 text-primary" />
+            )}
+          </div>
+          <div className="text-left">
+            <div className="font-bold text-foreground text-base">
+              {sendingToAccountant
+                ? 'Odosielam účtovníčke...'
+                : invoice.sent_to_accountant_at
+                  ? 'Odoslať znova účtovníčke'
+                  : 'Odoslať účtovníčke'}
             </div>
-            <div className="text-left">
-              <div className="font-bold text-foreground text-base">
-                {sendingToAccountant
-                  ? 'Odosielam účtovníčke...'
-                  : invoice.sent_to_accountant_at
-                    ? 'Odoslať znova účtovníčke'
-                    : 'Odoslať účtovníčke'}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {invoice.sent_to_accountant_at && invoice.sent_to_accountant_email
-                  ? `Naposledy odoslané na ${invoice.sent_to_accountant_email} — ${new Date(invoice.sent_to_accountant_at).toLocaleString('sk-SK')}`
-                  : accountantEmail
-                    ? `ZIP (XML + PDF) na ${accountantEmail}`
-                    : 'E-mail zadáte v ďalšom kroku'}
-              </div>
+            <div className="text-xs text-muted-foreground">
+              {invoice.sent_to_accountant_at && invoice.sent_to_accountant_email
+                ? `Naposledy odoslané na ${invoice.sent_to_accountant_email} — ${new Date(invoice.sent_to_accountant_at).toLocaleString('sk-SK')}`
+                : accountantEmail
+                  ? `ZIP (XML + PDF) na ${accountantEmail}`
+                  : 'E-mail zadáte v ďalšom kroku'}
             </div>
-          </button>
-        </GlassCard>
+          </div>
+        </button>
       )}
 
       {/* Peppol send - full width */}
       {canSendPeppol && isValid && !peppolStatus && (
-        <GlassCard heavy className="border-success/20">
-          <button
-            onClick={onSendPeppol}
-            disabled={sending}
-            className="w-full flex items-center justify-center gap-3 py-2"
-          >
-            <div className="w-12 h-12 rounded-xl bg-success/15 flex items-center justify-center">
-              {sending ? (
-                <Loader2 className="w-6 h-6 text-success animate-spin" />
-              ) : (
-                <Send className="w-6 h-6 text-success" />
-              )}
+        <button
+          onClick={onSendPeppol}
+          disabled={sending}
+          className="group relative overflow-hidden w-full rounded-2xl glass-card-heavy p-6 flex items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-success/30 border border-success/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          <div className="w-12 h-12 rounded-xl bg-success/15 flex items-center justify-center group-hover:bg-success/25 transition-colors">
+            {sending ? (
+              <Loader2 className="w-6 h-6 text-success animate-spin" />
+            ) : (
+              <Send className="w-6 h-6 text-success" />
+            )}
+          </div>
+          <div className="text-left">
+            <div className="font-bold text-foreground text-base">
+              {sending ? 'Odosielam cez Peppol...' : 'Odoslať cez Peppol sieť'}
             </div>
-            <div className="text-left">
-              <div className="font-bold text-foreground text-base">
-                {sending ? 'Odosielam cez Peppol...' : 'Odoslať cez Peppol sieť'}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Elektronické doručenie príjemcovi cez Peppol
-              </div>
+            <div className="text-xs text-muted-foreground">
+              Elektronické doručenie príjemcovi cez Peppol
             </div>
-          </button>
-        </GlassCard>
+          </div>
+        </button>
       )}
     </div>
   )
