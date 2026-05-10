@@ -1035,7 +1035,7 @@ export default function NewInvoicePage() {
 
       <div>{steps[step]?.component ?? steps[0].component}</div>
 
-      <div className="flex justify-between">
+      <div className="sticky bottom-14 md:bottom-0 z-10 -mx-3 sm:-mx-4 px-3 sm:px-4 py-3 bg-background/85 backdrop-blur-md border-t border-border flex justify-between">
         <button
           onClick={() => { setStep((s) => Math.max(0, s - 1)); document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
           disabled={step === 0}
