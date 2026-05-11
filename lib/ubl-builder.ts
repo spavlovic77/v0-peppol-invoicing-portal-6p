@@ -126,7 +126,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
   <cbc:IssueDate>${escapeXml(inv.issueDate)}</cbc:IssueDate>
   <cbc:DueDate>${escapeXml(inv.dueDate)}</cbc:DueDate>
   <cbc:InvoiceTypeCode>${escapeXml(inv.invoiceTypeCode)}</cbc:InvoiceTypeCode>
-  ${inv.invoiceNote ? `<cbc:Note>${escapeXml(inv.invoiceNote)}</cbc:Note>\n  ` : ''}<cbc:DocumentCurrencyCode>${escapeXml(inv.documentCurrencyCode)}</cbc:DocumentCurrencyCode>
+  ${inv.invoiceNote ? `<cbc:Note>${escapeXml(inv.invoiceNote)}</cbc:Note>\n  ` : ''}${inv.deliveryDate ? `<cbc:TaxPointDate>${escapeXml(inv.deliveryDate)}</cbc:TaxPointDate>\n  ` : ''}<cbc:DocumentCurrencyCode>${escapeXml(inv.documentCurrencyCode)}</cbc:DocumentCurrencyCode>
   <cbc:BuyerReference>${escapeXml(inv.buyerReference)}</cbc:BuyerReference>
   ${inv.orderReferenceId ? `<cac:OrderReference>
     <cbc:ID>${escapeXml(inv.orderReferenceId)}</cbc:ID>
@@ -201,14 +201,7 @@ export function buildUblXml(inv: PeppolInvoice): string {
         }
       </cac:PartyLegalEntity>
     </cac:Party>
-  </cac:AccountingCustomerParty>${
-    inv.deliveryDate
-      ? `
-  <cac:Delivery>
-    <cbc:ActualDeliveryDate>${escapeXml(inv.deliveryDate)}</cbc:ActualDeliveryDate>
-  </cac:Delivery>`
-      : ''
-  }
+  </cac:AccountingCustomerParty>
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>${escapeXml(inv.paymentMeansCode)}</cbc:PaymentMeansCode>${
       inv.paymentId && inv.paymentId.trim()
